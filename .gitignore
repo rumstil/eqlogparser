@@ -1,0 +1,9 @@
+*.suo
+*.user
+*.pdb
+*.exe
+Bin/
+Debug/
+Obj/
+Packages/
+

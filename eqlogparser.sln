@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EQLogParser", "core\EQLogParser.csproj", "{1C573E77-8416-4D48-BB44-FDE91836969D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EQLogParserTests", "tests\EQLogParserTests.csproj", "{FF96EC54-5D81-4ABD-84D4-CBE67B7EAFB8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "logdump", "sample\logdump.csproj", "{646E5B99-5B58-46F3-9F85-4AB4BF6E51CD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1C573E77-8416-4D48-BB44-FDE91836969D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C573E77-8416-4D48-BB44-FDE91836969D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C573E77-8416-4D48-BB44-FDE91836969D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C573E77-8416-4D48-BB44-FDE91836969D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FF96EC54-5D81-4ABD-84D4-CBE67B7EAFB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF96EC54-5D81-4ABD-84D4-CBE67B7EAFB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FF96EC54-5D81-4ABD-84D4-CBE67B7EAFB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FF96EC54-5D81-4ABD-84D4-CBE67B7EAFB8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{646E5B99-5B58-46F3-9F85-4AB4BF6E51CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{646E5B99-5B58-46F3-9F85-4AB4BF6E51CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{646E5B99-5B58-46F3-9F85-4AB4BF6E51CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{646E5B99-5B58-46F3-9F85-4AB4BF6E51CD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

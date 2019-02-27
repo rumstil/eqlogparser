@@ -39,14 +39,32 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FactionTracker.cs" />
-    <Compile Include="FightData.cs" />
-    <Compile Include="FightTracker.cs" />
-    <Compile Include="LogEvents.cs" />
-    <Compile Include="LogParser.cs" />
-    <Compile Include="PlayerTracker.cs" />
+    <Compile Include="Events\Death.cs" />
+    <Compile Include="Events\Heal.cs" />
+    <Compile Include="Events\Chat.cs" />
+    <Compile Include="Events\Consider.cs" />
+    <Compile Include="Events\Location.cs" />
+    <Compile Include="Events\Party.cs" />
+    <Compile Include="Events\Pet.cs" />
+    <Compile Include="Events\Who.cs" />
+    <Compile Include="Events\Loot.cs" />
+    <Compile Include="Events\Casting.cs" />
+    <Compile Include="Events\Skill.cs" />
+    <Compile Include="Events\AAXP.cs" />
+    <Compile Include="Events\Zone.cs" />
+    <Compile Include="Parser\Enums.cs" />
+    <Compile Include="Parser\LogReader.cs" />
+    <Compile Include="Parser\SpellParser.cs" />
+    <Compile Include="Tracker\FightData.cs" />
+    <Compile Include="Tracker\FightTracker.cs" />
+    <Compile Include="Events\Event.cs" />
+    <Compile Include="Events\Miss.cs" />
+    <Compile Include="Events\Hit.cs" />
+    <Compile Include="Parser\LogParser.cs" />
+    <Compile Include="Tracker\CharTracker.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -1,13 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2048
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EQLogParser", "core\EQLogParser.csproj", "{1C573E77-8416-4D48-BB44-FDE91836969D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EQLogParser", "parser\core\EQLogParser.csproj", "{1C573E77-8416-4D48-BB44-FDE91836969D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EQLogParserTests", "tests\EQLogParserTests.csproj", "{FF96EC54-5D81-4ABD-84D4-CBE67B7EAFB8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EQLogParserTests", "parser\tests\EQLogParserTests.csproj", "{FF96EC54-5D81-4ABD-84D4-CBE67B7EAFB8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "logdump", "sample\logdump.csproj", "{646E5B99-5B58-46F3-9F85-4AB4BF6E51CD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample", "sample\Sample.csproj", "{646E5B99-5B58-46F3-9F85-4AB4BF6E51CD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,5 +30,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {49390EBE-C6FC-49BC-A005-47F519945F2C}
 	EndGlobalSection
 EndGlobal

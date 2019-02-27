@@ -1,9 +1,12 @@
 *.suo
 *.user
 *.pdb
-*.exe
+*.exe*
+*.vshost.exe.*
 Bin/
-Debug/
 Obj/
+Debug/
+Release/
 Packages/
-
+node_modules/
+.vs/

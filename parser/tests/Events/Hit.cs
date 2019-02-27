@@ -1,0 +1,145 @@
+﻿using Xunit;
+
+namespace EQLogParser
+{
+    public class LogHitEventTests
+    {
+        const string PLAYER = "Bob";
+
+        private LogHitEvent Parse(string text)
+        {
+            return LogHitEvent.Parse(new LogRawEvent(text) { Player = PLAYER });
+        }
+
+        [Fact]
+        public void Parse_Melee()
+        {
+            var hit = Parse("You punch a corrupt orbweaver for 678 points of damage.");
+            Assert.NotNull(hit);
+            Assert.Equal(PLAYER, hit.Source);
+            Assert.Equal("A corrupt orbweaver", hit.Target);
+            Assert.Equal(678, hit.Amount);
+            Assert.Equal("punch", hit.Type);
+        }
+
+        [Fact]
+        public void Parse_Melee_Special()
+        {
+            var hit = Parse("You kick a corrupt orbweaver for 7977 points of damage. (Critical)");
+            Assert.NotNull(hit);
+            Assert.Equal(PLAYER, hit.Source);
+            Assert.Equal("A corrupt orbweaver", hit.Target);
+            Assert.Equal(7977, hit.Amount);
+            Assert.Equal("kick", hit.Type);
+            Assert.Equal("critical", hit.Special);
+        }
+
+        [Fact]
+        public void Parse_Melee_Finishing_Blow()
+        {
+            var hit = Parse("You kick a corrupt orbweaver for 79777 points of damage. (Finishing Blow)");
+            Assert.NotNull(hit);
+            Assert.Equal(PLAYER, hit.Source);
+            Assert.Equal("A corrupt orbweaver", hit.Target);
+            Assert.Equal(79777, hit.Amount);
+            Assert.Equal("finishing", hit.Type);
+        }
+
+        [Fact]
+        public void Parse_DD()
+        {
+            var hit = Parse("Fourier hit a tirun crusher for 4578 points of magic damage by Force of Magic VII.");
+            Assert.NotNull(hit);
+            Assert.Equal("Fourier", hit.Source);
+            Assert.Equal("A tirun crusher", hit.Target);
+            Assert.Equal(4578, hit.Amount);
+            Assert.Equal("dd", hit.Type);
+            Assert.Equal("Force of Magic VII", hit.Spell);
+        }
+
+        [Fact]
+        public void Parse_DD_Special()
+        {
+            var hit = Parse("Fourier hit a tirun crusher for 4578 points of magic damage by Force of Magic VII. (Critical)");
+            Assert.NotNull(hit);
+            Assert.Equal("Fourier", hit.Source);
+            Assert.Equal("A tirun crusher", hit.Target);
+            Assert.Equal(4578, hit.Amount);
+            Assert.Equal("dd", hit.Type);
+            Assert.Equal("Force of Magic VII", hit.Spell);
+            Assert.Equal("critical", hit.Special);
+        }
+
+        //[Fact]
+        public void Parse_Obsolete_DD()
+        {
+            var hit = Parse("Rumstil hit a scaled wolf for 726 points of non-melee damage.");
+            Assert.NotNull(hit);
+            Assert.Equal("Rumstil", hit.Source);
+            Assert.Equal("A scaled wolf", hit.Target);
+            Assert.Equal(726, hit.Amount);
+            Assert.Equal("dd", hit.Type);
+        }
+
+        //[Fact]
+        public void Parse_Obsolete_DD_Special()
+        {
+            var hit = Parse("Rumstil hit a kodiak bear for 2515 points of non-melee damage. (Critical)");
+            Assert.NotNull(hit);
+            Assert.Equal("Rumstil", hit.Source);
+            Assert.Equal("A kodiak bear", hit.Target);
+            Assert.Equal(2515, hit.Amount);
+            Assert.Equal("dd", hit.Type);
+            Assert.Equal("critical", hit.Special);
+        }
+
+        [Fact]
+        public void Parse_Own_DoT()
+        {
+            var hit = Parse("A tree snake has taken 1923 damage from your Breath of Queen Malarian.");
+            Assert.NotNull(hit);
+            Assert.Equal(PLAYER, hit.Source);
+            Assert.Equal("A tree snake", hit.Target);
+            Assert.Equal(1923, hit.Amount);
+            Assert.Equal("dot", hit.Type);
+            Assert.Equal("Breath of Queen Malarian", hit.Spell);
+        }
+
+        [Fact]
+        public void Parse_Own_DoT_Special()
+        {
+            var hit = Parse("A tree snake has taken 6677 damage from your Breath of Queen Malarian. (Critical)");
+            Assert.NotNull(hit);
+            Assert.Equal(PLAYER, hit.Source);
+            Assert.Equal("A tree snake", hit.Target);
+            Assert.Equal(6677, hit.Amount);
+            Assert.Equal("dot", hit.Type);
+            Assert.Equal("Breath of Queen Malarian", hit.Spell);
+            Assert.Equal("critical", hit.Special);
+        }
+
+        [Fact]
+        public void Parse_Other_DoT()
+        {
+            var hit = Parse("A Drogan berserker has taken 34993 damage from Mind Tempest by Fourier.");
+            Assert.NotNull(hit);
+            Assert.Equal("Fourier", hit.Source);
+            Assert.Equal("A Drogan berserker", hit.Target);
+            Assert.Equal(34993, hit.Amount);
+            Assert.Equal("dot", hit.Type);
+            Assert.Equal("Mind Tempest", hit.Spell);
+        }
+
+        [Fact]
+        public void Parse_DS()
+        {
+            var hit = Parse("A kodiak bear is pierced by YOUR thorns for 114 points of non-melee damage.");
+            Assert.NotNull(hit);
+            Assert.Equal(PLAYER, hit.Source);
+            Assert.Equal("A kodiak bear", hit.Target);
+            Assert.Equal(114, hit.Amount);
+            Assert.Equal("dmgshield", hit.Type);
+        }
+
+    }
+}

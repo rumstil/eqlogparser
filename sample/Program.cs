@@ -5,9 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using EQLogParser;
-
-
+using System.Net;
 
 namespace logdump
 {
@@ -20,99 +20,116 @@ namespace logdump
 
         static void Main(string[] args)
         {
-            Stopwatch timer = Stopwatch.StartNew();
+            var timer = Stopwatch.StartNew();
 
-            var file = File.OpenText("d:/games/everquest/logs/eqlog_Rumstil_erollisi.txt");
-            //file.BaseStream.Position = file.BaseStream.Length - 5000000;
+            var spells = new SpellParser();
+            spells.Load("d:/games/everquest/spells_us.txt");
+            Console.Error.WriteLine("Spells loaded in {0}", timer.Elapsed);
+            timer.Restart();
 
+            var file = new LogReader("d:/games/everquest/logs/eqlog_Rumstil_erollisi.txt");
+            //var file = new LogReader("d:/games/everquest/logs/eqlog_Rumstil_test.txt");
+            //var file = new LogReader("d:/games/everquest/logs/eqlog_Fourier_erollisi.txt");
+            //var file = new LogReader("d:/games/everquest/logs/eqlog_Fourier_test.txt");
 
-            var parser = new LogParser("Rumstil");
+            var parser = new LogParser(file);
+            parser.MinDate = DateTime.MinValue;
             //parser.MinDate = DateTime.Today.AddDays(-14);
-            //parser.OnEvent += LogHandler;
-            parser.OnZone += LogHandler;
-            parser.OnPlayerFound += LogHandler;
-            //parser.OnPetOwner += LogHandler;
-            //parser.OnFightHit += LogHandler;
-            //parser.OnDeath += LogHandler;
-            //parser.OnChat += LogHandler;
-            //parser.OnHeal += LogHandler;
-            parser.OnItemLooted += LogHandler;
+            //parser.MinDate = DateTime.Parse("2/25/2019 10:06:44 PM").ToUniversalTime();
+            parser.OnEvent += ShowLog;
+
+            fights = new FightTracker();
+            fights.Chars.GetSpellClass = spells.GetClass;
+            //fights.OnFightStarted += f => Console.WriteLine("\n--- Started {0}", f.Target.Name);
+            fights.OnFightFinished += ShowFight;
+            parser.OnEvent += fights.HandleEvent;
 
 
-            fights = new FightTracker(parser);
-            fights.OnFightStarted += f => Console.WriteLine("--- {0}", f.Opponent.Name);
-            fights.OnFightFinished += FightHandler;
+            file.ReadAllLines();
+            fights.ForceFightTimeouts();
 
-            //var faction = new FactionTracker(parser);
-
-            //parser.OnBeforeEvent += CheckMostCommon
-            //parser.MaxDate = DateTime.Parse("5/19/2016 10:35:43");
-            //parser.OnAfterEvent += DebugCheck;
-
-            parser.LoadFromFile(file);
-            Console.Error.WriteLine("Parse completed in {0} - {1:N0} bytes ", timer.Elapsed, file.BaseStream.Length);
+            Console.Error.WriteLine("Parse completed in {0}", timer.Elapsed);
             Console.Error.WriteLine("Fights: {0}", fights.Fights.Count);
 
-            //foreach (var f in faction)
-            //{
-            //    Console.Error.WriteLine("{0}", f);
-            //}
+            // keep reading log file
+            //file.StartWatcherThread();
+            //Console.Error.WriteLine("Watching log file... press any key to quit");
+            //Console.ReadKey();
+            //file.StopWatcherThread();
+
 
             //var common = MostCommon.OrderByDescending(x => x.Value).Take(20);
             //foreach (var item in common)
             //    Console.Error.WriteLine("{0} {1}", item.Key, item.Value);
 
-
-        }
-
-        static void DebugCheck(RawLogEvent log)
-        {
-            if (log.RawText.Contains("Lebekn"))
-            {
-                var p = fights.Fights[0].Participants.FirstOrDefault(x => x.Name == "Lebekn");
-                if (p == null)
-                    p = new Combatant("---");
-                Console.Error.WriteLine("{0} {1}", p.SourceHitSum, log.RawText);
-            }
-        }
-
-        static void CheckMostCommon(RawLogEvent log)
-        {
-            if (!MostCommon.ContainsKey(log.RawText))
-                MostCommon[log.RawText] = 0;
-
-            MostCommon[log.RawText] = MostCommon[log.RawText] + 1;
         }
 
         /// <summary>
         /// Dump a log event to the console. All log events override the ToString() method to generate a nicer log message.
         /// </summary>
-        static void LogHandler(LogEvent log)
+        static void ShowLog(LogEvent log)
         {
-            Console.WriteLine(log);
+            //if (log is LogRawEvent)
+            //    Console.WriteLine(log);
+
+            //if (log is LogHitEvent)
+            //    Console.WriteLine(log);
+
+            //if (log is LogDeathEvent)
+            //    Console.WriteLine(log);
+
+            //if (log is LogCastingEvent cast && cast.Source == "Annjule")
+            //    Console.WriteLine(log);
+
         }
 
         /// <summary>
         /// Dump a fight summary to the console.
         /// </summary>
-        static void FightHandler(Fight f)
+        static void ShowFight(Fight f)
         {
-            var duration = (f.Finished.Value - f.Started).TotalSeconds + 1;
+            //var duration = (f.Finished.Value - f.Started).TotalSeconds + 1;
 
             Console.WriteLine();
-            Console.WriteLine("=== {0} - {1:N0} HP - {2}s at {3}", f.Opponent.Name, f.Opponent.TargetHitSum, duration, f.Started, f.Zone);
+            Console.WriteLine("=== {0} - {1:N0} HP - {2}s at {3}", f.Name, f.Target.InboundHitSum, f.Duration, f.Started.ToLocalTime(), f.Zone);
             foreach (var p in f.Participants)
             {
-                var pct = (float)p.SourceHitSum / f.Opponent.TargetHitSum;
-                if (p == f.Opponent)
-                    pct = 0;
-                Console.WriteLine(" {0,-25} {1,12:N0} {2,8:N0} DPS  {3:P0} {4}", p.Name, p.SourceHitSum, p.SourceHitSum / duration, pct, p.SourceHitCount);
-                //foreach (var c in p.Casting)
-                //    Console.WriteLine("    {0} {1}", c.Timestamp, c.Spell);
+                var pct = (float)p.OutboundHitSum / f.Target.InboundHitSum;
+
+                Console.WriteLine(" {0} {1:P0} {2}-{3}", p, pct, p.FirstAction, p.LastAction);
+                //Console.WriteLine(" {0,-25} {1,12:N0} {2,8:N0} DPS  {3:P0} {4}", p.FullName, p.SourceHitSum, p.SourceHitSum / duration, pct, p.SourceHitCount);
+
+                Console.WriteLine("   {0,-10} {1,10:N0} / {2,6:N0} DPS", "total",  p.OutboundHitSum, p.OutboundHitSum / f.Duration);
                 foreach (var ht in p.AttackTypes)
-                    Console.WriteLine("   {0,-10} {2,10:N0} / {1,3:N0} [T]    {4,10:N0} / {3,3:N0} [N]    {6,10:N0} / {5,3:N0} [C] ", ht.Type, ht.NormalHitCount + ht.CritHitCount, ht.NormalHitSum + ht.CritHitSum, ht.NormalHitCount, ht.NormalHitSum, ht.CritHitCount, ht.CritHitSum);
+                    Console.WriteLine("   {0,-10} {1,10:N0} / {2,6:N0} DPS", ht.Type, ht.HitSum, ht.HitSum / f.Duration);
+
+                //if (p.TargetMissCount > 0)
+                //    Console.WriteLine("   {0,-10} {1,6:N0} of {2} {3:P0}", "*total*", p.TargetMissCount, p.TargetHitCount + p.TargetMissCount, (double)p.TargetMissCount / (p.TargetHitCount + p.TargetMissCount));
+                foreach (var d in p.DefenseTypes)
+                    Console.WriteLine("   {0,-10} {1,6:N0} of {2} {3:P0}", "*" + d.Type + "*", d.Count, d.Attempts, (double)d.Count / d.Attempts);
+
+                Console.WriteLine("   {0,-10} {1,6:N0} of {2} {3:P0}", "*hit*", p.InboundHitCount, p.InboundHitCount + p.InboundMissCount, (double)p.InboundHitCount / (p.InboundHitCount + p.InboundMissCount));
+
+                foreach (var s in p.Spells)
+                {
+                    //Console.WriteLine("   cast {0}: {1} for {2:N0} damage", s.Name, String.Join(", ", s.Times.Select(x => x.ToString())), s.Damage);
+                    Console.WriteLine("   cast {0}: {1:N0} damage, {2:N0} healed", s.Name, s.HitSum, s.HealSum);
+                }
+
+                if (p.OutboundHealSum > 0)
+                    Console.WriteLine("   healed     {0,10:N0}", p.OutboundHealSum);
+
             }
             Console.WriteLine();
+
+            var json = JsonConvert.SerializeObject(f, Formatting.Indented);
+            //var json = JsonConvert.SerializeObject(f);
+            File.WriteAllText("c:/proj/eq/logparser/server/static/json/" + f.ID + ".json", json);
+            var web = new WebClient();
+            // write to realtime database
+            //web.UploadString("https://eqlogdb.firebaseio.com/fights.json", json);
+            // write to cloud firestore (not working)
+            //web.UploadString("https://firestore.googleapis.com/v1/projects/eqlogdb/databases/(default)/documents/fights", json);
         }
 
 

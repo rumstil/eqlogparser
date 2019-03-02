@@ -402,5 +402,36 @@ namespace EQLogParser
                 p.Spells.Sort((a, b) => a.Name.CompareTo(b.Name));
             }
         }
+
+        /// <summary>
+        /// Merge all pet damage under their owner's damage types.
+        /// </summary>
+        public void MergePets()
+        {
+            var pets = Participants.Where(x => x.PetOwner != null).ToList();
+
+            foreach (var pet in pets)
+            {
+                Participants.Remove(pet);
+
+                var owner = AddParticipant(pet.PetOwner);
+
+                foreach (var hit in pet.AttackTypes)
+                {
+                    hit.Type = "pet:" + hit.Type;
+                    owner.AttackTypes.Add(hit);
+                }
+
+                foreach (var spell in pet.Spells)
+                {
+                    spell.Name = "pet: " + spell.Name;
+                    owner.Spells.Add(spell);
+                }
+
+                owner.OutboundHitCount += pet.OutboundHitCount;
+                owner.OutboundHitSum += pet.OutboundHitSum;
+                owner.OutboundMissCount += pet.OutboundMissCount;
+            }
+        }
     }
 }

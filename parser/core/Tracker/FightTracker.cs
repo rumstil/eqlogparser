@@ -9,7 +9,7 @@ namespace EQLogParser
     public delegate void FightTrackerEvent(Fight args);
 
     /// <summary>
-    /// Tracks hits/misses/heals and assembles them into fight summaries.
+    /// Tracks various combat events and assembles them into fight summaries.
     /// </summary>
     public class FightTracker
     {
@@ -243,13 +243,15 @@ namespace EQLogParser
         /// </summary>
         private void FinishFight(Fight f)
         {
-            f.Finish();            
-            f.Party = Party;
             foreach (var p in f.Participants)
             {
-                if (p.Class == null)
-                    p.Class = Chars.GetClass(p.Name);
+                p.PetOwner = Chars.GetOwner(p.Name);
+                p.Class = Chars.GetClass(p.Name);
             }
+
+            f.MergePets();
+            f.Finish();            
+            f.Party = Party;
 
             ActiveFights.Remove(f);
             if (OnFightFinished != null)
@@ -297,38 +299,6 @@ namespace EQLogParser
             return f;
         }
 
-        /// <summary>
-        /// Merge all pet damage into a single type named "pet" under their owner's damage types.
-        /// </summary>
-        private void MergePets(Fight f)
-        {
-            foreach (var p in f.Participants.Where(x => x.PetOwner != null))
-            {
-                var owner = f.Participants.FirstOrDefault(x => x.Name == p.PetOwner);
-                if (owner != null)
-                {
-
-                    // combine all pet hits into one type (treat criticals as normal because it doesn't really make sense to group melee/dd together by type anyway)
-                    // it would be best to make this idempotent by returning a new fight but for now i'm just going to check that the pet entry doesn't already exist
-                    var ownerHit = owner.AttackTypes.FirstOrDefault(x => x.Type == "pet");
-                    if (ownerHit != null)
-                        continue;
-
-                    ownerHit = new FightHit();
-                    ownerHit.Type = "pet";
-                    owner.AttackTypes.Add(ownerHit);
-                    foreach (var petHit in p.AttackTypes)
-                    {
-                        ownerHit.HitCount += petHit.HitCount;
-                        ownerHit.HitSum += petHit.HitSum;
-                    }
-
-                    owner.OutboundHitCount += p.OutboundHitCount;
-                    owner.OutboundHitSum += p.OutboundHitSum;
-                    owner.OutboundMissCount += p.OutboundMissCount;
-                }
-            }
-        }
 
         //private string StripCorpse(string name)
         //{

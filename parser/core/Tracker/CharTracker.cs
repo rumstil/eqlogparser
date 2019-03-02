@@ -289,15 +289,15 @@ namespace EQLogParser
 
             else if (n1.Type == CharType.Friend || n2.Type == CharType.Foe)
             {
-                Add(name1).Type = CharType.Friend;
-                Add(name2).Type = CharType.Foe;
+                n1.Type = CharType.Friend;
+                n2.Type = CharType.Foe;
                 return name2;
             }
 
             else if (n1.Type == CharType.Foe || n2.Type == CharType.Friend)
             {
-                Add(name1).Type = CharType.Foe;
-                Add(name2).Type = CharType.Friend;
+                n1.Type = CharType.Foe;
+                n2.Type = CharType.Friend;
                 return name1;
             }
 

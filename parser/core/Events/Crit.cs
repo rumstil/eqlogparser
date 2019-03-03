@@ -41,7 +41,7 @@ namespace EQLogParser
             var m = MeleeCriticalRegex.Match(e.Text);
             if (m.Success)
             {
-                return new LogObsoleteHitCritEvent
+                return new LogHitCritEvent
                 {
                     Timestamp = e.Timestamp,
                     Source = e.FixName(m.Groups[1].Value),
@@ -56,7 +56,7 @@ namespace EQLogParser
                 // if others crits are on, the game will produce 2 versions of the critical message
                 // we can ignore one of them (the 3rd party one)
                 //if (m.Groups[1].Value != Player.Name)
-                return new LogObsoleteHitCritEvent
+                return new LogHitCritEvent
                 {
                     Timestamp = e.Timestamp,
                     Source = e.FixName(m.Groups[1].Value),

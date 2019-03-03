@@ -10,7 +10,7 @@ namespace EQLogParser
         }
 
         [Fact]
-        public void Parse()
+        public void Parse_Normal()
         {
             LogZoneEvent zone = null;
 

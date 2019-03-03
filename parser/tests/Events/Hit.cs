@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using System;
+using Xunit;
 
 namespace EQLogParser
 {
@@ -71,6 +72,7 @@ namespace EQLogParser
         }
 
         //[Fact]
+        [Obsolete]
         public void Parse_Obsolete_DD()
         {
             var hit = Parse("Rumstil hit a scaled wolf for 726 points of non-melee damage.");
@@ -82,6 +84,7 @@ namespace EQLogParser
         }
 
         //[Fact]
+        [Obsolete]
         public void Parse_Obsolete_DD_Special()
         {
             var hit = Parse("Rumstil hit a kodiak bear for 2515 points of non-melee damage. (Critical)");

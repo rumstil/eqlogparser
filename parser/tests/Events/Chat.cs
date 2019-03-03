@@ -12,7 +12,7 @@ namespace EQLogParser
         }
 
         [Fact]
-        public void Parse()
+        public void Parse_All()
         {
             var chat = Parse("Rumstil says, 'adventure'");
             Assert.NotNull(chat);

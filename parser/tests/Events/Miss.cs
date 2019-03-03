@@ -12,7 +12,7 @@ namespace EQLogParser
         }
 
         [Fact]
-        public void Parse()
+        public void Parse_Normal()
         {
             var miss = Parse("A black wolf tries to bite YOU, but YOU dodge!");
             Assert.NotNull(miss);
@@ -32,7 +32,6 @@ namespace EQLogParser
             Assert.Equal("miss", miss.Type);
             Assert.Equal("double bow shot", miss.Special);
         }
-
 
         [Fact]
         public void Parse_Rune()

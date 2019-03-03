@@ -10,7 +10,7 @@ namespace EQLogParser
         }
 
         [Fact]
-        public void Parse()
+        public void Parse_Pet_Leader()
         {
             var pet = Parse("Xebn says, 'My leader is Fourier.'");
             Assert.NotNull(pet);

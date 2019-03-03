@@ -282,7 +282,7 @@ namespace EQLogParser
                 return null;
 
             var f = new Fight();
-            f.ID = name + Fights.Count.ToString();
+            f.ID = name.Replace(' ', '-') + "-" + Fights.Count.ToString();
             f.Zone = Zone;
             f.Name = name;
             f.Target = new FightParticipant(name);

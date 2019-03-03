@@ -87,14 +87,14 @@ namespace EQLogParser
         {
             var tracker = new FightTracker();
             tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
-            Assert.Equal(0, tracker.Fights.Count);
+            Assert.Empty(tracker.Fights);
 
             tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Type = "slash", Amount = 100 });
             tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player2", Target = "Mob1", Type = "slash", Amount = 100 });
             tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Mob1", Target = "Player1", Type = "slash", Amount = 100 });
             Assert.Equal("Mob1", tracker.Fights[0].Target.Name);
-            Assert.Equal(1, tracker.Fights.Count);
-            Assert.Equal(1, tracker.ActiveFights.Count);
+            Assert.Single(tracker.Fights);
+            Assert.Single(tracker.ActiveFights);
 
             tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob2", Type = "slash", Amount = 100 });
             Assert.Equal("Mob2", tracker.Fights[1].Target.Name);
@@ -109,17 +109,17 @@ namespace EQLogParser
             tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
 
             tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Type = "slash", Amount = 100 });
-            Assert.Equal(1, tracker.Fights.Count);
-            Assert.Equal(1, tracker.ActiveFights.Count);
+            Assert.Single(tracker.Fights);
+            Assert.Single(tracker.ActiveFights);
             
             tracker.HandleEvent(new LogDeathEvent { Timestamp = DateTime.Now, Name = "Mob1" });
-            Assert.Equal(1, tracker.Fights.Count);
-            Assert.Equal(0, tracker.ActiveFights.Count);
+            Assert.Single(tracker.Fights);
+            Assert.Empty(tracker.ActiveFights);
 
             // same mob name, but it should be treated as a new fight since it died
             tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Type = "slash", Amount = 101 });
             Assert.Equal(2, tracker.Fights.Count);
-            Assert.Equal(1, tracker.ActiveFights.Count);
+            Assert.Single(tracker.ActiveFights);
         }
 
         [Fact]
@@ -135,8 +135,8 @@ namespace EQLogParser
 
             Assert.NotNull(f);
             Assert.Equal("Mob1", f.Target.Name);
-            Assert.Equal(1, tracker.Fights.Count);
-            Assert.Equal(0, tracker.ActiveFights.Count);
+            Assert.Single(tracker.Fights);
+            Assert.Empty(tracker.ActiveFights);
         }
 
         [Fact]
@@ -153,8 +153,8 @@ namespace EQLogParser
             tracker.HandleEvent(new LogRawEvent { Timestamp = DateTime.Now + tracker.FightTimeout, Text = "..." });
             Assert.NotNull(f);
             Assert.Equal("Mob1", f.Target.Name);
-            Assert.Equal(1, tracker.Fights.Count);
-            Assert.Equal(0, tracker.ActiveFights.Count);
+            Assert.Single(tracker.Fights);
+            Assert.Empty(tracker.ActiveFights);
         }
 
         [Fact]

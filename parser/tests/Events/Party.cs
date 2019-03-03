@@ -12,7 +12,7 @@ namespace EQLogParser
         }
 
         [Fact]
-        public void Parse()
+        public void Parse_Party()
         {
             var party = Parse("A lizard hireling has joined the group.");
             Assert.NotNull(party);

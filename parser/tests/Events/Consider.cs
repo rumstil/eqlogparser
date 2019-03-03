@@ -10,7 +10,7 @@ namespace EQLogParser
         }
 
         [Fact]
-        public void Parse()
+        public void Parse_Normal()
         {
             var con = Parse("An iksar alchemist scowls at you, ready to attack -- You could probably win this fight. (Lvl: 82)");
             Assert.NotNull(con);

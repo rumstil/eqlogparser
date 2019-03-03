@@ -14,10 +14,10 @@ namespace EQLogParser
     public delegate void LogEventHandler(LogEvent e);
 
     /// <summary>
-    /// An event-based parser for converting EQ log wierdness into well defined structures. 
-    /// This class maintains a collection of parsers that implement the LogEventParser delegate pattern.
-    /// Each of those parsers returns a LogEvent descendant if succesful which is then returned by this
-    /// class through the OnEvent callback.
+    /// This is the main interface for log parsing. 
+    /// You feed it log lines via the ParseLine() function and it returns them as events via the OnEvent delegate.
+    /// All of the parsing is done outside of this class in the individual event parsers.
+    /// This class is mostly stateless and doesn't do much more than parsing of events.
     /// </summary>
     public class LogParser
     {
@@ -26,7 +26,7 @@ namespace EQLogParser
 
         public event LogEventHandler OnEvent;
 
-        // 2018-12-18 TBL expansion changed log format significantly and most the hit parsers will not 
+        // 2018-12-18 TBL expansion changed log format significantly and most of the hit parsing will not 
         // work for earlier log files
         public DateTime MinDate = DateTime.Parse("2018-12-18"); 
         public DateTime MaxDate = DateTime.MaxValue;
@@ -45,12 +45,7 @@ namespace EQLogParser
             Ignore.Add("You can't use that command right now...");
             //Ignore.Add("Try attacking someone other than yourself. It's more productive.");
 
-            // register all parsers that are marked with LogRawEventParserAttribute
-            // downside of this method is we can't optimize the order
-            //var methods = typeof(Parser).GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-            //var parsers = methods.Where(x => x.GetCustomAttributes(false).OfType<LogRawEventParserAttribute>().Any());
-
-            // add obsolete parsers first (these should check the date)
+            // obsolete parsers (these should check the date)
             //Parsers.Add(LogHitCritEvent.Parse);
 
             // parsers can be placed in any sequence as long as there is no overlap in matching 
@@ -67,9 +62,8 @@ namespace EQLogParser
             Parsers.Add(LogWhoEvent.Parse);
             Parsers.Add(LogConEvent.Parse);
             Parsers.Add(LogLootEvent.Parse);
-            //Parsers.Add(LogAAXPEvent.Parse);
-            //Parsers.Add(LogSkillEvent.Parse);
-
+            Parsers.Add(LogAAXPEvent.Parse);
+            Parsers.Add(LogSkillEvent.Parse);
         }
 
         public LogParser(LogReader file) : this()

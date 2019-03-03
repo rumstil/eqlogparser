@@ -29,7 +29,7 @@ namespace EQLogParser
         public int Id;
 
         /// <summary>
-        /// Timestamp as it appears in the log file.
+        /// Timestamp as it appears in the log file. Converted to UTC.
         /// </summary>
         public DateTime Timestamp;
     }
@@ -107,7 +107,7 @@ namespace EQLogParser
             //    name = name.Substring(0, name.Length - CorpseSuffix.Length);
 
             // many log messages will uppercase the first letter in a mob's name
-            // so we will normalize the names to always start with an uppercased char
+            // so we will normalize names to always start with an uppercased char
             if (Char.IsLower(name[0]))
                 name = Char.ToUpper(name[0]) + name.Substring(1);
 

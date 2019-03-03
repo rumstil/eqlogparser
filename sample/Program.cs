@@ -4,10 +4,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Net;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using EQLogParser;
-using System.Net;
 
 namespace logdump
 {
@@ -124,7 +124,9 @@ namespace logdump
 
             var json = JsonConvert.SerializeObject(f, Formatting.Indented);
             //var json = JsonConvert.SerializeObject(f);
-            File.WriteAllText("c:/proj/eq/logparser/server/static/json/" + f.ID + ".json", json);
+            //File.WriteAllText("c:/proj/eq/logparser/server/static/json/" + f.ID + ".json", json);
+            File.WriteAllText("/Proj/eq/logparser/localhost/wwwroot/json/" + f.ID + ".json", json);
+            
             var web = new WebClient();
             // write to realtime database
             //web.UploadString("https://eqlogdb.firebaseio.com/fights.json", json);

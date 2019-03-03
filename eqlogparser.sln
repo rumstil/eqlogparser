@@ -3,11 +3,14 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28010.2048
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EQLogParser", "parser\core\EQLogParser.csproj", "{1C573E77-8416-4D48-BB44-FDE91836969D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EQLogParser", "parser\core\EQLogParser.csproj", "{1C573E77-8416-4D48-BB44-FDE91836969D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EQLogParserTests", "parser\tests\EQLogParserTests.csproj", "{FF96EC54-5D81-4ABD-84D4-CBE67B7EAFB8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sample", "sample\Sample.csproj", "{646E5B99-5B58-46F3-9F85-4AB4BF6E51CD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1C573E77-8416-4D48-BB44-FDE91836969D} = {1C573E77-8416-4D48-BB44-FDE91836969D}
+	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sample", "sample\Sample.csproj", "{646E5B99-5B58-46F3-9F85-4AB4BF6E51CD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EQLogParserTests", "parser\tests\EQLogParserTests.csproj", "{40803A5B-7F5B-40E4-8D8C-3B9711BF1A1F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,14 +22,14 @@ Global
 		{1C573E77-8416-4D48-BB44-FDE91836969D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1C573E77-8416-4D48-BB44-FDE91836969D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1C573E77-8416-4D48-BB44-FDE91836969D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FF96EC54-5D81-4ABD-84D4-CBE67B7EAFB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FF96EC54-5D81-4ABD-84D4-CBE67B7EAFB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FF96EC54-5D81-4ABD-84D4-CBE67B7EAFB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FF96EC54-5D81-4ABD-84D4-CBE67B7EAFB8}.Release|Any CPU.Build.0 = Release|Any CPU
 		{646E5B99-5B58-46F3-9F85-4AB4BF6E51CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{646E5B99-5B58-46F3-9F85-4AB4BF6E51CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{646E5B99-5B58-46F3-9F85-4AB4BF6E51CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{646E5B99-5B58-46F3-9F85-4AB4BF6E51CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40803A5B-7F5B-40E4-8D8C-3B9711BF1A1F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40803A5B-7F5B-40E4-8D8C-3B9711BF1A1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40803A5B-7F5B-40E4-8D8C-3B9711BF1A1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40803A5B-7F5B-40E4-8D8C-3B9711BF1A1F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

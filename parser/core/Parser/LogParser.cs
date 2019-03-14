@@ -4,9 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-
-
-
 namespace EQLogParser
 {
     public delegate LogEvent LogEventParser(LogRawEvent e);
@@ -28,7 +25,7 @@ namespace EQLogParser
 
         // 2018-12-18 TBL expansion changed log format significantly and most of the hit parsing will not 
         // work for earlier log files
-        public DateTime MinDate = DateTime.Parse("2018-12-18"); 
+        public DateTime MinDate = DateTime.Parse("2018-12-18");
         public DateTime MaxDate = DateTime.MaxValue;
 
         public string Server;
@@ -46,7 +43,7 @@ namespace EQLogParser
             //Ignore.Add("Try attacking someone other than yourself. It's more productive.");
 
             // obsolete parsers (these should check the date)
-            //Parsers.Add(LogHitCritEvent.Parse);
+            //Parsers.Add(LogCritEvent.Parse);
 
             // parsers can be placed in any sequence as long as there is no overlap in matching 
             // the order below has been chosen to place the most frequent event types first which should speed up overall parsing
@@ -54,7 +51,6 @@ namespace EQLogParser
             Parsers.Add(LogMissEvent.Parse);
             Parsers.Add(LogHealEvent.Parse);
             Parsers.Add(LogDeathEvent.Parse);
-            Parsers.Add(LogPetChatEvent.Parse); // add before LogChatEvent to capture pet chat
             Parsers.Add(LogChatEvent.Parse);
             Parsers.Add(LogCastingEvent.Parse);
             Parsers.Add(LogZoneEvent.Parse);
@@ -66,22 +62,27 @@ namespace EQLogParser
             Parsers.Add(LogSkillEvent.Parse);
         }
 
-        public LogParser(LogReader file) : this()
+        /// <summary>
+        /// Get player name from the filename. This is important for converting the "you" messages
+        /// in the log to an actual name.
+        /// </summary>
+        public static string GetPlayerFromFileName(string path)
         {
-            // eqlog_Rumstil_erollisi.txt
-            var m = Regex.Match(file.Path, @"eqlog_(\w+)_(\w+)\.txt$");
+            var m = Regex.Match(path, @"eqlog_(\w+)_(\w+)\.txt$");
             if (m.Success)
             {
-                Player = m.Groups[1].Value;
-                Player = Char.ToUpper(Player[0]) + Player.Substring(1).ToLower();
-                Server = m.Groups[2].Value;
+                var name = m.Groups[1].Value;
+                name = Char.ToUpper(name[0]) + name.Substring(1).ToLower();
+                return name;
             }
-            file.OnRead += line => ParseLine(line);
+            return null;
         }
 
         public void Subscribe(LogEventHandler handler)
         {
             OnEvent += handler;
+            if (Player != null)
+                handler(new LogWhoEvent() { Name = Player });
         }
 
         public void Unsubscribe(LogEventHandler handler)

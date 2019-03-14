@@ -5,7 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using EQLogParser;
 
@@ -14,42 +16,50 @@ namespace logdump
 
     class Program
     {
-        static Dictionary<string, int> MostCommon = new Dictionary<string, int>();
-
         static FightTracker fights;
+
+        //static string LogPath = "";
+        static string LogPath = "d:/games/everquest/logs/";
+        //static string LogPath = Environment.GetEnvironmentVariable("EQLogPath");
+
+        static string JsonPath = "c:/Proj/eq/logparser/localhost/wwwroot/json/";
+        //static string JsonPath = Environment.GetEnvironmentVariable("EQLogJsonPath");
+
+        
 
         static void Main(string[] args)
         {
-            var timer = Stopwatch.StartNew();
+            //var serviceProvider = new ServiceCollection();
 
-            var spells = new SpellParser();
-            spells.Load("d:/games/everquest/spells_us.txt");
+            var timer = Stopwatch.StartNew();
+            Console.Error.WriteLine("Loading spells...");
+            SpellParser.Default.Load("spells_us.txt");
             Console.Error.WriteLine("Spells loaded in {0}", timer.Elapsed);
             timer.Restart();
 
-            var file = new LogReader("d:/games/everquest/logs/eqlog_Rumstil_erollisi.txt");
-            //var file = new LogReader("d:/games/everquest/logs/eqlog_Rumstil_test.txt");
-            //var file = new LogReader("d:/games/everquest/logs/eqlog_Fourier_erollisi.txt");
-            //var file = new LogReader("d:/games/everquest/logs/eqlog_Fourier_test.txt");
+            var file = new LogReader(LogPath + "eqlog_Rumstil_erollisi.txt");
+            //var file = new LogReader(LogPath + "eqlog_Rumstil_test.txt");
+            //var file = new LogReader(LogPath + "eqlog_Fourier_erollisi.txt");
+            //var file = new LogReader(LogPath + "eqlog_Fourier_test.txt");
 
-            var parser = new LogParser(file);
-            parser.MinDate = DateTime.MinValue;
+            var parser = new LogParser();
+            parser.Player = LogParser.GetPlayerFromFileName(file.Path);
+            //parser.MinDate = DateTime.MinValue;
             //parser.MinDate = DateTime.Today.AddDays(-14);
             //parser.MinDate = DateTime.Parse("2/25/2019 10:06:44 PM").ToUniversalTime();
             parser.OnEvent += ShowLog;
 
             fights = new FightTracker();
-            fights.Chars.GetSpellClass = spells.GetClass;
             //fights.OnFightStarted += f => Console.WriteLine("\n--- Started {0}", f.Target.Name);
             fights.OnFightFinished += ShowFight;
             parser.OnEvent += fights.HandleEvent;
 
-
+            file.OnRead += parser.ParseLine;
             file.ReadAllLines();
             fights.ForceFightTimeouts();
 
             Console.Error.WriteLine("Parse completed in {0}", timer.Elapsed);
-            Console.Error.WriteLine("Fights: {0}", fights.Fights.Count);
+            //Console.Error.WriteLine("Fights: {0}", list.Count);
 
             // keep reading log file
             //file.StartWatcherThread();
@@ -124,14 +134,17 @@ namespace logdump
 
             var json = JsonConvert.SerializeObject(f, Formatting.Indented);
             //var json = JsonConvert.SerializeObject(f);
-            //File.WriteAllText("c:/proj/eq/logparser/server/static/json/" + f.ID + ".json", json);
-            File.WriteAllText("/Proj/eq/logparser/localhost/wwwroot/json/" + f.ID + ".json", json);
+            //File.WriteAllText(JsonPath + f.ID + ".json", json);
             
             var web = new WebClient();
+            web.Headers.Add("Content-Type", "application/json");
+            //web.UploadString("http://localhost:11794/upload", json);
+            //web.UploadString("https://logs.raidloot.com/upload", json);
             // write to realtime database
             //web.UploadString("https://eqlogdb.firebaseio.com/fights.json", json);
             // write to cloud firestore (not working)
             //web.UploadString("https://firestore.googleapis.com/v1/projects/eqlogdb/databases/(default)/documents/fights", json);
+            web.Dispose();
         }
 
 

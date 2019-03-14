@@ -27,6 +27,10 @@ the damage will not be focused.
 + If the caster returns to the zone or is resurrected, these DoT messages will once again associate 
 with them and be focused.
 
+2019-03-05
+- Direct damage spells caused by a twincast now have a flag at the end of the damage message instead 
+of a separate twincast message. Twincasts of melee abilities are now indicated as twinstrikes.
+
 */
 
 namespace EQLogParser

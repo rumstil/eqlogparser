@@ -9,6 +9,9 @@ using System.Text.RegularExpressions;
 - Healing spells now report actual and potential healing to all players in the area. Added an 
 additional chat filter option to turn off heals that land for zero.
 
+2019-03-05
+- Percentage heal spells now display their name in healing messages.
+
 */
 
 namespace EQLogParser
@@ -56,6 +59,7 @@ namespace EQLogParser
             {
                 return new LogHealEvent()
                 {
+                    Timestamp = e.Timestamp,
                     Source = e.FixName(m.Groups[1].Value),
                     Target = m.Groups[2].Value == "himself" || m.Groups[2].Value == "herself" || m.Groups[2].Value == "itself" ? e.FixName(m.Groups[1].Value) : e.FixName(m.Groups[2].Value),
                     Amount = Int32.Parse(m.Groups[3].Value),
@@ -70,6 +74,7 @@ namespace EQLogParser
             {
                 return new LogHealEvent()
                 {
+                    Timestamp = e.Timestamp,
                     Source = null,
                     Target = e.FixName(m.Groups[1].Value),
                     Amount = Int32.Parse(m.Groups[2].Value),
@@ -84,6 +89,7 @@ namespace EQLogParser
             {
                 return new LogHealEvent()
                 {
+                    Timestamp = e.Timestamp,
                     Source = e.FixName(m.Groups[1].Value),
                     Target = m.Groups[2].Value == "himself" || m.Groups[2].Value == "herself" || m.Groups[2].Value == "itself" ? e.FixName(m.Groups[1].Value) : e.FixName(m.Groups[2].Value),
                     Amount = Int32.Parse(m.Groups[3].Value),

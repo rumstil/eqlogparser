@@ -31,11 +31,9 @@ namespace EQLogParser
             Assert.Equal(CharType.Friend, chars.GetType("Rumstil`s pet"));
             Assert.Equal(CharType.Friend, chars.GetType("Rumstil`s warder"));
 
-
-            Assert.Equal(CharType.Unknown, chars.GetType("Fred"));
-
-            chars.HandleEvent(new LogPetChatEvent() { Name = "Fred", Owner = "Rumstil" });
-            Assert.Equal(CharType.Friend, chars.GetType("Fred"));
+            Assert.Equal(CharType.Unknown, chars.GetType("Xantik"));
+            chars.HandleEvent(new LogChatEvent() { Source = "Xantik", Message = "My leader is Rumstil." });
+            Assert.Equal(CharType.Friend, chars.GetType("Xantik"));
         }
 
         [Fact]
@@ -49,9 +47,9 @@ namespace EQLogParser
             Assert.Equal("Rumstil", chars.GetOwner("Rumstil`s warder"));
 
             // other pets need to be announced first
-            Assert.Null(chars.GetOwner("Fred"));
-            chars.HandleEvent(new LogPetChatEvent() { Name = "Fred", Owner = "Rumstil" });
-            Assert.Equal("Rumstil", chars.GetOwner("Fred"));
+            Assert.Null(chars.GetOwner("Xantik"));
+            chars.HandleEvent(new LogChatEvent() { Source = "Xantik", Message = "My leader is Rumstil." });
+            Assert.Equal("Rumstil", chars.GetOwner("Xantik"));
         }
 
         [Fact]

@@ -72,8 +72,7 @@ namespace EQLogParser
         }
 
         //[Fact]
-        [Obsolete]
-        public void Parse_Obsolete_DD()
+        private void Parse_Obsolete_DD()
         {
             var hit = Parse("Rumstil hit a scaled wolf for 726 points of non-melee damage.");
             Assert.NotNull(hit);
@@ -84,8 +83,7 @@ namespace EQLogParser
         }
 
         //[Fact]
-        [Obsolete]
-        public void Parse_Obsolete_DD_Special()
+        private void Parse_Obsolete_DD_Special()
         {
             var hit = Parse("Rumstil hit a kodiak bear for 2515 points of non-melee damage. (Critical)");
             Assert.NotNull(hit);

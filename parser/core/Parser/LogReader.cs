@@ -13,7 +13,7 @@ namespace EQLogParser
     {
         public readonly string Path;
         public event Action<string> OnRead;
-        StreamReader Stream;
+        readonly StreamReader Stream;
         FileSystemWatcher Watch;
         int LastReadTicks;
 
@@ -22,6 +22,11 @@ namespace EQLogParser
             Path = path;
             //Stream = File.OpenText(path);
             Stream = new StreamReader(File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), Encoding.ASCII);
+        }
+
+        public LogReader(Stream stream)
+        {
+            Stream = new StreamReader(stream, Encoding.ASCII);
         }
 
         public void Dispose()
@@ -43,6 +48,9 @@ namespace EQLogParser
         /// </summary>
         public void ReadAllLines()
         {
+            if (OnRead == null)
+                throw new InvalidOperationException();
+
             // make sure the watcher thread isn't also running
             //if (Watch != null && Watch.EnableRaisingEvents)
             //    throw new InvalidOperationException("Do not call ReadAllLines while watcher is active.");

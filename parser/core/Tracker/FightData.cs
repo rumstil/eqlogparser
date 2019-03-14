@@ -88,6 +88,7 @@ namespace EQLogParser
         // store damage, tanking, healing summaries at fixed intervals rather than storing every data point
         // e.g. storing 6 seconds worth of hits as 1 integer takes a lot less space than 30 hits
         public List<int> DPS = new List<int>();
+        public List<int> HPS = new List<int>();
         public List<int> TankDPS = new List<int>();
 
         /// <summary>
@@ -197,7 +198,7 @@ namespace EQLogParser
             }
         }
 
-        public void AddMiss(LogMissEvent miss)
+        public void AddMiss(LogMissEvent miss, int interval)
         {
             if (FirstAction == null)
                 FirstAction = miss.Timestamp;
@@ -228,7 +229,7 @@ namespace EQLogParser
             }
         }
 
-        public void AddHeal(LogHealEvent heal)
+        public void AddHeal(LogHealEvent heal, int interval)
         {
             // promised heals appear as self heals 
             // we may want to ignore them for self healing stats
@@ -254,12 +255,15 @@ namespace EQLogParser
                     //if (heal.Amount < spell.HealMin || spell.HealMin == 0)
                     //    spell.HealMin = heal.Amount;
                 }
+
+                while (HPS.Count <= interval)
+                    HPS.Add(0);
+                HPS[interval] += heal.Amount;
             }
             else if (heal.Target == Name)
             {
                 InboundHealSum += heal.Amount;
             }
-
         }
 
         public void AddCasting(LogCastingEvent cast, int time)
@@ -348,19 +352,20 @@ namespace EQLogParser
 
         public void AddMiss(LogMissEvent miss)
         {
-            AddParticipant(miss.Source).AddMiss(miss);
-            AddParticipant(miss.Target).AddMiss(miss);
+            var interval = GetInterval(miss);
+            AddParticipant(miss.Source).AddMiss(miss, interval);
+            AddParticipant(miss.Target).AddMiss(miss, interval);
         }
 
         public void AddHeal(LogHealEvent heal)
         {
-            AddParticipant(heal.Source).AddHeal(heal);
-            //GetParticipant(heal.Target).AddHeal(miss);
+            var interval = GetInterval(heal);
+            AddParticipant(heal.Source).AddHeal(heal, interval);
         }
 
         public void AddCasting(LogCastingEvent cast)
         {
-            AddParticipant(cast.Source).AddCasting(cast, (int)(cast.Timestamp - Started).TotalSeconds);
+            AddParticipant(cast.Source).AddCasting(cast, Duration - 1);
         }
 
         public override string ToString()
@@ -424,7 +429,7 @@ namespace EQLogParser
 
                 foreach (var spell in pet.Spells)
                 {
-                    spell.Name = "pet: " + spell.Name;
+                    spell.Name = "pet:" + spell.Name;
                     owner.Spells.Add(spell);
                 }
 
@@ -433,5 +438,18 @@ namespace EQLogParser
                 owner.OutboundMissCount += pet.OutboundMissCount;
             }
         }
+
+        /// <summary>
+        /// Replace character names with fake names.
+        /// </summary>
+        public void Anonymize()
+        {
+            var i = 1;
+            foreach (var p in Participants)
+            {
+                p.Name = (p.Class ?? "Player") + (i++);
+            }
+        }
+
     }
 }

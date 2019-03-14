@@ -6,6 +6,12 @@ using System.Text.RegularExpressions;
 
 namespace EQLogParser
 {
+    public enum LogCritSequence
+    {
+        BeforeHit,
+        AfterHit
+    }
+
     /// <summary>
     /// Generated when a damage hit has a critical success.
     /// These log entries are no longer used as of the Dec 2018 release of TBL.
@@ -13,12 +19,13 @@ namespace EQLogParser
     /// Nuke crits are logged after the hit.
     /// </summary>
     [Obsolete]
-    public class LogHitCritEvent : LogEvent
+    public class LogCritEvent : LogEvent
     {
         private static readonly DateTime MaxDate = DateTime.Parse("2018-12-18");
 
         public string Source;
         public int Amount;
+        public LogCritSequence Sequence;
 
         public override string ToString()
         {
@@ -33,7 +40,7 @@ namespace EQLogParser
         // [Tue Nov 03 22:11:19 2015] You deliver a critical blast! (16956) -- shown after actual spell
         private static readonly Regex SpellCriticalRegex = new Regex(@"^(.+?) delivers? a critical blast! \((\d+)\)$", RegexOptions.Compiled | RegexOptions.RightToLeft);
 
-        public static LogHitCritEvent Parse(LogRawEvent e)
+        public static LogCritEvent Parse(LogRawEvent e)
         {
             if (e.Timestamp > MaxDate)
                 return null;
@@ -41,12 +48,12 @@ namespace EQLogParser
             var m = MeleeCriticalRegex.Match(e.Text);
             if (m.Success)
             {
-                return new LogHitCritEvent
+                return new LogCritEvent
                 {
                     Timestamp = e.Timestamp,
                     Source = e.FixName(m.Groups[1].Value),
                     Amount = Int32.Parse(m.Groups[2].Value),
-                    ///Sequence = FightCritEventSequence.BeforeHit
+                    Sequence = LogCritSequence.BeforeHit
                 };
             }
 
@@ -55,14 +62,14 @@ namespace EQLogParser
             {
                 // if others crits are on, the game will produce 2 versions of the critical message
                 // we can ignore one of them (the 3rd party one)
-                //if (m.Groups[1].Value != Player.Name)
-                return new LogHitCritEvent
-                {
-                    Timestamp = e.Timestamp,
-                    Source = e.FixName(m.Groups[1].Value),
-                    Amount = Int32.Parse(m.Groups[2].Value),
-                    //Sequence = FightCritEventSequence.AfterHit
-                };
+                if (m.Groups[1].Value != e.Player)
+                    return new LogCritEvent
+                    {
+                        Timestamp = e.Timestamp,
+                        Source = e.FixName(m.Groups[1].Value),
+                        Amount = Int32.Parse(m.Groups[2].Value),
+                        Sequence = LogCritSequence.AfterHit
+                    };
             }
 
             return null;

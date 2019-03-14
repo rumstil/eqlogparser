@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -24,14 +25,16 @@ namespace EQLogParser
             return String.Format("{0} {1}", Id, Name);
         }
     }
- 
+
     /// <summary>
     /// A rudimentary spell data parser that loads just enough information to help with log parsing.
     /// </summary>
     public class SpellParser
     {
-        private readonly Dictionary<int, SpellInfo> LookupById = new Dictionary<int, SpellInfo>(10000);
-        private readonly Dictionary<string, SpellInfo> LookupByName = new Dictionary<string, SpellInfo>(10000);
+        public static SpellParser Default = new SpellParser();
+
+        private IReadOnlyDictionary<int, SpellInfo> LookupById = new Dictionary<int, SpellInfo>();
+        private IReadOnlyDictionary<string, SpellInfo> LookupByName = new Dictionary<string, SpellInfo>();
 
         /*
         public event LogEventHandler OnEvent;
@@ -73,8 +76,8 @@ namespace EQLogParser
             if (!File.Exists(path))
                 return;
 
-            LookupById.Clear();
-            LookupByName.Clear();
+            var lookupById = new Dictionary<int, SpellInfo>(10000);
+            var lookupByName = new Dictionary<string, SpellInfo>(10000);
 
             using (var f = File.OpenText(path))
             {
@@ -115,8 +118,8 @@ namespace EQLogParser
                     //if (spell.ClassesCount > 0 && spell.Name == StripRank(spell.Name)) // rank 1 AA usually end with " I"
                     if (spell.ClassesCount > 0 && !LookupByName.ContainsKey(StripRank(spell.Name)))
                     {
-                        LookupById[spell.Id] = spell;
-                        LookupByName[StripRank(spell.Name)] = spell;
+                        lookupById[spell.Id] = spell;
+                        lookupByName[StripRank(spell.Name)] = spell;
                     }
 
                     //Console.WriteLine("{0} {1} {2}", spell.Id, spell.Name, (SpellClassesMaskLong)spell.ClassesMask);
@@ -128,6 +131,9 @@ namespace EQLogParser
             // load spell string file (starting 2018-2-14)
             // *SPELLINDEX^CASTERMETXT^CASTEROTHERTXT^CASTEDMETXT^CASTEDOTHERTXT^SPELLGONE^
             var strpath = path.Replace("spells_us", "spells_us_str");
+            if (!File.Exists(strpath))
+                return;
+
             using (var f = File.OpenText(strpath))
             {
                 while (true)
@@ -148,6 +154,9 @@ namespace EQLogParser
                     }
                 }
             }
+
+            LookupById = lookupById;
+            LookupByName = lookupByName;
         }
 
         /// <summary>

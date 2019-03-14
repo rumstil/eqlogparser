@@ -3,6 +3,7 @@
 *.pdb
 *.exe*
 *.vshost.exe.*
+*.lnk
 Bin/
 Obj/
 Debug/
@@ -10,3 +11,8 @@ Release/
 Packages/
 node_modules/
 .vs/
+
+
+eqlog*.txt
+/server/wwwroot/json
+/server-python

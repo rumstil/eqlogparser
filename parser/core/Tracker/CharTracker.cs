@@ -35,17 +35,18 @@ namespace EQLogParser
     /// </summary>
     public class CharTracker
     {
-        private readonly Dictionary<string, CharInfo> CharsByName = new Dictionary<string, CharInfo>(); // StringComparer.InvariantCultureIgnoreCase);
-
         // # https://forums.daybreakgames.com/eq/index.php?threads/collecting-pet-names.249684/#post-3671490
         private static readonly Regex PetNameRegex = new Regex(@"^[GJKLVXZ]([aeio][bknrs]){0,2}(ab|er|n|tik)$", RegexOptions.Compiled);
+        private static readonly Regex PetOwnerRegex = new Regex(@"^My leader is (\w+)\.$", RegexOptions.Compiled);
+        private static readonly Regex PetTellOwnerRegex = new Regex(@"^(Attacking .+? Master|Sorry, Master\.\.\. calming down|Following you, Master|By your command, master|I live again\.\.)\.$", RegexOptions.Compiled);
 
-        public Func<string, string> GetSpellClass;
+        private readonly Dictionary<string, CharInfo> CharsByName = new Dictionary<string, CharInfo>(); // StringComparer.InvariantCultureIgnoreCase);
 
+        private readonly Func<string, string> GetSpellClass;
 
         public CharTracker()
         {
-
+            GetSpellClass = SpellParser.Default.GetClass;
         }
 
         public void HandleEvent(LogEvent e)
@@ -95,6 +96,24 @@ namespace EQLogParser
                 {
                     Add(chat.Source).Type = CharType.Friend;
                 }
+
+                var m = PetOwnerRegex.Match(chat.Message);
+                if (m.Success)
+                {
+                    var c = Add(chat.Source);
+                    c.Owner = m.Groups[1].Value;
+                    c.Type = CharType.Friend; // can you /pet leader a NPC pet?
+                    c = Add(c.Owner);
+                    c.Type = CharType.Friend;
+                    c.Player = true;
+                }
+
+                m = PetTellOwnerRegex.Match(chat.Message);
+                if (m.Success)
+                {
+                    var c = Add(chat.Source);
+                    c.Type = CharType.Friend;
+                }
             }
 
             if (e is LogHealEvent heal)
@@ -113,25 +132,6 @@ namespace EQLogParser
                 var c = Add(loot.Looter);
                 c.Player = true;
                 c.Type = CharType.Friend;
-            }
-
-            if (e is LogPetChatEvent pet)
-            {
-                // what about charmed pets that break charm?
-                // or charmed pets fighting mobs of the same name?
-                var c = Add(pet.Name);
-                c.Type = CharType.Friend;
-                if (pet.Owner != null)
-                {
-                    c.Owner = pet.Owner;
-                    c = Add(pet.Owner);
-                    c.Type = CharType.Friend;
-                }
-                else if (c.Owner == null)
-                {
-                    // we know it's a pet, but we don't know who it belongs to
-                    //c.Owner = "Unknown Pet";
-                }
             }
 
             if (e is LogCastingEvent cast)

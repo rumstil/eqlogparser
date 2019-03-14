@@ -13,7 +13,7 @@ namespace EQLogParser
     /// </summary>
     public class FightTracker
     {
-        public CharTracker Chars = new CharTracker();
+        private CharTracker Chars = new CharTracker();
 
         //private List<FightHit> OrphanHits = new List<FightHit>();
         //private string Player = null;
@@ -23,12 +23,7 @@ namespace EQLogParser
         private DateTime LastTimeoutCheck;
         private LogHitEvent LastHit;
         private Fight LastFight;
-        private List<LogCastingEvent> Casting = new List<LogCastingEvent>();
-
-        /// <summary>
-        /// A list of all fights (including active ones)
-        /// </summary>
-        public readonly List<Fight> Fights = new List<Fight>();
+        //private List<LogCastingEvent> Casting = new List<LogCastingEvent>();
 
         /// <summary>
         /// A list of active fights.
@@ -114,7 +109,7 @@ namespace EQLogParser
             var foe = Chars.GetFoe(hit.Source, hit.Target);
             if (foe == null)
             {
-                Console.WriteLine("*** " + hit);
+                //Console.WriteLine("*** " + hit);
                 return;
             }
 
@@ -181,7 +176,6 @@ namespace EQLogParser
                 Party = "Solo";
         }
 
-
         /// <summary>
         /// Close active fights that have timed out.
         /// </summary>
@@ -206,7 +200,6 @@ namespace EQLogParser
                     else
                     {
                         ActiveFights.Remove(f);
-                        Fights.Remove(f);
                     }
                 }
                 else
@@ -233,7 +226,6 @@ namespace EQLogParser
                 else
                 {
                     ActiveFights.Remove(f);
-                    Fights.Remove(f);
                 }
             }
         }
@@ -250,7 +242,7 @@ namespace EQLogParser
             }
 
             f.MergePets();
-            f.Finish();            
+            f.Finish();
             f.Party = Party;
 
             ActiveFights.Remove(f);
@@ -282,16 +274,14 @@ namespace EQLogParser
                 return null;
 
             var f = new Fight();
-            f.ID = name.Replace(' ', '-') + "-" + Fights.Count.ToString();
+            f.ID = name.Replace(' ', '-') + "-" + Environment.TickCount.ToString();
             f.Zone = Zone;
             f.Name = name;
             f.Target = new FightParticipant(name);
             //f.Participants.Add(new FightParticipant(name));
+            // todo: always start fights at multiple of 6s for better alignment of data when merging fights?
             f.Started = f.Updated = Timestamp;
-            foreach (var p in f.Participants.Where(x => x.Class == null))
-                p.Class = Chars.GetClass(p.Name);
 
-            Fights.Add(f);
             ActiveFights.Add(f);
             if (OnFightStarted != null)
                 OnFightStarted(f);

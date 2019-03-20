@@ -154,7 +154,11 @@ namespace EQLogParser
         private void TrackDeath(LogDeathEvent death)
         {
             if (LastFight != null && LastFight.Finished == null && death.Name != LastFight.Name)
+            {
+                // todo: use killshot name instead of lastfight
                 LastFight.Deaths += 1;
+                //LastFight.AddDeath(death);
+            }
 
             var f = GetFight(death.Name);
             if (f != null)

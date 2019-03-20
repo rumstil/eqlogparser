@@ -179,6 +179,22 @@ namespace EQLogParser
             Assert.Equal(350, f.Participants[1].OutboundHitSum);
         }
 
+        [Fact]
+        public void Dont_Double_Count_Self_Heal()
+        {
+            var tracker = new FightTracker();
+
+            tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Amount = 100 });
+            tracker.HandleEvent(new LogHealEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Player1", Amount = 201 });
+
+            var f = tracker.ActiveFights[0];
+            
+            Assert.Equal(201, f.Participants[0].InboundHealSum);
+            Assert.Equal(201, f.Participants[0].OutboundHealSum);
+        }
+
+
 
     }
 }

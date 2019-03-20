@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 
 /*
@@ -41,10 +38,8 @@ namespace EQLogParser
         //private static readonly Regex MeleeMissRegex = new Regex(@"^(.+?)(?: try to | tries to )(\w+)(?: on)? (.+?), but .*?(miss|riposte|parry|parries|dodge|block|magical skin absorbs the blow)e?s?!$", RegexOptions.Compiled | RegexOptions.RightToLeft);
         private static readonly Regex MeleeMissRegex = new Regex(@"^(.+?) (?:try|tries) to (\w+)(?: on)? (.+?), but .*?(miss|riposte|parry|parries|dodge|block|INVULNERABLE|magical skin absorbs the blow)e?s?!(?:\s\((.+?)\))?$", RegexOptions.Compiled | RegexOptions.RightToLeft);
 
-        // [Wed Feb 13 21:25:32 2019] A mist wolf resisted your Undermining Helix Rk. II!
         private static readonly Regex ResistRegex = new Regex(@"^(.+?) resisted your (.+?)!$", RegexOptions.Compiled);
         private static readonly Regex SelfResistRegex = new Regex(@"^You resist (.+?)'s (.+?)!$", RegexOptions.Compiled);
-
         public static LogMissEvent Parse(LogRawEvent e)
         {
             var m = MeleeMissRegex.Match(e.Text);

@@ -158,6 +158,18 @@ namespace EQLogParser
             Assert.Equal("Celestial Regeneration XVIII", heal.Spell);
         }
 
+        [Fact]
+        public void Parse_HoT_No_Source_Self()
+        {
+            var heal = Parse("You have been healed over time for 9525 hit points by Merciful Elixir Rk. II.");
+            Assert.NotNull(heal);
+            Assert.Null(heal.Source);
+            Assert.Equal(PLAYER, heal.Target);
+            Assert.Equal(9525, heal.Amount);
+            Assert.Equal(9525, heal.GrossAmount);
+            Assert.Equal("Merciful Elixir Rk. II", heal.Spell);
+        }
+
 
     }
 }

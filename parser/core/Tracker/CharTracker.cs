@@ -40,6 +40,9 @@ namespace EQLogParser
         private static readonly Regex PetOwnerRegex = new Regex(@"^My leader is (\w+)\.$", RegexOptions.Compiled);
         private static readonly Regex PetTellOwnerRegex = new Regex(@"^(Attacking .+? Master|Sorry, Master\.\.\. calming down|Following you, Master|By your command, master|I live again\.\.)\.$", RegexOptions.Compiled);
 
+        // id by pet only buffs with heal component
+        // [Mon Feb 25 21:39:34 2019] Kebarer becomes empowered. Fourier healed Kebarer for 7384 (11218) hit points by Infused Minion.
+
         private readonly Dictionary<string, CharInfo> CharsByName = new Dictionary<string, CharInfo>(); // StringComparer.InvariantCultureIgnoreCase);
 
         private readonly Func<string, string> GetSpellClass;
@@ -190,6 +193,9 @@ namespace EQLogParser
                     c.Type = CharType.Unknown;
             }
 
+            //var test = Add("Saity");
+            //if (test.Class != null)
+            //    Console.WriteLine(e);
         }
 
         /// <summary>
@@ -238,10 +244,10 @@ namespace EQLogParser
             {
                 CharsByName[name] = c = new CharInfo { Name = name };
 
-                if (name.EndsWith("`s warder"))
+                if (name.EndsWith("`s warder") || name.EndsWith("'s warder"))
                     c.Owner = name.Substring(0, name.Length - 9);
 
-                if (name.EndsWith("`s pet"))
+                if (name.EndsWith("`s pet") || name.EndsWith("'s pet"))
                     c.Owner = name.Substring(0, name.Length - 6);
             }
 

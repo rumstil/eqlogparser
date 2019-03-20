@@ -39,7 +39,8 @@ namespace EQLogParser
         private static readonly Regex HoTRegex = new Regex(@"^(\w+) healed (.+?) over time for (\d+)(?: \((\d+)\))? hit points by (.+?)\.(?: \((.+?)\))?$", RegexOptions.Compiled);
 
         // [Sun Jan 13 23:09:15 2019] Uteusher has been healed over time for 0 (900) hit points by Celestial Regeneration XVIII.
-        private static readonly Regex HoTRegexNoSource = new Regex(@"^(\w+) has been healed over time for (\d+)(?: \((\d+)\))? hit points by (.+?)\.(?: \((.+?)\))?$", RegexOptions.Compiled);
+        // [Mon Mar 18 23:55:00 2019] You have been healed over time for 9525 hit points by Merciful Elixir Rk. II.
+        private static readonly Regex HoTRegexNoSource = new Regex(@"^(\w+) ha(?:s|ve) been healed over time for (\d+)(?: \((\d+)\))? hit points by (.+?)\.(?: \((.+?)\))?$", RegexOptions.Compiled);
         
         // [Sun Jan 13 23:09:15 2019] You wither under a vampiric strike. You healed Rumstil for 668 (996) hit points by Vampiric Strike VIII.
         // [Sun Jan 13 23:09:15 2019] Lenantik is bathed in a devout light. Uteusher healed Lenantik for 2153 (9875) hit points by Devout Light.
@@ -49,7 +50,6 @@ namespace EQLogParser
         // [Sun Jan 13 23:09:15 2019] You healed Rumstil for 8 hit points by Blood of the Devoted.
         private static readonly Regex InstantRegex = new Regex(@"(?:^|\. )([\w\s]+) healed (.+?) for (\d+)(?: \((\d+)\))? hit points(?: by (.+?))?\.(?: \((.+?)\))?$", RegexOptions.Compiled | RegexOptions.RightToLeft);
 
-        // [Sun Jan 13 23:09:15 2019] Blurr healed itself for 12 (617) hit points.
 
 
         public static LogHealEvent Parse(LogRawEvent e)

@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace EQLogParser
@@ -101,6 +98,10 @@ namespace EQLogParser
             if (name.Equals("you", StringComparison.InvariantCultureIgnoreCase) ||
                 name.Equals("your", StringComparison.InvariantCultureIgnoreCase))
                 return Player;
+
+            // replace backticks just because they look weird
+            // perhaps this is a bad idea since downstream code may look for "x`s warder" etc...
+            //name = name.Replace('`', '\'');
 
             // a few log messages can reference a corpse if they occur after the pc/npc died
             //if (name.EndsWith(CorpseSuffix))

@@ -27,14 +27,14 @@ namespace EQLogParser
             var who = Parse("[1 Shadow Knight] Scary (Froglok)  ZONE: bazaar");
             Assert.NotNull(who);
             Assert.Equal("Scary", who.Name);
-            Assert.Equal("Shadow Knight", who.Class);
+            Assert.Equal("SHD", who.Class);
             Assert.Equal(1, who.Level);
 
             // level based class name (basic class name)
             who = Parse("[105 Huntmaster (Ranger)] Rumstil (Halfling)  ZONE: kattacastrumb");
             Assert.NotNull(who);
             Assert.Equal("Rumstil", who.Name);
-            Assert.Equal("Ranger", who.Class);
+            Assert.Equal("RNG", who.Class);
             Assert.Equal(105, who.Level);
         }
 
@@ -46,7 +46,7 @@ namespace EQLogParser
             var who = Parse(" AFK [105 Huntmaster (Ranger)] Rumstil (Halfling)  ZONE: kattacastrumb");
             Assert.NotNull(who);
             Assert.Equal("Rumstil", who.Name);
-            Assert.Equal("Ranger", who.Class);
+            Assert.Equal("RNG", who.Class);
             Assert.Equal(105, who.Level);
         }
 

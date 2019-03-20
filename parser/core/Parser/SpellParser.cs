@@ -18,7 +18,7 @@ namespace EQLogParser
         public string LandSelf;
         public string LandOthers;
 
-        public string ClassName => ((ClassesMask)ClassesMask).ToString().Replace('_', ' ');
+        public string ClassName => ((ClassesMaskShort)ClassesMask).ToString().Replace('_', ' ');
 
         public override string ToString()
         {
@@ -33,7 +33,7 @@ namespace EQLogParser
     {
         public static SpellParser Default = new SpellParser();
 
-        private IReadOnlyDictionary<int, SpellInfo> LookupById = new Dictionary<int, SpellInfo>();
+        //private IReadOnlyDictionary<int, SpellInfo> LookupById = new Dictionary<int, SpellInfo>();
         private IReadOnlyDictionary<string, SpellInfo> LookupByName = new Dictionary<string, SpellInfo>();
 
         /*
@@ -113,14 +113,24 @@ namespace EQLogParser
                     }
 
                     // we could store all spells but that would take a lot of memory - so instead we will:
-                    // only keep spells that are player castable
+                    // only keep spells that can be cast by a player
                     // only keep one rank since all ranks are equivalent in terms of castable class and landing text
-                    //if (spell.ClassesCount > 0 && spell.Name == StripRank(spell.Name)) // rank 1 AA usually end with " I"
-                    if (spell.ClassesCount > 0 && !LookupByName.ContainsKey(StripRank(spell.Name)))
+                    if (spell.ClassesCount > 0)
                     {
-                        lookupById[spell.Id] = spell;
-                        lookupByName[StripRank(spell.Name)] = spell;
+                        var name = StripRank(spell.Name);
+                        // handle spell name collisions. e.g. both PAL/CLR have a Merciful Light
+                        if (lookupByName.TryGetValue(name, out SpellInfo match))
+                        {
+                            match.ClassesMask |= spell.ClassesMask;
+                            match.ClassesCount = CountBits(match.ClassesMask);
+                        }
+                        else
+                        {
+                            lookupByName.Add(name, spell);
+                        }
                     }
+
+                    lookupById[spell.Id] = spell;
 
                     //Console.WriteLine("{0} {1} {2}", spell.Id, spell.Name, (SpellClassesMaskLong)spell.ClassesMask);
                 }
@@ -132,7 +142,11 @@ namespace EQLogParser
             // *SPELLINDEX^CASTERMETXT^CASTEROTHERTXT^CASTEDMETXT^CASTEDOTHERTXT^SPELLGONE^
             var strpath = path.Replace("spells_us", "spells_us_str");
             if (!File.Exists(strpath))
+            {
+                //LookupById = lookupById;
+                LookupByName = lookupByName;
                 return;
+            }
 
             using (var f = File.OpenText(strpath))
             {
@@ -147,7 +161,7 @@ namespace EQLogParser
                         continue;
 
                     var id = Convert.ToInt32(fields[0]);
-                    if (LookupById.TryGetValue(id, out SpellInfo s))
+                    if (lookupById.TryGetValue(id, out SpellInfo s))
                     {
                         s.LandSelf = fields[3];
                         s.LandOthers = fields[4];
@@ -155,7 +169,7 @@ namespace EQLogParser
                 }
             }
 
-            LookupById = lookupById;
+            //LookupById = lookupById;
             LookupByName = lookupByName;
         }
 
@@ -196,6 +210,17 @@ namespace EQLogParser
             name = Regex.Replace(name, @"\s\(?\d+\)?$", ""); // (3) 
             name = Regex.Replace(name, @"\s(Rk\.\s)?[IVX]+$", ""); // Rk. III
             return name;
+        }
+
+        /// <summary>
+        /// Get number of bits that are set.
+        /// https://stackoverflow.com/questions/109023/how-to-count-the-number-of-set-bits-in-a-32-bit-integer
+        /// </summary>
+        private int CountBits(int i)
+        {
+            i = i - ((i >> 1) & 0x55555555);
+            i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
+            return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
         }
     }
 }

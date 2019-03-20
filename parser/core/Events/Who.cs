@@ -35,7 +35,7 @@ namespace EQLogParser
                 {
                     Timestamp = e.Timestamp,
                     Name = m.Groups[1].Value,
-                    Class = m.Groups[3].Success ? m.Groups[3].Value : null,
+                    Class = ParseClass(m.Groups[3].Success ? m.Groups[3].Value : null),
                     Level = m.Groups[2].Success ? Int32.Parse(m.Groups[2].Value) : 0
                 };
             }
@@ -43,5 +43,31 @@ namespace EQLogParser
             return null;
         }
 
+        public static string ParseClass(string name)
+        {
+            //if (Enum.TryParse(typeof(ClassesMaskLong), name, out object value))
+            //    return ((ClassesMaskShort)(int)value).ToString();
+
+            switch (name)
+            {
+                case "Warrior": return "WAR";
+                case "Cleric": return "CLR";
+                case "Paladin": return "PAL";
+                case "Ranger": return "RNG";
+                case "Shadow Knight": return "SHD";
+                case "Druid": return "DRU";
+                case "Monk": return "MNK";
+                case "Bard": return "BRD";
+                case "Rogue": return "ROG";
+                case "Shaman": return "SHM";
+                case "Necromancer": return "NEC";
+                case "Wizard": return "WIZ";
+                case "Magician": return "MAG";
+                case "Enchanter": return "ENC";
+                case "Beastlor": return "BST";
+                case "Berserker": return "BER";
+                default: return null;
+            }
+        }
     }
 }

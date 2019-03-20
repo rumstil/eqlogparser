@@ -27,13 +27,16 @@ namespace EQLogParser
     /// </summary>
     public class FightMiss
     {
-        public static readonly string[] MissOrder = new [] { "invul", "riposte", "parry", "dodge", "block", "miss", "rune" };
-        
+        public static readonly string[] MissOrder = new[] { "invul", "riposte", "parry", "dodge", "block", "miss", "rune" };
+
         public string Type;
         public int Count;
         public int Attempts;
     }
 
+    /// <summary>
+    /// Any spell that landed or was cast during a fight.
+    /// </summary>
     public class FightSpell
     {
         public string Name;
@@ -53,7 +56,7 @@ namespace EQLogParser
         /// <summary>
         /// Each time the spell is cast an entry is added with the # seconds from start of fight
         /// </summary>
-        public List<int> Times = new List<int>();  
+        public List<int> Times = new List<int>();
     }
 
     /// <summary>
@@ -64,6 +67,7 @@ namespace EQLogParser
         public string Name;
         public string PetOwner;
         public string Class;
+
         public DateTime? FirstAction;
         public DateTime? LastAction;
 
@@ -71,7 +75,7 @@ namespace EQLogParser
         /// Damage activity duration in seconds. Can be zero.
         /// </summary>
         public int Duration => FirstAction.HasValue && LastAction.HasValue ? (int)(LastAction.Value - FirstAction.Value).TotalSeconds + 1 : 0;
-
+                
         public int OutboundMissCount;
         public int OutboundHitCount;
         public int OutboundHitSum;
@@ -84,6 +88,8 @@ namespace EQLogParser
         public int InboundHealSum;
         public int SelfHealSum;
         //public FightHitEvent LastHit;
+
+        public int Deaths;
 
         // store damage, tanking, healing summaries at fixed intervals rather than storing every data point
         // e.g. storing 6 seconds worth of hits as 1 integer takes a lot less space than 30 hits
@@ -109,10 +115,10 @@ namespace EQLogParser
         public override string ToString()
         {
             if (PetOwner != null)
-                return String.Format("{0} ({1} Pet)", Name, PetOwner);
+                return String.Format("{0} - Pet ({1})", Name, PetOwner);
 
             if (Class != null)
-                return String.Format("{0} ({1})", Name, Class);
+                return String.Format("{0} - {1}", Name, Class);
 
             return Name;
         }
@@ -204,6 +210,10 @@ namespace EQLogParser
                 FirstAction = miss.Timestamp;
             LastAction = miss.Timestamp;
 
+            // don't count spell resist/invul in defense stats
+            if (miss.Spell != null)
+                return;
+
             if (miss.Source == Name)
             {
                 OutboundMissCount += 1;
@@ -231,6 +241,10 @@ namespace EQLogParser
 
         public void AddHeal(LogHealEvent heal, int interval)
         {
+            if (FirstAction == null)
+                FirstAction = heal.Timestamp;
+            LastAction = heal.Timestamp;
+
             // promised heals appear as self heals 
             // we may want to ignore them for self healing stats
             //var promised = heal.Source == Name && heal.Target == Name && heal.Spell != null && heal.Spell.StartsWith("Promised");
@@ -260,7 +274,8 @@ namespace EQLogParser
                     HPS.Add(0);
                 HPS[interval] += heal.Amount;
             }
-            else if (heal.Target == Name)
+
+            if (heal.Target == Name)
             {
                 InboundHealSum += heal.Amount;
             }
@@ -284,6 +299,8 @@ namespace EQLogParser
         }
 
 
+
+
     }
 
     /// <summary>
@@ -305,10 +322,12 @@ namespace EQLogParser
         public string Party;
         public bool Rare;
         public int Deaths;
+        public int TopHitSum;
+        public int TopHealSum;
         //public int PullSize;
         //public FightHitEvent LastHit;
         //public FightHitEvent LastSpell;
-        
+
         public int HP => Target.InboundHitSum;
 
         /// <summary>
@@ -321,7 +340,7 @@ namespace EQLogParser
         public FightParticipant Target;
 
         public List<FightParticipant> Participants = new List<FightParticipant>();
-        
+
         private FightParticipant AddParticipant(string name)
         {
             if (Target.Name == name)
@@ -346,7 +365,9 @@ namespace EQLogParser
         public void AddHit(LogHitEvent hit)
         {
             var interval = GetInterval(hit);
-            AddParticipant(hit.Source).AddHit(hit, interval);
+            // hit source may be null if caster dies
+            if (hit.Source != null)
+                AddParticipant(hit.Source).AddHit(hit, interval);
             AddParticipant(hit.Target).AddHit(hit, interval);
         }
 
@@ -360,12 +381,28 @@ namespace EQLogParser
         public void AddHeal(LogHealEvent heal)
         {
             var interval = GetInterval(heal);
-            AddParticipant(heal.Source).AddHeal(heal, interval);
+            // heal source may be null if healer dies
+            if (heal.Source != null)
+                AddParticipant(heal.Source).AddHeal(heal, interval);
+            // only count target if it's not a self heal (otherwise we would double count)
+            // temporarily removing this because it adds afk players that are soaking up group heals
+            //if (heal.Source != heal.Target)
+            //    AddParticipant(heal.Target).AddHeal(heal, interval);
         }
 
         public void AddCasting(LogCastingEvent cast)
         {
             AddParticipant(cast.Source).AddCasting(cast, Duration - 1);
+        }
+
+        //public void AddCastingFail(LogCastingFailEvent cast)
+        //{
+        //}
+
+        public void AddDeath(LogDeathEvent death)
+        {
+            if (death.Name != Name)
+                AddParticipant(death.Name).Deaths += 1;
         }
 
         public override string ToString()
@@ -381,13 +418,17 @@ namespace EQLogParser
             Finished = Updated;
             var ticks = Duration / 6;
 
+            // get top performers
+            TopHitSum = Participants.Max(x => x.OutboundHitSum);
+            TopHealSum = Participants.Max(x => x.OutboundHealSum);
+
             // sort by most damage to least damage
             Participants.Sort((a, b) => b.OutboundHitSum - a.OutboundHitSum);
             foreach (var p in Participants)
             {
                 // sort defense types in game check order
                 p.DefenseTypes = p.DefenseTypes.OrderBy(x => Array.IndexOf(FightMiss.MissOrder, x.Type)).ToList();
-                
+
                 // attempts should only count the remaining hit attempts after earlier checks fail
                 var attempts = p.InboundHitCount + p.InboundMissCount;
                 foreach (var def in p.DefenseTypes.Where(x => FightMiss.MissOrder.Contains(x.Type)))
@@ -417,8 +458,6 @@ namespace EQLogParser
 
             foreach (var pet in pets)
             {
-                Participants.Remove(pet);
-
                 var owner = AddParticipant(pet.PetOwner);
 
                 foreach (var hit in pet.AttackTypes)
@@ -436,7 +475,23 @@ namespace EQLogParser
                 owner.OutboundHitCount += pet.OutboundHitCount;
                 owner.OutboundHitSum += pet.OutboundHitSum;
                 owner.OutboundMissCount += pet.OutboundMissCount;
+
+                // removing the pet has the downside of hiding pet tanking
+                //Participants.Remove(pet);
+
+                // it's probably better to clear the damage on the pet but keep it for tanking stats
+                pet.Name = String.Format("{0} ({1})", pet.Name, pet.PetOwner);
+                pet.OutboundHitCount = 0;
+                pet.OutboundHitSum = 0;
+                pet.OutboundMissCount = 0;
+                pet.AttackTypes.Clear();
+                pet.Spells.Clear();
             }
+
+            // get top performers
+            TopHitSum = Participants.Max(x => x.OutboundHitSum);
+            TopHealSum = Participants.Max(x => x.OutboundHealSum);
+
         }
 
         /// <summary>

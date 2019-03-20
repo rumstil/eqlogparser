@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -9,10 +8,16 @@ using System.Threading.Tasks;
 
 namespace EQLogParser
 {
+    public enum SpellTarget
+    {
+        Pet = 14
+    }
+
     public class SpellInfo
     {
         public int Id;
         public string Name;
+        public int Target;
         public int ClassesMask;
         public int ClassesCount;
         public string LandSelf;
@@ -98,6 +103,9 @@ namespace EQLogParser
 
                     // 1 SPELLNAME
                     spell.Name = fields[1].Trim();
+
+                    // 32 TYPENUMBER
+                    spell.Target = Convert.ToInt32(fields[32]);
 
                     // 38 WARRIORMIN .. BERSERKERMIN
                     for (int i = 0; i < 16; i++)
@@ -189,7 +197,8 @@ namespace EQLogParser
         /// </summary>
         public string GetClass(string name)
         {
-            if (LookupByName.TryGetValue(StripRank(name), out SpellInfo s) && s.ClassesCount == 1)
+            var s = GetSpell(name);
+            if (s != null && s.ClassesCount == 1)
                 return s.ClassName;
             return null;
         }

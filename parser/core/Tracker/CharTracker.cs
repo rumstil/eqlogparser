@@ -40,15 +40,14 @@ namespace EQLogParser
         private static readonly Regex PetOwnerRegex = new Regex(@"^My leader is (\w+)\.$", RegexOptions.Compiled);
         private static readonly Regex PetTellOwnerRegex = new Regex(@"^(Attacking .+? Master|Sorry, Master\.\.\. calming down|Following you, Master|By your command, master|I live again\.\.)\.$", RegexOptions.Compiled);
 
-        // id by pet only buffs with heal component
-        // [Mon Feb 25 21:39:34 2019] Kebarer becomes empowered. Fourier healed Kebarer for 7384 (11218) hit points by Infused Minion.
-
         private readonly Dictionary<string, CharInfo> CharsByName = new Dictionary<string, CharInfo>(); // StringComparer.InvariantCultureIgnoreCase);
 
         private readonly Func<string, string> GetSpellClass;
+        private readonly Func<string, SpellInfo> GetSpell;
 
         public CharTracker()
         {
+            GetSpell = SpellParser.Default.GetSpell;
             GetSpellClass = SpellParser.Default.GetClass;
         }
 
@@ -122,11 +121,20 @@ namespace EQLogParser
             if (e is LogHealEvent heal)
             {
                 // is it safe tag targets as friends? some raids involve healing NPCs
-                Add(heal.Target).Type = CharType.Friend;
+                var c = Add(heal.Target);
+                c.Type = CharType.Friend;
+
+                // some heals are pet only spells
+                if (c.Owner == null && !c.Player && heal.Spell != null && heal.Source != null)
+                {
+                    var s = GetSpell(heal.Spell);
+                    if (s != null && s.Target == (int)SpellTarget.Pet)
+                        c.Owner = heal.Source;
+                }
 
                 if (heal.Source != null)
                 {
-                    Add(heal.Source).Type = CharType.Friend;
+                    Add(heal.Source).Type = CharType.Friend;                    
                 }
             }
 

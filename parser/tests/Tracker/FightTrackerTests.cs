@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EQLogParser;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,48 +7,10 @@ using System.Threading.Tasks;
 using Xunit;
 
 
-namespace EQLogParser
+namespace EQLogParserTests.Tracker
 {
     public class FightTrackerTests
     {
-
-        /*
-        [Fact]
-        public void FightHit_TrackDeadPlayer()
-        {
-            var tracker = new FightTracker();
-            tracker.Chars.Add("Player1");
-
-            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Type = "dot", Amount = 200 });
-            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1's corpse", Target = "Mob1", Type = "dot", Amount = 350 });
-
-            var f = tracker.Fights[0];
-            Assert.Equal(2, f.Participants.Count);
-            var p = f.Participants[1];
-            Assert.Equal("Player1", p.Name);
-            Assert.Equal(2, p.SourceHitCount);
-            Assert.Equal(550, p.SourceHitSum);
-        }
-        */
-
-        /*
-        [Fact]
-        public void FightHit_TrackDeadMob()
-        {
-            var tracker = new FightTracker();
-            tracker.Chars.Add("Player1");
-
-            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Mob1", Target = "Player1", Type = "dot", Amount = 200 });
-            //tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Mob1's corpse", Target = "Player1", Type = "dot", Amount = 350 });
-            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Mob1", SourceIsCorpse = true, Target = "Player1", Type = "dot", Amount = 350 });
-
-            Assert.Equal(1, tracker.Fights.Count);
-            var f = tracker.Fights[0];
-            Assert.Equal(2, f.Participants.Count);
-            Assert.Equal(2, f.Opponent.SourceHitCount);
-            Assert.Equal(550, f.Opponent.SourceHitSum);
-        }
-        */
 
         [Fact]
         public void Timestamps()
@@ -61,12 +24,13 @@ namespace EQLogParser
             tracker.HandleEvent(new LogMissEvent { Timestamp = t2, Source = "Player1", Target = "Mob1", Type = "dodge" });
 
             var f = tracker.ActiveFights[0];
-            Assert.Equal(t1, f.Started);
-            Assert.Equal(t2, f.Updated);
+            Assert.Equal(t1, f.StartedOn);
+            Assert.Equal(t2, f.UpdatedOn);
 
             var t3 = t2.AddSeconds(3);
             tracker.HandleEvent(new LogDeathEvent { Timestamp = t3, Name = "Mob1" });
-            Assert.Equal(t3, f.Finished.Value);
+            Assert.Equal(FightStatus.Killed, f.Status);
+            Assert.Equal(t3, f.UpdatedOn);
         }
 
         [Fact]
@@ -95,13 +59,13 @@ namespace EQLogParser
             Assert.Equal("Mob1", tracker.ActiveFights[0].Target.Name);
             Assert.Single(tracker.ActiveFights);
 
-            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob2", Type = "slash", Amount = 100 });
+            tracker.HandleEvent(new LogMissEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob2", Type = "dodge" });
             Assert.Equal("Mob2", tracker.ActiveFights[1].Target.Name);
             Assert.Equal(2, tracker.ActiveFights.Count);
         }
 
         [Fact]
-        public void Two_Fights_Back_To_Back()
+        public void Two_Fights_Back_to_Back()
         {
             var tracker = new FightTracker();
             tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
@@ -118,9 +82,9 @@ namespace EQLogParser
         }
 
         [Fact]
-        public void Death()
+        public void Death_of_Mob()
         {
-            Fight f = null;
+            FightSummary f = null;
             var tracker = new FightTracker();
             tracker.OnFightFinished += (args) => f = args;
 
@@ -134,9 +98,21 @@ namespace EQLogParser
         }
 
         [Fact]
+        public void Death_of_Player()
+        {
+            var tracker = new FightTracker();
+
+            tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Amount = 100 });
+            tracker.HandleEvent(new LogDeathEvent { Timestamp = DateTime.Now, Name = "Player1" });
+
+            Assert.Single(tracker.ActiveFights);
+        }
+
+        [Fact]
         public void Timeout()
         {
-            Fight f = null;
+            FightSummary f = null;
             var tracker = new FightTracker();
             tracker.OnFightFinished += (args) => f = args;
 
@@ -193,6 +169,8 @@ namespace EQLogParser
             Assert.Equal(201, f.Participants[0].InboundHealSum);
             Assert.Equal(201, f.Participants[0].OutboundHealSum);
         }
+
+
 
 
 

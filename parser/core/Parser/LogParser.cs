@@ -31,8 +31,6 @@ namespace EQLogParser
         public string Server;
         public string Player;
 
-        private int Count;
-
         public LogParser()
         {
             // spammy message are ignored rather than returned as LogRawEvent
@@ -53,6 +51,7 @@ namespace EQLogParser
             Parsers.Add(LogDeathEvent.Parse);
             Parsers.Add(LogChatEvent.Parse);
             Parsers.Add(LogCastingEvent.Parse);
+            //Parsers.Add(LogTwinEvent.Parse);
             Parsers.Add(LogZoneEvent.Parse);
             Parsers.Add(LogPartyEvent.Parse);
             Parsers.Add(LogWhoEvent.Parse);
@@ -78,41 +77,40 @@ namespace EQLogParser
             return null;
         }
 
-        public void Subscribe(LogEventHandler handler)
-        {
-            OnEvent += handler;
-            if (Player != null)
-                handler(new LogWhoEvent() { Name = Player });
-        }
+        //public void Subscribe(LogEventHandler handler)
+        //{
+        //    OnEvent += handler;
+        //    if (Player != null)
+        //        handler(new LogWhoEvent() { Name = Player });
+        //}
 
-        public void Unsubscribe(LogEventHandler handler)
-        {
-            OnEvent -= handler;
-        }
+        //public void Unsubscribe(LogEventHandler handler)
+        //{
+        //    OnEvent -= handler;
+        //}
 
         /// <summary>
-        /// Process a full log line and trigger OnEvent delegate if successful.
+        /// Process a single log file line and return the result if successful.
         /// </summary>
-        public void ParseLine(string text)
+        public LogEvent ParseLine(string text)
         {
             if (String.IsNullOrEmpty(text))
-                return;
+                return null;
 
             // first stage parser accepts a string and convert to a LogRawEvent
             var raw = LogRawEvent.Parse(text);
             if (raw == null)
-                return;
+                return null;
 
-            raw.Id = Count++;
             raw.Player = Player;
 
             // ignore if timestamp out of range
             if (raw.Timestamp < MinDate || raw.Timestamp > MaxDate)
-                return;
+                return null;
 
             // ignore spam
-            if (Ignore.Contains(raw.Text))
-                return;
+            if (Ignore.Contains(raw.Text, StringComparer.Ordinal))
+                return null;
 
             // second stage parsers accept a LogRawEvent and convert to a LogEvent descendant
             // call each custom parser until one returns a non null result
@@ -121,15 +119,17 @@ namespace EQLogParser
                 var result = Parsers[i](raw);
                 if (result != null)
                 {
-                    result.Id = raw.Id;
-                    OnEvent(result);
-                    return;
+                    if (OnEvent != null)
+                        OnEvent(result);
+                    return result; 
                 }
             }
 
             // if no match was found then just return the raw event
             // this is useful for catching parsing left-overs that slipped through regex checks
-            OnEvent(raw);
+            if (OnEvent != null)
+                OnEvent(raw);
+            return raw;
         }
 
         /// <summary>

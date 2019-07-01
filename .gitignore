@@ -3,7 +3,6 @@
 *.pdb
 *.exe*
 *.vshost.exe.*
-*.lnk
 Bin/
 Obj/
 Debug/
@@ -14,5 +13,13 @@ node_modules/
 
 
 eqlog*.txt
+spells_us*.txt*
+dbstr_us*.txt*
+SpellStackingGroups*.txt*
+manifest.dat
+*.zip
+*.gz
+*.lnk
 /server/wwwroot/json
 /server-python
+/firebase

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EQLogParser;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,9 +7,9 @@ using System.Threading.Tasks;
 using Xunit;
 
 
-namespace EQLogParser
+namespace EQLogParserTests.Tracker
 {
-    public class PlayerTrackerTests
+    public class CharTrackerTests
     {
         [Fact]
         public void GetFoe()

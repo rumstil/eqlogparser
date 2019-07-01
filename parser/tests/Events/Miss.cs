@@ -1,6 +1,7 @@
-﻿using Xunit;
+﻿using EQLogParser;
+using Xunit;
 
-namespace EQLogParser
+namespace EQLogParserTests.Event
 {
     public class LogMissEventTests
     {
@@ -19,7 +20,7 @@ namespace EQLogParser
             Assert.Equal("A black wolf", miss.Source);
             Assert.Equal(PLAYER, miss.Target);
             Assert.Equal("dodge", miss.Type);
-            Assert.Null(miss.Special);
+            Assert.Equal(LogEventMod.None, miss.Mod);
         }
 
         [Fact]
@@ -30,7 +31,7 @@ namespace EQLogParser
             Assert.Equal("A sarnak conscript", miss.Target);
             Assert.Equal(PLAYER, miss.Source);
             Assert.Equal("miss", miss.Type);
-            Assert.Equal("double bow shot", miss.Special);
+            //Assert.Equal(LogEventMod.Double_Bow_Shot, miss.Mod);
         }
 
         [Fact]
@@ -40,6 +41,16 @@ namespace EQLogParser
             Assert.NotNull(miss);
             Assert.Equal("A tirun overlord", miss.Source);
             Assert.Equal("Xebn", miss.Target);
+            Assert.Equal("rune", miss.Type);
+        }
+
+        [Fact]
+        public void Parse_Rune_Self()
+        {
+            var miss = Parse("A tirun crusher tries to hit YOU, but YOUR magical skin absorbs the blow!");
+            Assert.NotNull(miss);
+            Assert.Equal("A tirun crusher", miss.Source);
+            Assert.Equal(PLAYER, miss.Target);
             Assert.Equal("rune", miss.Type);
         }
 

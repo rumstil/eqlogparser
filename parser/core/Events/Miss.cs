@@ -21,7 +21,7 @@ namespace EQLogParser
         public string Source;
         public string Target;
         public string Type;
-        public string Special;
+        public LogEventMod Mod;
         public string Spell;
 
         public override string ToString()
@@ -34,14 +34,22 @@ namespace EQLogParser
         // [Thu May 19 15:32:30 2016] You try to pierce an ocean serpent, but miss!
         // [Thu May 19 15:32:23 2016] An ocean serpent tries to hit YOU, but YOU parry!
         // [Thu May 19 15:31:33 2016] A sea naga stormcaller tries to hit Fourier, but Fourier's magical skin absorbs the blow!
+        // [Sat Feb 23 14:56:59 2019] A grove guardian tries to smash Jantik, but Jantik's magical skin absorbs the blow! (Riposte Strikethrough)
         // [Fri Dec 28 23:31:08 2018] You try to shoot a sarnak conscript, but miss! (Double Bow Shot)
-        //private static readonly Regex MeleeMissRegex = new Regex(@"^(.+?)(?: try to | tries to )(\w+)(?: on)? (.+?), but .*?(miss|riposte|parry|parries|dodge|block|magical skin absorbs the blow)e?s?!$", RegexOptions.Compiled | RegexOptions.RightToLeft);
-        private static readonly Regex MeleeMissRegex = new Regex(@"^(.+?) (?:try|tries) to (\w+)(?: on)? (.+?), but .*?(miss|riposte|parry|parries|dodge|block|INVULNERABLE|magical skin absorbs the blow)e?s?!(?:\s\((.+?)\))?$", RegexOptions.Compiled | RegexOptions.RightToLeft);
+        private static readonly Regex MeleeMissRegex = new Regex(@"^(.+) \w+ to (\w+)(?: on)? (.+?), but .*?(miss|riposte|parry|parries|dodge|block|INVULNERABLE|magical skin absorbs the blow)e?s?!(?:\s\(([^\(\)]+)\))?$", RegexOptions.Compiled | RegexOptions.RightToLeft);
 
-        private static readonly Regex ResistRegex = new Regex(@"^(.+?) resisted your (.+?)!$", RegexOptions.Compiled);
-        private static readonly Regex SelfResistRegex = new Regex(@"^You resist (.+?)'s (.+?)!$", RegexOptions.Compiled);
+        // [Mon Mar 25 21:55:36 2019] YOUR magical skin absorbs the damage of a Bloodmoon boneeater's thorns.
+
+
+        private static readonly Regex ResistRegex = new Regex(@"^(.+) resisted your (.+?)!$", RegexOptions.Compiled | RegexOptions.RightToLeft);
+        private static readonly Regex SelfResistRegex = new Regex(@"^You resist (.+?)'s (.+)!$", RegexOptions.Compiled);
+
         public static LogMissEvent Parse(LogRawEvent e)
         {
+            // this short-circuit exit is here strictly as an optmization 
+            if (!e.Text.Contains(", but", StringComparison.Ordinal) && !e.Text.Contains("resist", StringComparison.Ordinal))
+                return null;
+
             var m = MeleeMissRegex.Match(e.Text);
             if (m.Success)
             {
@@ -59,20 +67,7 @@ namespace EQLogParser
                     Source = e.FixName(m.Groups[1].Value),
                     Target = e.FixName(m.Groups[3].Value),
                     Type = type,
-                    Special = m.Groups[5].Success ? m.Groups[5].Value.ToLower() : null
-                };
-            }
-
-            m = ResistRegex.Match(e.Text);
-            if (m.Success)
-            {
-                return new LogMissEvent()
-                {
-                    Timestamp = e.Timestamp,
-                    Source = e.Player,
-                    Target = e.FixName(m.Groups[1].Value),
-                    Type = "resist",
-                    Spell = m.Groups[2].Value
+                    Mod = ParseMod(m.Groups[5].Value)
                 };
             }
 
@@ -89,8 +84,23 @@ namespace EQLogParser
                 };
             }
 
+            m = ResistRegex.Match(e.Text);
+            if (m.Success)
+            {
+                return new LogMissEvent()
+                {
+                    Timestamp = e.Timestamp,
+                    Source = e.Player,
+                    Target = e.FixName(m.Groups[1].Value),
+                    Type = "resist",
+                    Spell = m.Groups[2].Value
+                };
+            }
+
             return null;
         }
+
+
 
     }
 }

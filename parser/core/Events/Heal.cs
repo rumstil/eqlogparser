@@ -26,12 +26,15 @@ namespace EQLogParser
         public int Amount;
         public int GrossAmount;
         public string Spell;
-        public string Special;
-
+        public LogEventMod Mod;
+        
         public override string ToString()
         {
             return String.Format("Heal: {0} => {1} ({2})", Source, Target, Amount);
         }
+
+        private static readonly Regex HealModRegex = new Regex(@"\(([^\(\)]+)\)?$", RegexOptions.Compiled | RegexOptions.RightToLeft);
+
 
         // [Sun Jan 13 23:09:15 2019] Uteusher healed you over time for 1797 hit points by Devout Elixir.
         // [Sun Jan 13 23:09:15 2019] Uteusher healed you over time for 208 (1797) hit points by Devout Elixir.
@@ -50,11 +53,20 @@ namespace EQLogParser
         // [Sun Jan 13 23:09:15 2019] You healed Rumstil for 8 hit points by Blood of the Devoted.
         private static readonly Regex InstantRegex = new Regex(@"(?:^|\. )([\w\s]+) healed (.+?) for (\d+)(?: \((\d+)\))? hit points(?: by (.+?))?\.(?: \((.+?)\))?$", RegexOptions.Compiled | RegexOptions.RightToLeft);
 
-
-
         public static LogHealEvent Parse(LogRawEvent e)
         {
-            var m = HoTRegex.Match(e.Text);
+            // this short-circuit exit is here strictly as an optmization 
+            if (e.Text.IndexOf("heal", StringComparison.Ordinal) < 0)
+                return null;
+
+            LogEventMod mod = 0;
+            var m = HealModRegex.Match(e.Text);
+            if (m.Success)
+            {
+                mod = ParseMod(m.Groups[1].Value);
+            }
+
+            m = HoTRegex.Match(e.Text);
             if (m.Success)
             {
                 return new LogHealEvent()
@@ -65,7 +77,7 @@ namespace EQLogParser
                     Amount = Int32.Parse(m.Groups[3].Value),
                     GrossAmount = m.Groups[4].Success ? Int32.Parse(m.Groups[4].Value) : Int32.Parse(m.Groups[3].Value),
                     Spell = m.Groups[5].Success ? m.Groups[5].Value : null,
-                    Special = m.Groups[6].Success ? m.Groups[6].Value.ToLower() : null
+                    Mod = mod
                 };
             }
 
@@ -80,7 +92,7 @@ namespace EQLogParser
                     Amount = Int32.Parse(m.Groups[2].Value),
                     GrossAmount = m.Groups[3].Success ? Int32.Parse(m.Groups[3].Value) : Int32.Parse(m.Groups[2].Value),
                     Spell = m.Groups[4].Success ? m.Groups[4].Value : null,
-                    Special = m.Groups[5].Success ? m.Groups[5].Value.ToLower() : null
+                    Mod = mod
                 };
             }
 
@@ -95,7 +107,7 @@ namespace EQLogParser
                     Amount = Int32.Parse(m.Groups[3].Value),
                     GrossAmount = m.Groups[4].Success ? Int32.Parse(m.Groups[4].Value) : Int32.Parse(m.Groups[3].Value),
                     Spell = m.Groups[5].Success ? m.Groups[5].Value : null,
-                    Special = m.Groups[6].Success ? m.Groups[6].Value.ToLower() : null
+                    Mod = mod
                 };
             }
 

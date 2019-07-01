@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace EQLogParser
@@ -36,8 +33,6 @@ namespace EQLogParser
         // [Sat Mar 19 20:48:12 2016] You have been removed from the group.
         // [Sat May 07 20:44:12 2016] You remove Fourier from the party.
         // [Thu May 19 10:20:40 2016] You notify Rumstil that you agree to join the group.
-        // [Sat May 21 19:42:50 2016] You will now auto-follow Rumstil.
-        // [Thu May 19 10:36:24 2016] You are no longer auto-following Rumstil.
         //private static readonly Regex PartyRegex = new Regex(@"^(.+?) (?:have|has) (joined|left|been removed from) the (group|raid)\.$", RegexOptions.Compiled);
         private static readonly Regex PartyJoinedRegex = new Regex(@"^(.+?) (?:have|has) joined the (group|raid)\.$", RegexOptions.Compiled | RegexOptions.RightToLeft);
         private static readonly Regex PartyJoinedInviteeRegex = new Regex(@"^You notify (\w+) that you agree to join the (group|raid)\.$", RegexOptions.Compiled);
@@ -51,9 +46,28 @@ namespace EQLogParser
         // [Tue Oct 28 21:50:19 2014] Fred has been added to your shared task.
         // [Wed Mar 31 08:58:21 2010] Your shared task, 'To Serve Sporali', has ended.
 
+        private static readonly Regex XPRegex = new Regex(@"^You gaine?d? (experience|party|raid)", RegexOptions.Compiled);
+
+
         public static LogPartyEvent Parse(LogRawEvent e)
         {
-            var m = PartyJoinedRegex.Match(e.Text);
+            var m = XPRegex.Match(e.Text);
+            if (m.Success)
+            {
+                var status = PartyStatus.SoloXP;
+                if (m.Groups[1].Value == "party")
+                    status = PartyStatus.GroupXP;
+                if (m.Groups[1].Value == "raid")
+                    status = PartyStatus.GroupXP;
+                return new LogPartyEvent
+                {
+                    Timestamp = e.Timestamp,
+                    Name = e.Player,
+                    Status = status
+                };
+            }
+            
+            m = PartyJoinedRegex.Match(e.Text);
             if (m.Success)
             {
                 var status = m.Groups[2].Value == "raid" ? PartyStatus.RaidJoined : PartyStatus.GroupJoined;
@@ -86,36 +100,6 @@ namespace EQLogParser
                     Timestamp = e.Timestamp,
                     Name = e.FixName(m.Groups[1].Value),
                     Status = status
-                };
-            }
-
-            if (e.Text.StartsWith("You gain experience"))
-            {
-                return new LogPartyEvent
-                {
-                    Timestamp = e.Timestamp,
-                    Name = e.Player,
-                    Status = PartyStatus.SoloXP
-                };
-            }
-
-            if (e.Text.StartsWith("You gain party experience"))
-            {
-                return new LogPartyEvent
-                {
-                    Timestamp = e.Timestamp,
-                    Name = e.Player,
-                    Status = PartyStatus.GroupXP
-                };
-            }
-
-            if (e.Text.StartsWith("You gained raid experience"))
-            {
-                return new LogPartyEvent
-                {
-                    Timestamp = e.Timestamp,
-                    Name = e.Player,
-                    Status = PartyStatus.RaidXP
                 };
             }
 

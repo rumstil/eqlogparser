@@ -1,6 +1,7 @@
-﻿using Xunit;
+﻿using EQLogParser;
+using Xunit;
 
-namespace EQLogParser
+namespace EQLogParserTests.Event
 {
     public class LogHealEventTests
     {
@@ -37,8 +38,9 @@ namespace EQLogParser
         [Fact]
         public void Parse_Instant_No_Spell_Name()
         {
-            // is this a bard effect?
-            var heal = Parse("Blurr healed itself for 12 (617) hit points.");
+            // lifetap weapons work like this
+            // bard regen too?
+            var heal = Parse("Blurr healed itself for 12 (617) hit points.");                              
             Assert.NotNull(heal);
             Assert.Equal("Blurr", heal.Source);
             Assert.Equal("Blurr", heal.Target);
@@ -83,7 +85,7 @@ namespace EQLogParser
             Assert.Equal(361, heal.Amount);
             Assert.Equal(361, heal.GrossAmount);
             Assert.Equal("HandOfHolyVengeanceVRecourse", heal.Spell);
-            Assert.Equal("critical", heal.Special);
+            Assert.Equal(LogEventMod.Critical, heal.Mod);
         }
 
         [Fact]

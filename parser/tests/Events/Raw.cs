@@ -1,7 +1,8 @@
-﻿using System;
+﻿using EQLogParser;
+using System;
 using Xunit;
 
-namespace EQLogParser
+namespace EQLogParserTests.Event
 {
     public class LogRawEventTests
     {

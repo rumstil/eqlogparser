@@ -140,7 +140,7 @@ namespace EQLogParser
 
             if (e is LogLootEvent loot)
             {
-                var c = Add(loot.Looter);
+                var c = Add(loot.Char);
                 c.Player = true;
                 c.Type = CharType.Friend;
             }
@@ -171,7 +171,7 @@ namespace EQLogParser
                     c.PlayerAggro = hit.Timestamp;
                 }
 
-                // this works, but it's probably unnecessary
+                // this works, but it's probably unnecessary given spell and /who id
                 //c = Add(hit.Source);
                 //if (c.Class == null)
                 //{
@@ -209,11 +209,11 @@ namespace EQLogParser
         /// <summary>
         /// Get info for a character.
         /// </summary>
-        public CharInfo Get(string name)
-        {
-            CharsByName.TryGetValue(name, out CharInfo c);
-            return c;
-        }
+        //public CharInfo Get(string name)
+        //{
+        //    CharsByName.TryGetValue(name, out CharInfo c);
+        //    return c;
+        //}
 
         /// <summary>
         /// Get friend/foe type for a character.
@@ -248,6 +248,11 @@ namespace EQLogParser
         /// </summary>
         public CharInfo Add(string name)
         {
+            if (name.EndsWith("'corpse"))
+            {
+                name = name.Substring(0, name.Length - 9);
+            }
+
             if (!CharsByName.TryGetValue(name, out CharInfo c))
             {
                 CharsByName[name] = c = new CharInfo { Name = name };

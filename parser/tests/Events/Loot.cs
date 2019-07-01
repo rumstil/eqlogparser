@@ -1,6 +1,7 @@
-﻿using Xunit;
+﻿using EQLogParser;
+using Xunit;
 
-namespace EQLogParser
+namespace EQLogParserTests.Event
 {
     public class LogLootEventTests
     {
@@ -16,26 +17,8 @@ namespace EQLogParser
         {
             var loot = Parse("--Rumstil has looted a Alluring Flower.--");
             Assert.NotNull(loot);
-            Assert.Equal("Rumstil", loot.Looter);
-            Assert.Equal("a Alluring Flower", loot.Item);
-        }
-
-        [Fact]
-        public void Parse_Craft()
-        {
-            var loot = Parse("You have fashioned the items together to create something new: Magi-potent Crystal.");
-            Assert.NotNull(loot);
-            Assert.Equal(PLAYER, loot.Looter);
-            Assert.Equal("Magi-potent Crystal", loot.Item);
-        }
-
-        [Fact]
-        public void Parse_Craft_Alt()
-        {
-            var loot = Parse("You have fashioned the items together to create an alternate product: Magi-potent Crystal.");
-            Assert.NotNull(loot);
-            Assert.Equal(PLAYER, loot.Looter);
-            Assert.Equal("Magi-potent Crystal", loot.Item);
+            Assert.Equal("Rumstil", loot.Char);
+            Assert.Equal("Alluring Flower", loot.Item);
         }
     }
 }

@@ -1,6 +1,7 @@
-﻿using Xunit;
+﻿using EQLogParser;
+using Xunit;
 
-namespace EQLogParser
+namespace EQLogParserTests.Event
 {
     public class LogConEventTests
     {

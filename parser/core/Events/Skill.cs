@@ -22,6 +22,8 @@ namespace EQLogParser
         // [Wed Feb 13 21:31:20 2019] You have become better at Specialize Divination! (53)
         private static readonly Regex SkillRegex = new Regex(@"^You have become better at (.+)! \((\d+)\)$", RegexOptions.Compiled);
 
+        // [Mon Mar 18 23:29:08 2019] Your guildmate Smiddy has completed Smithing (50) achievement.
+
         public static LogSkillEvent Parse(LogRawEvent e)
         {
             var m = SkillRegex.Match(e.Text);

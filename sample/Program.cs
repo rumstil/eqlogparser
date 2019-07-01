@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using EQLogParser;
+using System.Collections.Concurrent;
 
 namespace logdump
 {
@@ -17,6 +18,7 @@ namespace logdump
     class Program
     {
         static FightTracker fights;
+        static IntervalTracker itracker;
 
         //static string LogPath = "";
         static string LogPath = "d:/games/everquest/logs/";
@@ -24,8 +26,6 @@ namespace logdump
 
         static string JsonPath = "c:/Proj/eq/logparser/localhost/wwwroot/json/";
         //static string JsonPath = Environment.GetEnvironmentVariable("EQLogJsonPath");
-
-        
 
         static void Main(string[] args)
         {
@@ -41,6 +41,7 @@ namespace logdump
             //var file = new LogReader(LogPath + "eqlog_Rumstil_test.txt");
             //var file = new LogReader(LogPath + "eqlog_Fourier_erollisi.txt");
             //var file = new LogReader(LogPath + "eqlog_Fourier_test.txt");
+            
 
             var parser = new LogParser();
             parser.Player = LogParser.GetPlayerFromFileName(file.Path);
@@ -52,13 +53,45 @@ namespace logdump
             fights = new FightTracker();
             //fights.OnFightStarted += f => Console.WriteLine("\n--- Started {0}", f.Target.Name);
             fights.OnFightFinished += ShowFight;
-            parser.OnEvent += fights.HandleEvent;
 
-            file.OnRead += parser.ParseLine;
-            file.ReadAllLines();
+            itracker = new IntervalTracker();
+            itracker.OnFightFinished += ShowFight;
+
+            //parser.OnEvent += fights.HandleEvent;
+            //parser.OnEvent += itracker.HandleEvent;
+
+            //var lines = 0;
+            //file.OnRead += (s) => { lines++; LogRawEvent.Parse(s); };
+            //file.OnRead += parser.ParseLine;
+            //file.ReadAllLines();
+
+            //var lines = 0;
+            //foreach (var s in file.Lines())
+            //{
+            //    lines++;
+            //    var e = parser.ParseLine(s);
+            //    fights.HandleEvent(e);
+            //}
+
+            //foreach (var e in file.Lines().AsParallel().AsOrdered().Select(x => parser.ParseLine(x)))
+            //{
+            //    if (e != null)
+            //        fights.HandleEvent(e);
+            //}
+
+            //var part = Partitioner.Create(file.Lines());
+
+            //Parallel.ForEach(file.Lines(), 
+            //    () => new LogParser(),
+            //    (s, state, local) => local,
+            //    (local) => { }
+            //    );
+
+            TimeParsers(file);
+
             fights.ForceFightTimeouts();
-
             Console.Error.WriteLine("Parse completed in {0}", timer.Elapsed);
+
             //Console.Error.WriteLine("Fights: {0}", list.Count);
 
             // keep reading log file
@@ -72,6 +105,39 @@ namespace logdump
             //foreach (var item in common)
             //    Console.Error.WriteLine("{0} {1}", item.Key, item.Value);
 
+        }
+
+        static void TimeParsers(LogReader file)
+        {
+            var parser = new LogParser();
+            parser.Player = LogParser.GetPlayerFromFileName(file.Path);
+
+            // load raw log lines once 
+            var lines = 0;
+            var events = new List<LogRawEvent>();
+            foreach (var s in file.Lines())
+            {
+                lines++;
+                var e = LogRawEvent.Parse(s);
+                if (e != null)
+                    events.Add(e);
+            }
+            Console.Error.WriteLine("Loaded {0} events", events.Count);
+
+            // time individual parsers
+            foreach (var p in parser.Parsers)
+            {
+                var ptimer = Stopwatch.StartNew();
+                var pcount = 0;
+                foreach (var e in events)
+                {
+                    var result = p.Invoke(e);
+                    if (result != null && !(result is LogRawEvent))
+                        pcount++;
+                }
+                Console.Error.WriteLine("{0,-20} {1,10} in {2}", p.Method.DeclaringType.Name, pcount, ptimer.Elapsed);
+            }
+            Console.WriteLine("***");
         }
 
         /// <summary>
@@ -96,12 +162,13 @@ namespace logdump
         /// <summary>
         /// Dump a fight summary to the console.
         /// </summary>
-        static void ShowFight(Fight f)
+        static void ShowFight(FightSummary f)
         {
+            f.Anonymize();
             //var duration = (f.Finished.Value - f.Started).TotalSeconds + 1;
 
             Console.WriteLine();
-            Console.WriteLine("=== {0} - {1:N0} HP - {2}s at {3}", f.Name, f.Target.InboundHitSum, f.Duration, f.Started.ToLocalTime(), f.Zone);
+            Console.WriteLine("=== {0} - {1:N0} HP - {2}s at {3}", f.Name, f.Target.InboundHitSum, f.Duration, f.StartedOn.ToLocalTime(), f.Zone);
             foreach (var p in f.Participants)
             {
                 var pct = (float)p.OutboundHitSum / f.Target.InboundHitSum;

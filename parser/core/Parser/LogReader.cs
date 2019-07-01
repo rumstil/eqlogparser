@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,20 +14,23 @@ namespace EQLogParser
     {
         public readonly string Path;
         public event Action<string> OnRead;
-        readonly StreamReader Stream;
-        FileSystemWatcher Watch;
-        int LastReadTicks;
+        readonly StreamReader Reader;
+        readonly FileStream Stream;
 
-        public LogReader(string path)
+        public LogReader(string path, int index = 0)
         {
             Path = path;
-            //Stream = File.OpenText(path);
-            Stream = new StreamReader(File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite), Encoding.ASCII);
+            Stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            if (index > 0 && Stream.Length > index)
+                Stream.Position = index;
+            if (index < 0 && Stream.Length > index)
+                Stream.Position = Stream.Length + index;
+            Reader = new StreamReader(Stream, Encoding.ASCII);
         }
 
         public LogReader(Stream stream)
         {
-            Stream = new StreamReader(stream, Encoding.ASCII);
+            Reader = new StreamReader(stream, Encoding.ASCII);
         }
 
         public void Dispose()
@@ -39,8 +43,13 @@ namespace EQLogParser
         /// </summary>
         public void Close()
         {
-            StopWatcherThread();
+            Reader.Close();
             Stream.Close();
+        }
+
+        public void Reset()
+        {
+            Stream.Position = 0;            
         }
 
         /// <summary>
@@ -49,55 +58,32 @@ namespace EQLogParser
         public void ReadAllLines()
         {
             if (OnRead == null)
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("OnRead not initialized.");
 
-            // make sure the watcher thread isn't also running
-            //if (Watch != null && Watch.EnableRaisingEvents)
-            //    throw new InvalidOperationException("Do not call ReadAllLines while watcher is active.");
-
-            //while (!Stream.EndOfStream)
             while (true)
             {
-                var line = Stream.ReadLine();
+                var line = Reader.ReadLine();
                 if (line == null)
                     return;
                 OnRead(line);
-                LastReadTicks = Environment.TickCount;
             }
         }
 
-        /// <summary>
-        /// Start background file watcher thread and continue to read lines whenever the file is updated.
-        /// </summary>
-        public void StartWatcherThread()
+        public void ReadAllLinesInParallel()
         {
-            if (Watch == null)
-                Watch = new FileSystemWatcher(System.IO.Path.GetDirectoryName(Path), System.IO.Path.GetFileName(Path));
-            Watch.IncludeSubdirectories = false;
-            Watch.Changed += ChangedHandler;
-            Watch.EnableRaisingEvents = true;
+            //Partitioner.Create()
+
         }
 
-        /// <summary>
-        /// Stop the background file watcher thread.
-        /// </summary>
-        public void StopWatcherThread()
+        public IEnumerable<string> Lines()
         {
-            if (Watch != null)
-                Watch.EnableRaisingEvents = false;
+            while (true)
+            {
+                var line = Reader.ReadLine();
+                if (line == null)
+                    yield break;
+                yield return line;
+            }
         }
-
-        private void ChangedHandler(object source, FileSystemEventArgs e)
-        {
-            // throttle reader (notification event can be generated several time per write)
-            var elapsed = Environment.TickCount - LastReadTicks;
-            if (elapsed > 0 && elapsed < 500)
-                return;
-
-            //Console.WriteLine("--- {0} {1}", e.ChangeType, e.FullPath);
-            ReadAllLines();
-        }
-
-
     }
 }

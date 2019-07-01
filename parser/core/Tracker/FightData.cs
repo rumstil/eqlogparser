@@ -7,23 +7,33 @@ using System.Text;
 namespace EQLogParser
 {
     /// <summary>
-    /// Any kind of damage that occurs in a fight: melee hit, ranged hit, spell, proc.
+    /// An aggregate of damage that occurs in a fight: melee hit, ranged hit, spell, proc.
     /// </summary>
     public class FightHit
     {
         public string Type;
         public int HitCount;
         public int HitSum;
-        public int HitMin;
-        public int HitMax;
         public int CritCount;
         public int CritSum;
+        //public int HitMin;
+        //public int HitMax;
 
-        //public Dictionary<int, int> HitBuckets = new Dictionary<int, int>();
+        public void Add(FightHit x)
+        {
+            HitSum += x.HitSum;
+            HitCount += x.HitCount;
+            CritSum += x.CritSum;
+            CritCount += x.CritCount;
+            //if (HitMin > x.HitMin || HitMin == 0)
+            //    HitMin = x.HitMin;
+            //if (HitMax < x.HitMax)
+            //    HitMax = x.HitMax;
+        }
     }
 
     /// <summary>
-    /// Any kind of defense that occurs in a fight: invulnerability, riposte, parry, dodge, block, miss, resist etc..
+    ///  An aggregate of defense that occurs in a fight: invulnerability, riposte, parry, dodge, block, miss, etc..
     /// </summary>
     public class FightMiss
     {
@@ -32,10 +42,16 @@ namespace EQLogParser
         public string Type;
         public int Count;
         public int Attempts;
+
+        public void Add(FightMiss x)
+        {
+            Count += x.Count;
+            Attempts += x.Attempts;
+        }
     }
 
     /// <summary>
-    /// Any spell that landed or was cast during a fight.
+    /// An aggregate of any spell that landed or was cast during a fight.
     /// </summary>
     public class FightSpell
     {
@@ -43,20 +59,60 @@ namespace EQLogParser
         public int ResistCount;
         public int HitCount;
         public int HitSum;
-        public int HitMin;
-        public int HitMax;
+        //public int HitMin;
+        //public int HitMax;
         public int CritCount;
         public int CritSum;
+        public int TwinCount;
         public int HealCount;
         public int HealSum;
         public int HealGross;
         //public int HealMin; // heal min is going to be 0 often
-        public int HealMax;
+        //public int HealMax;
 
         /// <summary>
         /// Each time the spell is cast an entry is added with the # seconds from start of fight
         /// </summary>
         public List<int> Times = new List<int>();
+
+        public void Add(FightSpell x)
+        {
+            HitSum += x.HitSum;
+            HitCount += x.HitCount;
+            CritSum += x.CritSum;
+            CritCount += x.CritCount;
+            HealSum += x.HealSum;
+            HealGross += x.HealGross;
+            HealCount += x.HealCount;
+            //if (HitMin > x.HitMin || HitMin == 0)
+            //    HitMin = x.HitMin;
+            //if (HitMax < x.HitMax)
+            //    HitMax = x.HitMax;
+            //if (HealMax < x.HealMax)
+            //    HealMax = x.HealMax;
+        }
+
+    }
+
+    /// <summary>
+    /// Any buff or debuff that landed on a character during a fight.
+    /// </summary>
+    public class FightEffect
+    {
+        public string Name;
+        //public List<(int Start, int End)> Times = new List<(int, int)>();
+    }
+
+    /// <summary>
+    /// A short history of activity that occured before a death.
+    /// </summary>
+    public class FightDeath
+    {
+        public string Name;
+        public string Class;
+        //public DateTime Timestamp;
+        public int Time;
+        public List<string> Replay = new List<string>();
     }
 
     /// <summary>
@@ -75,21 +131,30 @@ namespace EQLogParser
         /// Damage activity duration in seconds. Can be zero.
         /// </summary>
         public int Duration => FirstAction.HasValue && LastAction.HasValue ? (int)(LastAction.Value - FirstAction.Value).TotalSeconds + 1 : 0;
-                
+
         public int OutboundMissCount;
-        public int OutboundHitCount;
+        public int OutboundHitCount; // includes all damage
         public int OutboundHitSum;
+        public int OutboundMeleeCount; // includes melee/combat skills
+        public int OutboundMeleeSum;
+        public int OutboundSpellCount; // includes dd/dot  
+        public int OutboundSpellSum;
+        //public int OutboundRiposteSum;
+        public int OutboundStrikeCount;
 
         public int InboundMissCount;
         public int InboundHitCount;
         public int InboundHitSum;
+        public int InboundMeleeCount;
+        public int InboundMeleeSum;
+        public int InboundRiposteSum;
+        //public int InboundSpellCount;
+        //public int InboundSpellSum;
 
         public int OutboundHealSum;
         public int InboundHealSum;
-        public int SelfHealSum;
-        //public FightHitEvent LastHit;
 
-        public int Deaths;
+        public int DeathCount;
 
         // store damage, tanking, healing summaries at fixed intervals rather than storing every data point
         // e.g. storing 6 seconds worth of hits as 1 integer takes a lot less space than 30 hits
@@ -97,20 +162,10 @@ namespace EQLogParser
         public List<int> HPS = new List<int>();
         public List<int> TankDPS = new List<int>();
 
-        /// <summary>
-        /// A list of successful attacks that the participant has landed.
-        /// </summary>
         public List<FightHit> AttackTypes = new List<FightHit>();
-
-        /// <summary>
-        /// A list of successful defenses that the partipant has used.
-        /// </summary>
         public List<FightMiss> DefenseTypes = new List<FightMiss>();
-
-        /// <summary>
-        /// A list of spells that the participant has cast.
-        /// </summary>
         public List<FightSpell> Spells = new List<FightSpell>();
+        public List<FightEffect> Effects = new List<FightEffect>();
 
         public override string ToString()
         {
@@ -134,57 +189,90 @@ namespace EQLogParser
                 FirstAction = hit.Timestamp;
             LastAction = hit.Timestamp;
 
-            if (hit.Type == "resist")
-            {
-                return;
-            }
-
             if (hit.Source == Name)
             {
                 OutboundHitCount += 1;
                 OutboundHitSum += hit.Amount;
 
-                var at = AttackTypes.FirstOrDefault(x => x.Type == hit.Type);
-                if (at == null)
+                if (hit.Spell != null)
                 {
-                    at = new FightHit();
-                    at.Type = hit.Type;
-                    AttackTypes.Add(at);
+                    OutboundSpellCount += 1;
+                    OutboundSpellSum += hit.Amount;
+
+                    var spell = AddSpell(hit.Spell);
+                    spell.HitCount += 1;
+                    spell.HitSum += hit.Amount;
+                    //if (hit.Amount > spell.HitMax)
+                    //    spell.HitMax = hit.Amount;
+                    //if (hit.Amount < spell.HitMin || spell.HitMin == 0)
+                    //    spell.HitMin = hit.Amount;
+
+                    if (hit.Mod.HasFlag(LogEventMod.Critical))
+                    {
+                        spell.CritCount += 1;
+                        spell.CritSum += hit.Amount;
+                    }
+
+                    if (hit.Mod.HasFlag(LogEventMod.Twincast))
+                    {
+                        spell.TwinCount += 1;
+                        //spell.TwinSum += hit.Amount;
+                    }
+
+                }
+                else
+                {
+                    OutboundMeleeCount += 1;
+                    OutboundMeleeSum += hit.Amount;
                 }
 
+                var type = hit.Type;
+
+                // alter the attack type on some special hits
+                if (hit.Mod.HasFlag(LogEventMod.Finishing_Blow))
+                    type = "finish";
+                //else if (hit.Mod.HasFlag(LogEventMod.Headshot))
+                //    type += ":headshot";
+                //else if (hit.Mod.HasFlag(LogEventMod.Assassinate))
+                //    type += ":assassinate";
+                else if (hit.Mod.HasFlag(LogEventMod.Special))
+                    type += ":special";
+                else if (hit.Mod.HasFlag(LogEventMod.Riposte))
+                    type = "riposte";
+
+                var at = AddAttack(type);
                 at.HitCount += 1;
                 at.HitSum += hit.Amount;
-                if (hit.Amount > at.HitMax)
-                    at.HitMax = hit.Amount;
-                if (hit.Amount < at.HitMin || at.HitMin == 0)
-                    at.HitMin = hit.Amount;
+                //if (hit.Amount > at.HitMax)
+                //    at.HitMax = hit.Amount;
+                //if (hit.Amount < at.HitMin || at.HitMin == 0)
+                //    at.HitMin = hit.Amount;
 
-                if (hit.Special != null && hit.Special.Contains("critical"))
+                if (hit.Mod.HasFlag(LogEventMod.Critical))
                 {
                     at.CritCount += 1;
                     at.CritSum += hit.Amount;
                 }
 
+                /*
+                if (hit.Mod.HasFlag(LogEventMod.Riposte))
+                {
+                    // riposte type is a duplicate and should not be included in the overall sum
+                    // it might make more sense to add it as an attribute (like crit damage)
+                    var rip = AddAttack("riposte");
+                    rip.HitCount += 1;
+                    rip.HitSum += hit.Amount;
+                }
+                */
+
+                if (hit.Mod.HasFlag(LogEventMod.Strikethrough))
+                {
+                    OutboundStrikeCount += 1;
+                }
+
                 while (DPS.Count <= interval)
                     DPS.Add(0);
                 DPS[interval] += hit.Amount;
-
-                if (hit.Spell != null)
-                {
-                    var spell = AddSpell(hit.Spell);
-                    spell.HitCount += 1;
-                    spell.HitSum += hit.Amount;
-                    if (hit.Amount > spell.HitMax)
-                        spell.HitMax = hit.Amount;
-                    if (hit.Amount < spell.HitMin || spell.HitMin == 0)
-                        spell.HitMin = hit.Amount;
-
-                    if (hit.Special != null && hit.Special.Contains("critical"))
-                    {
-                        spell.CritCount += 1;
-                        spell.CritSum += hit.Amount;
-                    }
-                }
 
             }
             else if (hit.Target == Name)
@@ -192,8 +280,15 @@ namespace EQLogParser
                 InboundHitCount += 1;
                 InboundHitSum += hit.Amount;
 
-                if (hit.Spell == null)
+                if (hit.Spell != null)
                 {
+                    //InboundSpellSum += hit.Amount;
+                }
+                else
+                {
+                    InboundMeleeCount += 1;
+                    InboundMeleeSum += hit.Amount;
+
                     while (TankDPS.Count <= interval)
                         TankDPS.Add(0);
                     TankDPS[interval] += hit.Amount;
@@ -201,6 +296,12 @@ namespace EQLogParser
                     //TankHits.TryGetValue(hit.Amount, out int count);
                     //TankHits[hit.Amount] = count + 1;
                 }
+
+                if (hit.Mod.HasFlag(LogEventMod.Riposte))
+                {
+                    InboundRiposteSum += hit.Amount;
+                }
+
             }
         }
 
@@ -212,17 +313,24 @@ namespace EQLogParser
 
             // don't count spell resist/invul in defense stats
             if (miss.Spell != null)
+            {
+                if (miss.Source == Name)
+                {
+                    var spell = AddSpell(miss.Spell);
+                    spell.ResistCount += 1;
+                }
                 return;
+            }
 
             if (miss.Source == Name)
             {
                 OutboundMissCount += 1;
 
-                if (miss.Spell != null)
-                {
-                    var spell = AddSpell(miss.Spell);
-                    spell.ResistCount += 1;
-                }
+                //if (miss.Spell != null)
+                //{
+                //    var spell = AddSpell(miss.Spell);
+                //    spell.ResistCount += 1;
+                //}
             }
             else if (miss.Target == Name)
             {
@@ -249,10 +357,10 @@ namespace EQLogParser
             // we may want to ignore them for self healing stats
             //var promised = heal.Source == Name && heal.Target == Name && heal.Spell != null && heal.Spell.StartsWith("Promised");
 
-            if (heal.Source == Name && heal.Target == Name)
-            {
-                SelfHealSum += heal.Amount;
-            }
+            //if (heal.Source == Name && heal.Target == Name)
+            //{
+            //    SelfHealSum += heal.Amount;
+            //}
 
             if (heal.Source == Name)
             {
@@ -264,10 +372,14 @@ namespace EQLogParser
                     spell.HealCount += 1;
                     spell.HealSum += heal.Amount;
                     spell.HealGross += heal.GrossAmount;
-                    if (heal.Amount > spell.HealMax)
-                        spell.HealMax = heal.Amount;
-                    //if (heal.Amount < spell.HealMin || spell.HealMin == 0)
-                    //    spell.HealMin = heal.Amount;
+                    //if (heal.Amount > spell.HealMax)
+                    //    spell.HealMax = heal.Amount;
+
+                    if (heal.Mod.HasFlag(LogEventMod.Critical))
+                    {
+                        spell.CritCount += 1;
+                        spell.CritSum += heal.Amount;
+                    }
                 }
 
                 while (HPS.Count <= interval)
@@ -298,33 +410,60 @@ namespace EQLogParser
             return spell;
         }
 
+        private FightHit AddAttack(string type)
+        {
+            //var at = AttackTypes.FirstOrDefault(x => x.Type == hit.Type);
+            FightHit at = null;
+            for (int i = 0; i < AttackTypes.Count; i++)
+                if (AttackTypes[i].Type == type)
+                {
+                    at = AttackTypes[i];
+                    break;
+                }
 
+            if (at == null)
+            {
+                at = new FightHit();
+                at.Type = type;
+                AttackTypes.Add(at);
+            }
 
+            return at;
+        }
+    }
 
+    public enum FightStatus
+    {
+        Active,
+        Killed,
+        Timeout,
+        Interval
     }
 
     /// <summary>
     /// A summary of activity for a single fight.
     /// </summary>
-    public class Fight
+    public class FightSummary
     {
         public string Version = "1";
-        public string OwnerID; // secret - cleared after upload
-        public string ID;
-        public DateTime Started;
-        public DateTime Updated;
-        public DateTime? Finished;
-        public DateTime? Expires;
+        public string OwnerId;
+        public string Id;
+        public DateTime StartedOn;
+        public DateTime UpdatedOn;
+        public FightStatus Status;
         public string Player;
         public string Server;
         public string Zone;
         public string Name;
         public string Party;
-        public bool Rare;
-        public int Deaths;
+        public bool IsRare;
+        public int CohortCount;
         public int TopHitSum;
         public int TopHealSum;
-        //public int PullSize;
+        public List<FightDeath> Deaths = new List<FightDeath>();
+        // special target counters
+        //public int StrikeCount;
+
         //public FightHitEvent LastHit;
         //public FightHitEvent LastSpell;
 
@@ -333,7 +472,7 @@ namespace EQLogParser
         /// <summary>
         /// Fight duration in seconds. Always at least 1.
         /// </summary>
-        public int Duration => (int)(Updated - Started).TotalSeconds + 1;
+        public int Duration => (int)(UpdatedOn - StartedOn).TotalSeconds + 1;
 
         //public int Interval => Duration / 6;
 
@@ -341,12 +480,30 @@ namespace EQLogParser
 
         public List<FightParticipant> Participants = new List<FightParticipant>();
 
+        public FightSummary()
+        {
+
+        }
+
+        public FightSummary(string name)
+        {
+            Name = name;
+            Target = new FightParticipant(name);
+        }
+
         private FightParticipant AddParticipant(string name)
         {
             if (Target.Name == name)
                 return Target;
 
-            var p = Participants.FirstOrDefault(x => x.Name == name);
+            FightParticipant p = null;
+            for (int i = 0; i < Participants.Count; i++)
+                if (Participants[i].Name == name)
+                {
+                    p = Participants[i];
+                    break;
+                }
+
             if (p == null)
             {
                 p = new FightParticipant(name);
@@ -359,7 +516,11 @@ namespace EQLogParser
         {
             // going to store DPS at 6 second intervals - this smooths the damage spikes and produces a better
             // comparison between DoT DPS and other DPS
-            return (int)(e.Timestamp - Started).TotalSeconds / 6;
+            var interval = (int)(e.Timestamp - StartedOn).TotalSeconds / 6;
+            // if the log is altered and entries are saved out of order then our intervals might be negative
+            if (interval < 0)
+                interval = 0;
+            return interval;
         }
 
         public void AddHit(LogHitEvent hit)
@@ -369,6 +530,15 @@ namespace EQLogParser
             if (hit.Source != null)
                 AddParticipant(hit.Source).AddHit(hit, interval);
             AddParticipant(hit.Target).AddHit(hit, interval);
+
+            // special counters for the mob/target only
+            //if (hit.Source == Name)
+            //{
+            //    if (hit.Special != null && hit.Special.Contains("strikethrough"))
+            //    {
+            //        StrikeCount += 1;
+            //    }
+            //}
         }
 
         public void AddMiss(LogMissEvent miss)
@@ -399,15 +569,34 @@ namespace EQLogParser
         //{
         //}
 
-        public void AddDeath(LogDeathEvent death)
+        public void AddDeath(LogDeathEvent death, IEnumerable<LogEvent> replay)
         {
-            if (death.Name != Name)
-                AddParticipant(death.Name).Deaths += 1;
+            AddParticipant(death.Name).DeathCount += 1;
+
+            var audit = new FightDeath();
+            //audit.Timestamp = death.Timestamp;
+            audit.Time = (int)(death.Timestamp - StartedOn).TotalSeconds;
+            audit.Name = death.Name;
+
+            foreach (var e in replay)
+            {
+                // show time as # seconds prior to death
+                var time = (e.Timestamp - death.Timestamp).TotalSeconds.ToString() + "s";
+                if (e is LogHitEvent hit && hit.Target == death.Name)
+                    audit.Replay.Add(String.Format("Hit: {0} for {1}", hit.Source, hit.Amount, time));
+                if (e is LogHealEvent heal && heal.Target == death.Name)
+                    audit.Replay.Add(String.Format("Heal: {0} for {1}", heal.Source, heal.Amount, time));
+                // healers can't be expected to respond to runes - maybe don't show these
+                //if (e is LogMissEvent miss && miss.Target == death.Name && miss.Type == "rune")
+                //    audit.Replay.Add(miss.ToString() + time);
+            }
+
+            Deaths.Add(audit);
         }
 
         public override string ToString()
         {
-            return String.Format("{0} ({1}) - {2}", Target.Name, Zone, Started);
+            return String.Format("{0} ({1}) - {2}", Target.Name, Zone, StartedOn);
         }
 
         /// <summary>
@@ -415,8 +604,10 @@ namespace EQLogParser
         /// </summary>
         public void Finish()
         {
-            Finished = Updated;
             var ticks = Duration / 6;
+
+            if (Participants.Count == 0)
+                return;
 
             // get top performers
             TopHitSum = Participants.Max(x => x.OutboundHitSum);
@@ -426,6 +617,9 @@ namespace EQLogParser
             Participants.Sort((a, b) => b.OutboundHitSum - a.OutboundHitSum);
             foreach (var p in Participants)
             {
+                // sort attacks in alpha order
+                p.AttackTypes.Sort((a, b) => a.Type.CompareTo(b.Type));
+
                 // sort defense types in game check order
                 p.DefenseTypes = p.DefenseTypes.OrderBy(x => Array.IndexOf(FightMiss.MissOrder, x.Type)).ToList();
 
@@ -447,10 +641,21 @@ namespace EQLogParser
                 // sort spells in alpha order
                 p.Spells.Sort((a, b) => a.Name.CompareTo(b.Name));
             }
+
+            // don't track replays on wipes because they take too much space
+            // and by then things have gone downhill too much
+            if (Deaths.Count > 10)
+            {
+                foreach (var d in Deaths)
+                    d.Replay.Clear();
+            }
+
+            MergePets();
         }
 
         /// <summary>
-        /// Merge all pet damage under their owner's damage types.
+        /// Merge all pet damage into their owner's damage.
+        /// Tanking will remain unmerged.
         /// </summary>
         public void MergePets()
         {
@@ -460,10 +665,19 @@ namespace EQLogParser
             {
                 var owner = AddParticipant(pet.PetOwner);
 
-                foreach (var hit in pet.AttackTypes)
+                foreach (var at in pet.AttackTypes)
                 {
-                    hit.Type = "pet:" + hit.Type;
-                    owner.AttackTypes.Add(hit);
+                    at.Type = "pet:" + at.Type;
+                    //owner.AttackTypes.Add(hit);
+                    var match = owner.AttackTypes.FirstOrDefault(x => x.Type == at.Type);
+                    if (match != null)
+                    {
+                        match.Add(at);
+                    }
+                    else
+                    {
+                        owner.AttackTypes.Add(at);
+                    }
                 }
 
                 foreach (var spell in pet.Spells)
@@ -480,12 +694,18 @@ namespace EQLogParser
                 //Participants.Remove(pet);
 
                 // it's probably better to clear the damage on the pet but keep it for tanking stats
-                pet.Name = String.Format("{0} ({1})", pet.Name, pet.PetOwner);
                 pet.OutboundHitCount = 0;
                 pet.OutboundHitSum = 0;
                 pet.OutboundMissCount = 0;
                 pet.AttackTypes.Clear();
                 pet.Spells.Clear();
+                pet.DPS.Clear();
+                pet.HPS.Clear();
+
+                // append owner name to pet name - this should probably be done client side
+                // also removing because this isn't handled well in anonymize
+                //if (!pet.Name.StartsWith(pet.PetOwner))
+                //    pet.Name = String.Format("{0} ({1})", pet.Name, pet.PetOwner);
             }
 
             // get top performers
@@ -495,15 +715,52 @@ namespace EQLogParser
         }
 
         /// <summary>
-        /// Replace character names with fake names.
+        /// Replace real player names with fake names and return a decoder dictionary that can be
+        /// used to undo the anonymization.
         /// </summary>
-        public void Anonymize()
+        public Dictionary<string, string> Anonymize()
         {
+            // todo: don't anonymize charm pet names
+            var names = new Dictionary<string, string>();
+
             var i = 1;
             foreach (var p in Participants)
             {
-                p.Name = (p.Class ?? "Player") + (i++);
+                i++;
+                var alias = p.PetOwner == null ? "Player" + i : "Pet" + i;
+                names[p.Name] = alias;
+                p.Name = alias;
             }
+
+            foreach (var p in Participants.Where(x => x.PetOwner != null))
+            {
+                if (names.TryGetValue(p.PetOwner, out string alias))
+                {
+                    p.PetOwner = alias;
+                }
+                else
+                {
+                    // this shouldn't happen
+                    p.PetOwner = "Unknown";
+                }
+            }
+
+            foreach (var d in Deaths)
+            {
+                if (names.TryGetValue(d.Name, out string alias))
+                {
+                    d.Name = alias;
+                }
+                else
+                {
+                    // this shouldn't happen
+                    d.Name = "Unknown";
+                }
+
+            }
+
+            // invert the dictionary: alias=>real
+            return names.ToDictionary(x => x.Value, x => x.Key);
         }
 
     }

@@ -41,36 +41,6 @@ namespace EQLogParser
         //private IReadOnlyDictionary<int, SpellInfo> LookupById = new Dictionary<int, SpellInfo>();
         private IReadOnlyDictionary<string, SpellInfo> LookupByName = new Dictionary<string, SpellInfo>();
 
-        /*
-        public event LogEventHandler OnEvent;
-
-        public void HandleEvent(LogEvent e)
-        {
-            if (e is LogCastingEvent cast)
-            {
-                var s = GetSpell(cast.Spell);
-                if (s != null && !String.IsNullOrEmpty(s.LandSelf) && !String.IsNullOrEmpty(s.LandOthers))
-                {
-                    var extcast = new LogCastingEventWithSpellInfo
-                    {
-                        Id = cast.Id,
-                        Timestamp = cast.Timestamp,
-                        Source = cast.Source,
-                        Spell = cast.Spell,
-                        ClassName = s.ClassName,
-                        LandOthers = s.LandOthers,
-                        LandSelf = s.LandSelf
-                    };
-
-                    OnEvent(extcast);
-                    return;
-                }
-            }
-
-            // pass the original event along if it wasn't handled yet
-            OnEvent(e);
-        }
-        */
 
         /// <summary>
         /// Load spell data.
@@ -79,7 +49,7 @@ namespace EQLogParser
         public void Load(string path)
         {
             if (!File.Exists(path))
-                return;
+                throw new FileNotFoundException();
 
             var lookupById = new Dictionary<int, SpellInfo>(10000);
             var lookupByName = new Dictionary<string, SpellInfo>(10000);
@@ -103,6 +73,10 @@ namespace EQLogParser
 
                     // 1 SPELLNAME
                     spell.Name = fields[1].Trim();
+
+                    // 11 DURATIONBASE
+                    // 12 DURATIONCAP
+                    //spell.DurationTicks = CalcDuration(Convert.ToInt32(fields[11]), Convert.ToInt32(fields[12]), 254);
 
                     // 32 TYPENUMBER
                     spell.Target = Convert.ToInt32(fields[32]);
@@ -225,11 +199,43 @@ namespace EQLogParser
         /// Get number of bits that are set.
         /// https://stackoverflow.com/questions/109023/how-to-count-the-number-of-set-bits-in-a-32-bit-integer
         /// </summary>
-        private int CountBits(int i)
+        private static int CountBits(int i)
         {
             i = i - ((i >> 1) & 0x55555555);
             i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
             return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
         }
+
+
+        /*
+        public event LogEventHandler OnEvent;
+
+        public void HandleEvent(LogEvent e)
+        {
+            if (e is LogCastingEvent cast)
+            {
+                var s = GetSpell(cast.Spell);
+                if (s != null && !String.IsNullOrEmpty(s.LandSelf) && !String.IsNullOrEmpty(s.LandOthers))
+                {
+                    var extcast = new LogCastingEventWithSpellInfo
+                    {
+                        Id = cast.Id,
+                        Timestamp = cast.Timestamp,
+                        Source = cast.Source,
+                        Spell = cast.Spell,
+                        ClassName = s.ClassName,
+                        LandOthers = s.LandOthers,
+                        LandSelf = s.LandSelf
+                    };
+
+                    OnEvent(extcast);
+                    return;
+                }
+            }
+
+            // pass the original event along if it wasn't handled yet
+            OnEvent(e);
+        }
+        */
     }
 }

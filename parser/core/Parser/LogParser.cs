@@ -12,7 +12,7 @@ namespace EQLogParser
 
     /// <summary>
     /// This is the main interface for log parsing. 
-    /// You feed it log lines via the ParseLine() function and it returns them as events via the OnEvent delegate.
+    /// You feed it log lines via the ParseLine() function and it returns them as events.
     /// All of the parsing is done outside of this class in the individual event parsers.
     /// This class is mostly stateless and doesn't do much more than parsing of events.
     /// </summary>
@@ -28,7 +28,7 @@ namespace EQLogParser
         public DateTime MinDate = DateTime.Parse("2018-12-18");
         public DateTime MaxDate = DateTime.MaxValue;
 
-        public string Server;
+        //public string Server;
         public string Player;
 
         public LogParser()
@@ -57,6 +57,8 @@ namespace EQLogParser
             Parsers.Add(LogWhoEvent.Parse);
             Parsers.Add(LogConEvent.Parse);
             Parsers.Add(LogLootEvent.Parse);
+            Parsers.Add(LogRotEvent.Parse);
+            Parsers.Add(LogCraftEvent.Parse);
             Parsers.Add(LogAAXPEvent.Parse);
             Parsers.Add(LogSkillEvent.Parse);
         }
@@ -67,7 +69,8 @@ namespace EQLogParser
         /// </summary>
         public static string GetPlayerFromFileName(string path)
         {
-            var m = Regex.Match(path, @"eqlog_(\w+)_(\w+)\.txt$");
+            //var m = Regex.Match(path, @"eqlog_(\w+)_(\w+)\.txt$"); // official format
+            var m = Regex.Match(path, @"eqlog_([A-Za-z]+).*\.txt(\.gz)?$"); // permissive format
             if (m.Success)
             {
                 var name = m.Groups[1].Value;
@@ -77,23 +80,31 @@ namespace EQLogParser
             return null;
         }
 
-        //public void Subscribe(LogEventHandler handler)
-        //{
-        //    OnEvent += handler;
-        //    if (Player != null)
-        //        handler(new LogWhoEvent() { Name = Player });
-        //}
-
-        //public void Unsubscribe(LogEventHandler handler)
-        //{
-        //    OnEvent -= handler;
-        //}
+        /// <summary>
+        /// Get server name from filename. This may be incorrect if the log file has been renamed.
+        /// I should probably check again list of real server names -- at least test/beta since those are those 
+        /// ones where we can expect different log formats or data.
+        /// </summary>
+        public static string GetServerFromFileName(string path)
+        {
+            var m = Regex.Match(path, @"eqlog_\w+_([A-Za-z]+).*\.txt(\.gz)?$"); // permissive format
+            if (m.Success)
+            {
+                return m.Groups[1].Value;
+            }
+            return null;
+        }
 
         /// <summary>
-        /// Process a single log file line and return the result if successful.
+        /// Process a single line from the log file and return an event that describes the line.
+        /// If none of the event parsers can handle the line then a LogRawEvent will be returned.
+        /// If the line is blank or the date is malformed then a null will be returned.
         /// </summary>
         public LogEvent ParseLine(string text)
         {
+            if (String.IsNullOrEmpty(Player))
+                throw new InvalidOperationException("Log owner player name must be set prior to parsing.");
+
             if (String.IsNullOrEmpty(text))
                 return null;
 
@@ -102,7 +113,7 @@ namespace EQLogParser
             if (raw == null)
                 return null;
 
-            raw.Player = Player;
+            raw.Player = Player ?? "Unknown";
 
             // ignore if timestamp out of range
             if (raw.Timestamp < MinDate || raw.Timestamp > MaxDate)
@@ -119,16 +130,14 @@ namespace EQLogParser
                 var result = Parsers[i](raw);
                 if (result != null)
                 {
-                    if (OnEvent != null)
-                        OnEvent(result);
+                    OnEvent?.Invoke(result);
                     return result; 
                 }
             }
 
             // if no match was found then just return the raw event
             // this is useful for catching parsing left-overs that slipped through regex checks
-            if (OnEvent != null)
-                OnEvent(raw);
+            OnEvent?.Invoke(raw);
             return raw;
         }
 

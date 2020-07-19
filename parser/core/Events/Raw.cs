@@ -70,7 +70,9 @@ namespace EQLogParser
                 return null;
 
             if (name.Equals("you", StringComparison.OrdinalIgnoreCase) ||
-                name.Equals("your", StringComparison.OrdinalIgnoreCase))
+                name.Equals("your", StringComparison.OrdinalIgnoreCase) ||
+                name.Equals("yourself", StringComparison.OrdinalIgnoreCase)
+                )
                 return Player;
 
             // strip possesive form
@@ -82,6 +84,7 @@ namespace EQLogParser
             //name = name.Replace('`', '\'');
 
             // a few log messages can reference a corpse if they occur after the pc/npc died
+            // disabled because downstream code may look for this
             //if (name.EndsWith(CorpseSuffix))
             //    name = name.Substring(0, name.Length - CorpseSuffix.Length);
 

@@ -5,12 +5,12 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Net;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
 using EQLogParser;
-using System.Collections.Concurrent;
+
 
 namespace logdump
 {
@@ -18,79 +18,78 @@ namespace logdump
     class Program
     {
         static FightTracker fights;
-        static IntervalTracker itracker;
+        //static IntervalTracker itracker;
 
         //static string LogPath = "";
         static string LogPath = "d:/games/everquest/logs/";
         //static string LogPath = Environment.GetEnvironmentVariable("EQLogPath");
 
-        static string JsonPath = "c:/Proj/eq/logparser/localhost/wwwroot/json/";
+        //static string JsonPath = "c:/Proj/eq/logparser/server/wwwroot/json/";
+        static string JsonPath = "c:/Proj/eq/raidloot2/web/wwwroot/fights/";
         //static string JsonPath = Environment.GetEnvironmentVariable("EQLogJsonPath");
 
         static void Main(string[] args)
         {
             //var serviceProvider = new ServiceCollection();
+            //DeleteJsonFiles();
 
             var timer = Stopwatch.StartNew();
             Console.Error.WriteLine("Loading spells...");
-            SpellParser.Default.Load("spells_us.txt");
+            SpellParser.Default.Load("d:/games/everquest/spells_us.txt");
             Console.Error.WriteLine("Spells loaded in {0}", timer.Elapsed);
             timer.Restart();
 
-            var file = new LogReader(LogPath + "eqlog_Rumstil_erollisi.txt");
+            //var file = new LogReader("d:/games/everquest/logs/backup/sample.txt");
+            //var file = new LogReader(LogPath + "eqlog_Rumstil_erollisi.txt");
             //var file = new LogReader(LogPath + "eqlog_Rumstil_test.txt");
-            //var file = new LogReader(LogPath + "eqlog_Fourier_erollisi.txt");
+            var file = new LogReader(LogPath + "eqlog_Fourier_erollisi.txt");
             //var file = new LogReader(LogPath + "eqlog_Fourier_test.txt");
-            
+
 
             var parser = new LogParser();
             parser.Player = LogParser.GetPlayerFromFileName(file.Path);
             //parser.MinDate = DateTime.MinValue;
-            //parser.MinDate = DateTime.Today.AddDays(-14);
-            //parser.MinDate = DateTime.Parse("2/25/2019 10:06:44 PM").ToUniversalTime();
-            parser.OnEvent += ShowLog;
+            //parser.MinDate = DateTime.Today.AddDays(-1).ToUniversalTime();
+            parser.MinDate = DateTime.Parse("7/13/2020").ToUniversalTime();
+            parser.MaxDate = DateTime.Parse("7/13/2020 11:00 PM").ToUniversalTime();
+            //parser.OnEvent += ShowLog;
+
+            var completed = new List<FightInfo>();
 
             fights = new FightTracker();
-            //fights.OnFightStarted += f => Console.WriteLine("\n--- Started {0}", f.Target.Name);
-            fights.OnFightFinished += ShowFight;
+            fights.OnFightStarted += f =>
+            {
+                ShowFight(f);
+            };
+            fights.OnFightFinished += f =>
+            {
+                ShowFight(f);
+                completed.Add(f);
+            };
 
-            itracker = new IntervalTracker();
-            itracker.OnFightFinished += ShowFight;
 
-            //parser.OnEvent += fights.HandleEvent;
-            //parser.OnEvent += itracker.HandleEvent;
+            var lines = 0;
+            foreach (var s in file.Lines())
+            {
+                lines++;
+                var e = parser.ParseLine(s);
+                if (e != null)
+                    fights.HandleEvent(e);
+            }
 
-            //var lines = 0;
-            //file.OnRead += (s) => { lines++; LogRawEvent.Parse(s); };
-            //file.OnRead += parser.ParseLine;
-            //file.ReadAllLines();
 
-            //var lines = 0;
-            //foreach (var s in file.Lines())
-            //{
-            //    lines++;
-            //    var e = parser.ParseLine(s);
-            //    fights.HandleEvent(e);
-            //}
-
-            //foreach (var e in file.Lines().AsParallel().AsOrdered().Select(x => parser.ParseLine(x)))
-            //{
-            //    if (e != null)
-            //        fights.HandleEvent(e);
-            //}
-
-            //var part = Partitioner.Create(file.Lines());
-
-            //Parallel.ForEach(file.Lines(), 
-            //    () => new LogParser(),
-            //    (s, state, local) => local,
-            //    (local) => { }
-            //    );
-
-            TimeParsers(file);
+            //TimeParsers(file);
 
             fights.ForceFightTimeouts();
             Console.Error.WriteLine("Parse completed in {0}", timer.Elapsed);
+
+            var total = new MergedFightInfo();
+            //var temp = completed.OrderByDescending(x => x.UpdatedOn).Take(20);
+            var temp = completed;
+            foreach (var f in temp)
+                total.Merge(f);
+            total.Finish();
+            ShowFight(total);
 
             //Console.Error.WriteLine("Fights: {0}", list.Count);
 
@@ -99,12 +98,6 @@ namespace logdump
             //Console.Error.WriteLine("Watching log file... press any key to quit");
             //Console.ReadKey();
             //file.StopWatcherThread();
-
-
-            //var common = MostCommon.OrderByDescending(x => x.Value).Take(20);
-            //foreach (var item in common)
-            //    Console.Error.WriteLine("{0} {1}", item.Key, item.Value);
-
         }
 
         static void TimeParsers(LogReader file)
@@ -145,6 +138,8 @@ namespace logdump
         /// </summary>
         static void ShowLog(LogEvent log)
         {
+            Console.WriteLine(log);
+
             //if (log is LogRawEvent)
             //    Console.WriteLine(log);
 
@@ -154,66 +149,52 @@ namespace logdump
             //if (log is LogDeathEvent)
             //    Console.WriteLine(log);
 
-            //if (log is LogCastingEvent cast && cast.Source == "Annjule")
-            //    Console.WriteLine(log);
-
         }
 
         /// <summary>
         /// Dump a fight summary to the console.
         /// </summary>
-        static void ShowFight(FightSummary f)
+        static void ShowFight(FightInfo f)
         {
-            f.Anonymize();
+            if (f.Status == FightStatus.Active)
+            {
+                Console.WriteLine("\n--- {0} --- started at {1}", f.Target.Name, f.StartedOn.ToLocalTime());
+                return;
+            }
+
+            //if (f.HP < 1000000)
+            //    return;
+
+            //f.Anonymize();
             //var duration = (f.Finished.Value - f.Started).TotalSeconds + 1;
 
-            Console.WriteLine();
-            Console.WriteLine("=== {0} - {1:N0} HP - {2}s at {3}", f.Name, f.Target.InboundHitSum, f.Duration, f.StartedOn.ToLocalTime(), f.Zone);
-            foreach (var p in f.Participants)
-            {
-                var pct = (float)p.OutboundHitSum / f.Target.InboundHitSum;
+            f.Dump(Console.Out);
+        }
 
-                Console.WriteLine(" {0} {1:P0} {2}-{3}", p, pct, p.FirstAction, p.LastAction);
-                //Console.WriteLine(" {0,-25} {1,12:N0} {2,8:N0} DPS  {3:P0} {4}", p.FullName, p.SourceHitSum, p.SourceHitSum / duration, pct, p.SourceHitCount);
-
-                Console.WriteLine("   {0,-10} {1,10:N0} / {2,6:N0} DPS", "total",  p.OutboundHitSum, p.OutboundHitSum / f.Duration);
-                foreach (var ht in p.AttackTypes)
-                    Console.WriteLine("   {0,-10} {1,10:N0} / {2,6:N0} DPS", ht.Type, ht.HitSum, ht.HitSum / f.Duration);
-
-                //if (p.TargetMissCount > 0)
-                //    Console.WriteLine("   {0,-10} {1,6:N0} of {2} {3:P0}", "*total*", p.TargetMissCount, p.TargetHitCount + p.TargetMissCount, (double)p.TargetMissCount / (p.TargetHitCount + p.TargetMissCount));
-                foreach (var d in p.DefenseTypes)
-                    Console.WriteLine("   {0,-10} {1,6:N0} of {2} {3:P0}", "*" + d.Type + "*", d.Count, d.Attempts, (double)d.Count / d.Attempts);
-
-                Console.WriteLine("   {0,-10} {1,6:N0} of {2} {3:P0}", "*hit*", p.InboundHitCount, p.InboundHitCount + p.InboundMissCount, (double)p.InboundHitCount / (p.InboundHitCount + p.InboundMissCount));
-
-                foreach (var s in p.Spells)
-                {
-                    //Console.WriteLine("   cast {0}: {1} for {2:N0} damage", s.Name, String.Join(", ", s.Times.Select(x => x.ToString())), s.Damage);
-                    Console.WriteLine("   cast {0}: {1:N0} damage, {2:N0} healed", s.Name, s.HitSum, s.HealSum);
-                }
-
-                if (p.OutboundHealSum > 0)
-                    Console.WriteLine("   healed     {0,10:N0}", p.OutboundHealSum);
-
-            }
-            Console.WriteLine();
-
-            var json = JsonConvert.SerializeObject(f, Formatting.Indented);
-            //var json = JsonConvert.SerializeObject(f);
-            //File.WriteAllText(JsonPath + f.ID + ".json", json);
+        static void SaveFight(FightInfo f)
+        { 
+            //var json = JsonConvert.SerializeObject(f, Formatting.Indented);
+            //var json = JsonSerializer.Serialize(f);
+            //var path = JsonPath + f.ID + ".json";
+            //Console.WriteLine(path);
+            //File.WriteAllText(path, json);
             
-            var web = new WebClient();
-            web.Headers.Add("Content-Type", "application/json");
+            //var web = new WebClient();
+            //web.Headers.Add("Content-Type", "application/json");
             //web.UploadString("http://localhost:11794/upload", json);
             //web.UploadString("https://logs.raidloot.com/upload", json);
             // write to realtime database
             //web.UploadString("https://eqlogdb.firebaseio.com/fights.json", json);
             // write to cloud firestore (not working)
             //web.UploadString("https://firestore.googleapis.com/v1/projects/eqlogdb/databases/(default)/documents/fights", json);
-            web.Dispose();
+            //web.Dispose();
         }
 
-
+        static void DeleteJsonFiles()
+        {
+            var dir = new DirectoryInfo(JsonPath);
+            foreach (var f in dir.GetFiles("*.json"))
+                f.Delete();
+        }
     }
 }

@@ -81,6 +81,11 @@ namespace EQLogParser
         private static readonly Regex OwnDoTDamageRegex = new Regex(@"^(.+?) has taken (\d+) damage from your (.+?)\.(?:\s\(([^\(\)]+)\))?$", RegexOptions.Compiled);
         private static readonly Regex OtherDoTDamageRegex = new Regex(@"^(.+?) has taken (\d+) damage from (.+?) by (.+?)\.(?:\s\(([^\(\)]+)\))?$", RegexOptions.Compiled);
 
+        // doom spells and accidents (i don't think there is a 3rd party version of this)
+        // [Thu Jul 09 20:52:57 2020] You hit yourself for 4017 points of unresistable damage by Bone Crunch.
+        private static readonly Regex SelfDamageRegex = new Regex(@"^You hit yourself for (\d+) points .+? by (.+?)\.", RegexOptions.Compiled);
+
+
         public static LogHitEvent Parse(LogRawEvent e)
         {
             // this short-circuit exit is here strictly as an optmization 
@@ -96,6 +101,21 @@ namespace EQLogParser
             {
                 mod = ParseMod(m.Groups[1].Value);
             }
+
+            // rather than parsing self hits, we can use FixName to convert "yourself"
+            //m = SelfDamageRegex.Match(e.Text);
+            //if (m.Success)
+            //{
+            //    return new LogHitEvent()
+            //    {
+            //        Timestamp = e.Timestamp,
+            //        Source = e.FixName(m.Groups[1].Value),
+            //        Target = e.FixName(m.Groups[1].Value),
+            //        Amount = Int32.Parse(m.Groups[2].Value),
+            //        Spell = m.Groups[3].Value,
+            //        Type = "self"
+            //    };
+            //}
 
             m = MeleeHitRegex.Match(e.Text);
             if (m.Success)
@@ -169,7 +189,7 @@ namespace EQLogParser
                     Source = e.FixName(m.Groups[2].Value),
                     Target = e.FixName(m.Groups[1].Value),
                     Amount = Int32.Parse(m.Groups[3].Value),
-                    Type = "dmgshield"
+                    Type = "ds"
                 };
             }
 
@@ -187,6 +207,8 @@ namespace EQLogParser
                     Mod = mod
                 };
             }
+
+
 
             return null;
         }

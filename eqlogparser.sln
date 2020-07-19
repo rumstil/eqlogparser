@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28010.2048
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30225.117
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EQLogParser", "parser\core\EQLogParser.csproj", "{1C573E77-8416-4D48-BB44-FDE91836969D}"
 EndProject
@@ -13,6 +13,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EQLogParserTests", "parser\tests\EQLogParserTests.csproj", "{40803A5B-7F5B-40E4-8D8C-3B9711BF1A1F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebApp", "server\WebApp.csproj", "{56BAAE45-6417-4900-A635-9ECD0E4A3A20}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogSync", "LogSync\LogSync.csproj", "{FAD6C236-CFF2-4D89-BEBB-8DF1484E66D5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -36,6 +38,10 @@ Global
 		{56BAAE45-6417-4900-A635-9ECD0E4A3A20}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{56BAAE45-6417-4900-A635-9ECD0E4A3A20}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{56BAAE45-6417-4900-A635-9ECD0E4A3A20}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FAD6C236-CFF2-4D89-BEBB-8DF1484E66D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FAD6C236-CFF2-4D89-BEBB-8DF1484E66D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FAD6C236-CFF2-4D89-BEBB-8DF1484E66D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FAD6C236-CFF2-4D89-BEBB-8DF1484E66D5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

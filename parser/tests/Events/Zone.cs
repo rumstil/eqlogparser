@@ -31,6 +31,9 @@ namespace EQLogParserTests.Event
 
             zone = Parse("You have entered an Arena (PvP) area.");
             Assert.Null(zone);
+
+            zone = Parse("You have entered an area where Bind Affinity is allowed.");
+            Assert.Null(zone);
         }
     }
 }

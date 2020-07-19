@@ -9,6 +9,18 @@ spell will now function as a link to the spell description.
 Ex: 'You resist the Skunk Spray spell!' is now 'You resist a large skunk's Skunk Spray!'
 Ex: 'Your target resisted the Fireball spell.' is now 'A large skunk resisted your Fireball!'
 
+2019-2-20
+- Added a (Riposte) tag to hits and misses that occurred due to a riposte.
+
+2019-4-17
+- Riposte messages are now reported before their resulting hit damage.
+
+2019-9-18
+- The hit/miss check in melee combat now occurs before riposte and other defensive checks. (test wording)
+- You can no longer block, parry, dodge, or riposte an attack that would have missed. (live wording)
+
+
+
 */
 
 namespace EQLogParser

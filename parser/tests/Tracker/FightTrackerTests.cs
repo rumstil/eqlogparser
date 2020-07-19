@@ -11,9 +11,23 @@ namespace EQLogParserTests.Tracker
 {
     public class FightTrackerTests
     {
+        /// <summary>
+        /// Most of the tests here use a LogWhoEvent tag a player. This tests what
+        /// happens when that isn't done.
+        /// </summary>
+        [Fact]
+        public void Fight_Ignored_If_Foe_Unknown()
+        {
+            var tracker = new FightTracker();
+            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Type = "slash", Amount = 200 });
+
+            // since the tracker doesn't know if Player1 or Mob1 is the foe it 
+            // can't track the fight yet
+            Assert.Empty(tracker.ActiveFights);
+        }
 
         [Fact]
-        public void Timestamps()
+        public void Fight_Has_Correct_Timestamps()
         {
             var tracker = new FightTracker();
             tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
@@ -65,14 +79,14 @@ namespace EQLogParserTests.Tracker
         }
 
         [Fact]
-        public void Two_Fights_Back_to_Back()
+        public void Two_Fights_Back_to_Back_With_Same_Mob_Name()
         {
             var tracker = new FightTracker();
             tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
 
             tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Type = "slash", Amount = 100 });
             Assert.Single(tracker.ActiveFights);
-            
+
             tracker.HandleEvent(new LogDeathEvent { Timestamp = DateTime.Now, Name = "Mob1" });
             Assert.Empty(tracker.ActiveFights);
 
@@ -84,7 +98,7 @@ namespace EQLogParserTests.Tracker
         [Fact]
         public void Death_of_Mob()
         {
-            FightSummary f = null;
+            FightInfo f = null;
             var tracker = new FightTracker();
             tracker.OnFightFinished += (args) => f = args;
 
@@ -112,7 +126,7 @@ namespace EQLogParserTests.Tracker
         [Fact]
         public void Timeout()
         {
-            FightSummary f = null;
+            FightInfo f = null;
             var tracker = new FightTracker();
             tracker.OnFightFinished += (args) => f = args;
 
@@ -165,14 +179,118 @@ namespace EQLogParserTests.Tracker
             tracker.HandleEvent(new LogHealEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Player1", Amount = 201 });
 
             var f = tracker.ActiveFights[0];
-            
+
             Assert.Equal(201, f.Participants[0].InboundHealSum);
             Assert.Equal(201, f.Participants[0].OutboundHealSum);
         }
 
+        [Fact]
+        public void Ignore_Self_Hits()
+        {
+            var tracker = new FightTracker();
+
+            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Player1", Amount = 100 });
+            Assert.Empty(tracker.ActiveFights);
+        }
 
 
+        [Fact]
+        public void Check_DPS_Intervals()
+        {
+            var tracker = new FightTracker();
+            tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
 
+
+            var start = DateTime.Today.AddHours(3).AddSeconds(34);
+            var time = start;
+            tracker.HandleEvent(new LogHitEvent { Timestamp = time, Source = "Player1", Target = "Mob", Amount = 100 });
+
+            time = start.AddSeconds(1);
+            tracker.HandleEvent(new LogHitEvent { Timestamp = time, Source = "Player1", Target = "Mob", Amount = 50 });
+
+            time = start.AddSeconds(3);
+            tracker.HandleEvent(new LogHitEvent { Timestamp = time, Source = "Player1", Target = "Mob", Amount = 21 });
+
+            time = start.AddSeconds(4);
+            tracker.HandleEvent(new LogHitEvent { Timestamp = time, Source = "Player2", Target = "Mob", Amount = 35 });
+
+            var f = tracker.ActiveFights[0];
+            f.Finish();
+
+            // the whole fight is only 4 seconds long so far but since the hits 
+            // cross a 6 second wall clock interval we should split the hits into
+            // two intervals
+            Assert.Equal(4, f.Participants[0].Duration);
+            Assert.Equal(150, f.Participants[0].DPS[0]);
+            Assert.Equal(21, f.Participants[0].DPS[1]);
+
+            Assert.Equal(1, f.Participants[1].Duration);
+            Assert.Equal(0, f.Participants[1].DPS[0]);
+            Assert.Equal(35, f.Participants[1].DPS[1]);
+        }
+
+        [Fact]
+        public void Merge_DPS_Intervals_With_Gap()
+        {
+            var a = new FightInfo();
+            a.StartedOn = DateTime.Parse("11:01:05");
+            a.UpdatedOn = a.StartedOn.AddSeconds(14);
+            a.Target = new FightParticipant() { Name = "Mob1" };
+            a.Participants.Add(new FightParticipant() { Name = "Player1", DPS = new List<int>{ 0, 3, 0 } });
+            a.Participants.Add(new FightParticipant() { Name = "Player2", DPS = new List<int> { 2, 6, 3 } });
+
+            // second fight starts with a gap after the first fight
+            var b = new FightInfo();
+            b.Target = new FightParticipant() { Name = "Mob2" };
+            b.StartedOn = a.StartedOn.AddMinutes(1);
+            b.UpdatedOn = b.StartedOn.AddSeconds(12);
+            b.Participants.Add(new FightParticipant() { Name = "Player1", DPS = new List<int> { 7, 23 } });
+
+            // act
+            var total = new MergedFightInfo();
+            total.Merge(a);
+            total.Merge(b);
+            total.Finish();
+
+            var p = total.Participants[0];
+            Assert.Equal(0, p.DPS[0]); // :00 to :05
+            Assert.Equal(3, p.DPS[1]); // :06 to :11
+            Assert.Equal(0, p.DPS[2]); // :12 to :17
+            Assert.Equal(0, p.DPS[3]); // :18 to :23 (fight is 14 seconds long even though there isn't a tick for that)
+            // then that gap to the second fight should be ignored and we continue from interval[4]
+            Assert.Equal(7, p.DPS[4]); // :00 to :05 (one minute after first fight)
+            Assert.Equal(23, p.DPS[5]); // :06 to :11
+        }
+
+        [Fact]
+        public void Merge_DPS_Intervals_With_Overlap()
+        {
+            var a = new FightInfo();
+            a.StartedOn = DateTime.Parse("11:01:05");
+            a.UpdatedOn = a.StartedOn.AddSeconds(14);
+            a.Target = new FightParticipant() { Name = "Mob1" };
+            a.Participants.Add(new FightParticipant() { Name = "Player1", DPS = new List<int> { 0, 3, 0 } });
+            a.Participants.Add(new FightParticipant() { Name = "Player2", DPS = new List<int> { 2, 6, 3 } });
+
+            // second fight starts before the first is finished
+            var b = new FightInfo();
+            b.Target = new FightParticipant() { Name = "Mob2" };
+            b.StartedOn = a.StartedOn.AddSeconds(2);
+            b.UpdatedOn = b.StartedOn.AddSeconds(12);
+            b.Participants.Add(new FightParticipant() { Name = "Player1", DPS = new List<int> { 7, 23 } });
+
+            // act
+            var total = new MergedFightInfo();
+            total.Merge(a);
+            total.Merge(b);
+            total.Finish();
+
+            var p = total.Participants[0];
+            Assert.Equal(0, p.DPS[0]); // :00 to :05
+            Assert.Equal(10, p.DPS[1]); // :06 to :11
+            Assert.Equal(23, p.DPS[2]); // :12 to :17
+        }
 
     }
+
 }

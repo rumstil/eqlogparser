@@ -12,16 +12,27 @@ namespace EQLogParserTests.Tracker
     public class CharTrackerTests
     {
         [Fact]
-        public void GetFoe()
+        public void Player_Friend()
         {
             var chars = new CharTracker();
+            // "/who" should always tag players
             chars.HandleEvent(new LogWhoEvent() { Name = "Rumstil" });
             Assert.Equal("a mosquito", chars.GetFoe("Rumstil", "a mosquito"));
             Assert.Equal("a mosquito", chars.GetFoe("a mosquito", "Rumstil"));
         }
 
         [Fact]
-        public void GetType_Pet_Same_As_Owner()
+        public void Healer_May_Be_Foe()
+        {
+            // mobs can be healers too, a heal shouldn't flag the source as a friend (unless the target is a player)
+            var chars = new CharTracker();
+            chars.HandleEvent(new LogHealEvent() { Source = "froglok jin shaman", Target = "froglok dar knight", Amount = 3, Spell = "Doomscale Focusing" });
+            Assert.Equal(CharType.Unknown, chars.GetType("froglok jin shaman"));
+            Assert.Equal(CharType.Unknown, chars.GetType("froglok dar knight"));
+        }
+
+        [Fact]
+        public void Pet_Owner_Status_Propogates_To_Pet()
         {
             var chars = new CharTracker();
 

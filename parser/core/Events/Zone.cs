@@ -29,6 +29,7 @@ namespace EQLogParser
                 var zone = m.Groups[1].Value;
                 if (zone == "an area where levitation effects do not function" ||
                     zone == "an Arena (PvP) area" ||
+                    zone == "an area where Bind Affinity is allowed" ||
                     zone == "the Drunken Monkey stance adequately")
                     return null;
 

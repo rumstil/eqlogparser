@@ -22,6 +22,7 @@ namespace EQLogParser
         public int ClassesCount;
         public string LandSelf;
         public string LandOthers;
+        public string WearsOff;
 
         public string ClassName => ((ClassesMaskShort)ClassesMask).ToString().Replace('_', ' ');
 
@@ -32,7 +33,7 @@ namespace EQLogParser
     }
 
     /// <summary>
-    /// A rudimentary spell data parser that loads just enough information to help with log parsing.
+    /// A minimalist spell data parser that loads just enough information to help with log parsing.
     /// </summary>
     public class SpellParser
     {
@@ -41,6 +42,7 @@ namespace EQLogParser
         //private IReadOnlyDictionary<int, SpellInfo> LookupById = new Dictionary<int, SpellInfo>();
         private IReadOnlyDictionary<string, SpellInfo> LookupByName = new Dictionary<string, SpellInfo>();
 
+        public bool IsReady => LookupByName.Count > 0;
 
         /// <summary>
         /// Load spell data.
@@ -147,6 +149,7 @@ namespace EQLogParser
                     {
                         s.LandSelf = fields[3];
                         s.LandOthers = fields[4];
+                        s.WearsOff = fields[5];
                     }
                 }
             }
@@ -167,7 +170,7 @@ namespace EQLogParser
 
         /// <summary>
         /// Get the class of a character based on a spell they cast.
-        /// TODO: Are any proc buffs that can be cast on other players ever tagged with a class?
+        /// TODO: Are there any proc buffs that are tagged with a class? 
         /// </summary>
         public string GetClass(string name)
         {

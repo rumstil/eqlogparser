@@ -1,6 +1,16 @@
 ﻿using EQLogParser;
 using Xunit;
 
+/*
+At some point the heal description was split to a separate line.
+e.g. 
+Lenantik is bathed in a devout light. Uteusher healed Lenantik for 9875 hit points by Devout Light.
+is now
+Lenantik is bathed in a devout light. 
+Uteusher healed Lenantik for 9875 hit points by Devout Light.
+
+*/
+
 namespace EQLogParserTests.Event
 {
     public class LogHealEventTests
@@ -14,6 +24,18 @@ namespace EQLogParserTests.Event
 
         [Fact]
         public void Parse_Instant()
+        {
+            var heal = Parse("Uteusher healed Lenantik for 9875 hit points by Devout Light.");
+            Assert.NotNull(heal);
+            Assert.Equal("Uteusher", heal.Source);
+            Assert.Equal("Lenantik", heal.Target);
+            Assert.Equal(9875, heal.Amount);
+            Assert.Equal(9875, heal.GrossAmount);
+            Assert.Equal("Devout Light", heal.Spell);
+        }
+
+        [Fact]
+        public void Parse_Obsolete_Instant()
         {
             var heal = Parse("Lenantik is bathed in a devout light. Uteusher healed Lenantik for 9875 hit points by Devout Light.");
             Assert.NotNull(heal);
@@ -38,7 +60,7 @@ namespace EQLogParserTests.Event
         [Fact]
         public void Parse_Instant_No_Spell_Name()
         {
-            // lifetap weapons work like this
+            // lifetap weapons don't list a spell name
             // bard regen too?
             var heal = Parse("Blurr healed itself for 12 (617) hit points.");                              
             Assert.NotNull(heal);
@@ -50,7 +72,7 @@ namespace EQLogParserTests.Event
         }
 
         [Fact]
-        public void Parse_Instant_Gross()
+        public void Parse_Instant_Partial()
         {
             var heal = Parse("Lenantik is bathed in a devout light. Uteusher healed Lenantik for 2153 (9875) hit points by Devout Light.");
             Assert.NotNull(heal);
@@ -75,7 +97,21 @@ namespace EQLogParserTests.Event
         }
 
         [Fact]
-        public void Parse_Instant_Special()
+        public void Parse_Instant_Mod()
+        {
+            // capture critical
+            var heal = Parse("You healed Uteusher for 361 hit points by HandOfHolyVengeanceVRecourse. (Critical)");
+            Assert.NotNull(heal);
+            Assert.Equal(PLAYER, heal.Source);
+            Assert.Equal("Uteusher", heal.Target);
+            Assert.Equal(361, heal.Amount);
+            Assert.Equal(361, heal.GrossAmount);
+            Assert.Equal("HandOfHolyVengeanceVRecourse", heal.Spell);
+            Assert.Equal(LogEventMod.Critical, heal.Mod);
+        }
+
+        [Fact]
+        public void Parse_Obsolete_Instant_Mod()
         {
             // capture critical
             var heal = Parse("A holy light surrounds you. You healed Uteusher for 361 hit points by HandOfHolyVengeanceVRecourse. (Critical)");
@@ -88,8 +124,21 @@ namespace EQLogParserTests.Event
             Assert.Equal(LogEventMod.Critical, heal.Mod);
         }
 
+
         [Fact]
         public void Parse_Instant_Himself()
+        {
+            // convert himself/herself/itself
+            var heal = Parse("Brugian healed himself for 44363 hit points by Promised Remedy Trigger II.");
+            Assert.NotNull(heal);
+            Assert.Equal("Brugian", heal.Source);
+            Assert.Equal("Brugian", heal.Target);
+            Assert.Equal(44363, heal.Amount);
+            Assert.Equal("Promised Remedy Trigger II", heal.Spell);
+        }
+
+        [Fact]
+        public void Parse_Obsolete_Instant_Himself()
         {
             // convert himself/herself/itself
             var heal = Parse("Brugian is infused by divine healing. Brugian healed himself for 44363 hit points by Promised Remedy Trigger II.");
@@ -101,7 +150,7 @@ namespace EQLogParserTests.Event
         }
 
         [Fact]
-        public void Parse_Instant_NonGreedy_Capture()
+        public void Parse_Obsolete_Instant_NonGreedy_Capture()
         {
             // could be incorrectly parsed as source="is" target="by life-giving energy. Brugian healed Xebn"
             var heal = Parse("Xebn is healed by life-giving energy. Brugian healed Xebn for 84056 hit points by Furial Renewal.");

@@ -6,7 +6,7 @@ using Xunit;
 
 namespace EQLogParserTests.Tracker
 {
-    public class FightDataTests
+    public class FightTrackerDataTests
     {
         const string MOB1 = "a skeleton";
         const string PLAYER1 = "Fred";
@@ -14,7 +14,7 @@ namespace EQLogParserTests.Tracker
         [Fact]
         public void Flags_Riposte()
         {
-            var fs = new FightSummary(MOB1);
+            var fs = new FightInfo(MOB1);
 
             fs.AddHit(new LogHitEvent { Source = PLAYER1, Target = MOB1, Mod = LogEventMod.Riposte | LogEventMod.Strikethrough | LogEventMod.Lucky, Amount = 1 });
 
@@ -25,7 +25,7 @@ namespace EQLogParserTests.Tracker
         [Fact]
         public void Flags_Strikethrough()
         {
-            var fs = new FightSummary(MOB1);
+            var fs = new FightInfo(MOB1);
 
             fs.AddHit(new LogHitEvent { Source = PLAYER1, Target = MOB1, Mod = LogEventMod.Riposte | LogEventMod.Strikethrough | LogEventMod.Lucky, Amount = 1 });
 
@@ -36,7 +36,7 @@ namespace EQLogParserTests.Tracker
         [Fact]
         public void Flags_Critical()
         {
-            var fs = new FightSummary(MOB1);
+            var fs = new FightInfo(MOB1);
 
             fs.AddHit(new LogHitEvent { Source = PLAYER1, Target = MOB1, Type = "slash", Mod = LogEventMod.Strikethrough | LogEventMod.Lucky, Amount = 1 });
             fs.AddHit(new LogHitEvent { Source = PLAYER1, Target = MOB1, Type = "slash", Mod = LogEventMod.Critical | LogEventMod.Strikethrough | LogEventMod.Lucky, Amount = 3 });

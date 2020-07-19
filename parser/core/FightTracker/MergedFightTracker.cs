@@ -4,14 +4,14 @@ using System.Text;
 
 namespace EQLogParser
 {
-    //public delegate void IntervalTrackerEvent(Fight args);
+    //public delegate void ConsolidatedTrackerEvent(Fight args);
 
 
     /// <summary>
-    /// Tracks various combat events and assembles them into time interval summaries.
-    /// i.e. all mobs fought in the time interval are assembled into a single fight summary.
+    /// Tracks combat events for a fixed duration and assembles them into a single fight.
+    /// This is experimental and may not work properly.
     /// </summary>
-    public class IntervalTracker
+    public class MergedFightTracker
     {
         const string NAME = "Target";
 
@@ -20,12 +20,12 @@ namespace EQLogParser
         private string Zone = null;
         //private string Party = null;
         private DateTime Timestamp;
-        private FightSummary Fight;
+        private FightInfo Fight;
 
         public event FightTrackerEvent OnFightStarted;
         public event FightTrackerEvent OnFightFinished;
 
-        public IntervalTracker()
+        public MergedFightTracker()
         {
         }
 
@@ -48,16 +48,15 @@ namespace EQLogParser
                     Fight.Status = FightStatus.Timeout;
                     Fight.Finish();
 
-                    if (OnFightFinished != null)
-                        OnFightFinished(Fight);
+                    OnFightFinished?.Invoke(Fight);
                 }
-                Fight = new FightSummary();
-                Fight.Id = Guid.NewGuid().ToString();
-                Fight.Target = new FightParticipant(NAME);
+                Fight = new MergedFightInfo();
+                Fight.ID = Guid.NewGuid().ToString();
+                Fight.Target = new FightParticipant() { Name = NAME };
                 Fight.Name = NAME;
+                Fight.MobCount = 1;
                 Fight.StartedOn = Timestamp;
-                if (OnFightStarted != null)
-                    OnFightStarted(Fight);
+                OnFightStarted?.Invoke(Fight);
             }
 
             Fight.UpdatedOn = Timestamp;

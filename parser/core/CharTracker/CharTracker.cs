@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EQLogParser.Events;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,7 +19,7 @@ namespace EQLogParser
         public string Class;
         public int Level;
         public string Owner;
-        public bool Player;
+        public bool IsPlayer;
         public DateTime? PlayerAggro; // last time a player hit the mob
         public CharType Type;
 
@@ -29,7 +30,7 @@ namespace EQLogParser
     }
 
     /// <summary>
-    /// Tracks PC, NPC, merc, and pets activity to determine who is a friend/foe and what class they are.
+    /// Tracks PC, NPC, merc, and pet activity to determine who is a friend/foe and what class they are.
     /// Players are always considered friends. Obviously this won't work on a PvP server.
     /// NPCs are always considered foes.
     /// </summary>
@@ -53,11 +54,18 @@ namespace EQLogParser
 
         public void HandleEvent(LogEvent e)
         {
+            if (e is LogOpenEvent open)
+            {
+                var c = Add(open.Player);
+                c.IsPlayer = true;
+                c.Type = CharType.Friend;
+            }
+
             if (e is LogWhoEvent who)
             {
                 // who command only shows players
                 var c = Add(who.Name);
-                c.Player = true;
+                c.IsPlayer = true;
                 c.Type = CharType.Friend;
                 if (who.Level > 0)
                     c.Level = who.Level;
@@ -79,76 +87,80 @@ namespace EQLogParser
             if (e is LogPartyEvent party)
             {
                 var c = Add(party.Name);
-                c.Player = true;
+                c.IsPlayer = true;
                 c.Type = CharType.Friend;
             }
 
             if (e is LogChatEvent chat)
             {
+                var c = Add(chat.Source);
+
                 // NPCs use say, tell and shout
                 // pets use say, tell
                 // mercs use group chat (maybe all starting with "Casting"?)
                 if (chat.Channel != "tell" && chat.Channel != "shout" && chat.Channel != "say")
                 {
-                    var c = Add(chat.Source);
-                    c.Player = true;
+                    c.IsPlayer = true;
                     c.Type = CharType.Friend;
                 }
                 else if (IsPetName(chat.Source))
                 {
-                    Add(chat.Source).Type = CharType.Friend;
+                    c.Type = CharType.Friend;
                 }
 
                 var m = PetOwnerRegex.Match(chat.Message);
                 if (m.Success)
                 {
-                    var c = Add(chat.Source);
                     c.Owner = m.Groups[1].Value;
                     c.Type = CharType.Friend; // can you /pet leader a NPC pet?
-                    c = Add(c.Owner);
-                    c.Type = CharType.Friend;
-                    c.Player = true;
+                    var owner = Add(c.Owner);
+                    owner.Type = CharType.Friend;
+                    owner.IsPlayer = true;
                 }
 
                 m = PetTellOwnerRegex.Match(chat.Message);
                 if (m.Success)
                 {
-                    var c = Add(chat.Source);
                     c.Type = CharType.Friend;
                 }
             }
 
             if (e is LogHealEvent heal)
             {
-                // is it safe tag targets as friends? some raids involve healing NPCs
-                var c = Add(heal.Target);
-                c.Type = CharType.Friend;
+                // mobs can heal mobs so we can't tag healers without more info
+                var target = Add(heal.Target);
 
                 // some heals are pet only spells
-                if (c.Owner == null && !c.Player && heal.Spell != null && heal.Source != null)
+                // however, they may have a recourse heal with the same name... e.g. Growl of the Jaguar
+                // todo: do any have a group heal/lifetap recourse with the same name?
+                if (target.Owner == null && !target.IsPlayer && heal.Spell != null && heal.Source != null && heal.Source != heal.Target)
                 {
                     var s = GetSpell(heal.Spell);
                     if (s != null && s.Target == (int)SpellTarget.Pet)
-                        c.Owner = heal.Source;
+                        target.Owner = heal.Source;
                 }
 
                 if (heal.Source != null)
                 {
-                    Add(heal.Source).Type = CharType.Friend;                    
+                    var source = Add(heal.Source);
+                    if (target.IsPlayer || target.Type == CharType.Friend)
+                        source.Type = CharType.Friend;
+                    else if (target.Type == CharType.Foe)
+                        source.Type = CharType.Foe;
                 }
             }
 
             if (e is LogLootEvent loot)
             {
                 var c = Add(loot.Char);
-                c.Player = true;
+                c.IsPlayer = true;
                 c.Type = CharType.Friend;
             }
 
             if (e is LogCastingEvent cast)
             {
                 var c = Add(cast.Source);
-                
+
                 if (c.Class == null && GetSpellClass != null)
                 {
                     var cls = GetSpellClass(cast.Spell);
@@ -165,7 +177,7 @@ namespace EQLogParser
             if (e is LogHitEvent hit)
             {
                 var c = Add(hit.Target);
-                if (c.Player)
+                if (c.IsPlayer)
                 {
                     c = Add(hit.Source);
                     c.PlayerAggro = hit.Timestamp;
@@ -186,7 +198,7 @@ namespace EQLogParser
             {
                 var c = Add(miss.Target);
 
-                if (c.Player)
+                if (c.IsPlayer)
                 {
                     c = Add(miss.Source);
                     c.PlayerAggro = miss.Timestamp;
@@ -197,13 +209,10 @@ namespace EQLogParser
             {
                 var c = Add(death.Name);
                 c.PlayerAggro = null;
-                if (!c.Player)
+                if (!c.IsPlayer)
                     c.Type = CharType.Unknown;
             }
 
-            //var test = Add("Saity");
-            //if (test.Class != null)
-            //    Console.WriteLine(e);
         }
 
         /// <summary>
@@ -244,7 +253,7 @@ namespace EQLogParser
         }
 
         /// <summary>
-        /// Add a character. Will perform a dupe check.
+        /// Add a player or NPC to the list of tracked entities. Will perform a dupe check.
         /// </summary>
         public CharInfo Add(string name)
         {
@@ -290,14 +299,14 @@ namespace EQLogParser
             {
                 // if they're both foes, one may be newly charmed and should be reverted
                 // if they're both friends, one may be a charm break and should be reverted
-                if ((!n1.Player && n2.Player) || (n1.PlayerAggro > n2.PlayerAggro) || (n1.PlayerAggro != null && n2.PlayerAggro == null))
+                if ((!n1.IsPlayer && n2.IsPlayer) || (n1.PlayerAggro > n2.PlayerAggro) || (n1.PlayerAggro != null && n2.PlayerAggro == null))
                 {
                     n1.Type = CharType.Foe;
                     n2.Type = CharType.Friend;
                     //Console.WriteLine("*** Pick {0} as foe", name1);
                     return name1;
                 }
-                else if ((n1.Player && !n2.Player) || (n2.PlayerAggro > n1.PlayerAggro) || (n1.PlayerAggro == null && n2.PlayerAggro != null))
+                else if ((n1.IsPlayer && !n2.IsPlayer) || (n2.PlayerAggro > n1.PlayerAggro) || (n1.PlayerAggro == null && n2.PlayerAggro != null))
                 {
                     n1.Type = CharType.Friend;
                     n2.Type = CharType.Foe;

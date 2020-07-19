@@ -13,6 +13,8 @@ namespace EQLogParser
     {
         public string Item;
         public string Char;
+        public string Source;
+        public int Qty;
 
         public override string ToString()
         {
@@ -21,18 +23,23 @@ namespace EQLogParser
 
         // [Tue Apr 26 20:17:58 2016] --Rumstil has looted a Alluring Flower.--
         // [Tue Apr 26 20:26:20 2016] --You have looted a Bixie Chitin Sword.--
-        private static readonly Regex ItemLootedRegex = new Regex(@"^--(\w+) \w+ looted an? ([^\.]+)\.--$", RegexOptions.Compiled);
+        // [Wed Apr 17 21:52:43 2019] --Rumstil has looted 2 Energy Core.--
+        // [Thu Dec 19 18:59:56 2019] --You have looted a Viable Chokidai Egg from a chokidai egg sac .--
+        private static readonly Regex ItemLootedRegex = new Regex(@"^--(\w+) \w+ looted (an?|\d+) ([^\.]+)(?:from ([^\.]+))?\s?\.--$", RegexOptions.Compiled | RegexOptions.RightToLeft);
 
         public static LogLootEvent Parse(LogRawEvent e)
         {
             var m = ItemLootedRegex.Match(e.Text);
+
             if (m.Success)
             {
                 return new LogLootEvent
                 {
                     Timestamp = e.Timestamp,
                     Char = e.FixName(m.Groups[1].Value),
-                    Item = m.Groups[2].Value
+                    Item = m.Groups[3].Value.Trim(),
+                    Source = e.FixName(m.Groups[4].Value.Replace("'s corpse", "")),
+                    Qty = System.Char.IsDigit(m.Groups[2].Value[0]) ? Int32.Parse(m.Groups[2].Value) : 1,
                 };
             }
 

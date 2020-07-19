@@ -1,35 +1,41 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Security;
 using System.Text;
+using System.Text.RegularExpressions;
+using EQLogParser.Events;
 
 
 namespace EQLogParser
 {
-    public delegate void FightTrackerEvent(FightSummary args);
+    public delegate void FightTrackerEvent(FightInfo args);
 
     /// <summary>
-    /// Tracks various combat events and assembles them into individual fight summaries.
+    /// Tracks combat events and assembles them into individual fight summaries.
     /// </summary>
     public class FightTracker
     {
         private CharTracker Chars = new CharTracker();
         private List<LogEvent> Events = new List<LogEvent>(1000);
-        //private string Player = null;
+        private string Server = null;
+        private string Player = null;
         private string Zone = null;
         private string Party = null;
         private DateTime Timestamp;
         private DateTime LastTimeoutCheck;
-        private LogHitEvent LastHit;
-        private FightSummary LastFight;
+        //private LogHitEvent LastHit;
+        private FightInfo LastFight; // the fight that the previous event was assigned to
 
-        public readonly List<FightSummary> ActiveFights = new List<FightSummary>();
+        public readonly List<FightInfo> ActiveFights = new List<FightInfo>();
 
         /// <summary>
         /// Finish a fight after this duration of no activity is detected.
         /// This should be as least as long as mez or root.
+        /// Changing my mind: this should be shorter than a mez/root because we don't want parked mobs to count as engaged and to have a fake duration.
         /// </summary>
-        public TimeSpan FightTimeout = TimeSpan.FromSeconds(90);
+        //public TimeSpan FightTimeout = TimeSpan.FromSeconds(90);
+        public TimeSpan FightTimeout = TimeSpan.FromSeconds(15);
 
         public event FightTrackerEvent OnFightStarted;
         public event FightTrackerEvent OnFightFinished;
@@ -44,7 +50,14 @@ namespace EQLogParser
 
             Timestamp = e.Timestamp;
 
-            // we only need keep enough events to backtrack on player death
+            // todo: log open should reset the tracker's state
+            if (e is LogOpenEvent open)
+            {
+                Player = open.Player;
+                Server = open.Server;
+            }
+
+            // keep enough events to backtrack on player death
             Events.Add(e);
             if (Events.Count >= 1000)
                 Events.RemoveRange(0, 500);
@@ -141,7 +154,7 @@ namespace EQLogParser
                 return;
 
             f.AddHit(hit);
-            LastHit = hit;
+            //LastHit = hit;
             LastFight = f;
         }
 
@@ -161,9 +174,44 @@ namespace EQLogParser
 
         private void TrackHeal(LogHealEvent heal)
         {
-            // attribute heal to most recent fight - this is probably the best compromise
+            // heals are complicated because they aren't easily attributable to a fight (especially if several fights are in progress)
+            // the best compromise is probably to attribute to the most recent active fight (at least for player cast heals)
+            // what if a cleric heals someone between fights? (ignore it for now)
+            // what about if A,B are fighting but C heals C or D? (check all active fights)
             if (LastFight != null && LastFight.Status == FightStatus.Active)
-                LastFight.AddHeal(heal);
+            {
+                for (int i = 0; i < LastFight.Participants.Count; i++)
+                    if (LastFight.Participants[i].Name == heal.Target || LastFight.Participants[i].Name == heal.Source)
+                    {
+                        LastFight.AddHeal(heal);
+                        return;
+                    }
+            }
+
+            foreach (var f in ActiveFights)
+            {
+                if (f == LastFight)
+                    continue;
+
+                //for (int i = 0; i < f.Participants.Count; i++)
+                for (int i = f.Participants.Count - 1; i >= 0; i--)
+                    if (f.Participants[i].Name == heal.Target || f.Participants[i].Name == heal.Source)
+                    {
+                        f.AddHeal(heal);
+                        return;
+                    }
+            }
+
+            // finally just attribute it to an active fight if it is cast by a friend
+            if (heal.Source != null && Chars.GetType(heal.Source) == CharType.Friend && ActiveFights.Count > 0)
+            {
+                var f = ActiveFights[^1];
+                f.AddHeal(heal);
+                return;
+            }
+
+            //if (LastFight == null || LastFight.Status != FightStatus.Active)
+            //    LastFight.AddHeal(heal);
         }
 
         private void TrackCasting(LogCastingEvent cast)
@@ -225,7 +273,7 @@ namespace EQLogParser
 
         private void TrackMisc(LogRawEvent raw)
         {
-            
+
 
         }
 
@@ -244,7 +292,7 @@ namespace EQLogParser
         }
 
         /// <summary>
-        /// Close active fights that have timed out.
+        /// Run a check to see if any fights have timed out.
         /// </summary>
         public void CheckFightTimeouts()
         {
@@ -280,6 +328,9 @@ namespace EQLogParser
             }
         }
 
+        /// <summary>
+        /// Force all active fights to time out.
+        /// </summary>
         public void ForceFightTimeouts()
         {
             var cohorts = ActiveFights.Count - 1;
@@ -308,7 +359,7 @@ namespace EQLogParser
         /// <summary>
         /// Finish an active fight. 
         /// </summary>
-        private void FinishFight(FightSummary f)
+        private void FinishFight(FightInfo f)
         {
             ActiveFights.Remove(f);
 
@@ -320,16 +371,18 @@ namespace EQLogParser
 
             f.Finish();
             f.Party = Party;
+            f.Player = Player;
+            f.Server = Server;
 
-            if (OnFightFinished != null)
-                OnFightFinished(f);
+            // after a fight is passed to this delegate it should never be modified (e.g. via the LastFight variable)
+            OnFightFinished?.Invoke(f);
         }
 
         /// <summary>
         /// Find the active fight involving the given foe name or create a new fight if it doesn't exist.
         /// This will return a null if it the name is a friend.
         /// </summary>
-        private FightSummary GetFight(string name)
+        private FightInfo GetFight(string name)
         {
             // fights are always "foe" focused so we need to return a null if the name is a friend
             var type = Chars.GetType(name);
@@ -349,11 +402,11 @@ namespace EQLogParser
             }
 
             // start a new fight
-            var f = new FightSummary();
-            f.Id = name.Replace(' ', '-') + "-" + Environment.TickCount.ToString();
+            var f = new FightInfo();
+            //f.Id = name.Replace(' ', '-') + "-" + Environment.TickCount.ToString();
             f.Zone = Zone;
             f.Name = name;
-            f.Target = new FightParticipant(f.Name);
+            f.Target = new FightParticipant() { Name = name };
             // todo: always start fights at multiple of 6s for better alignment of data when merging fights?
             f.StartedOn = f.UpdatedOn = Timestamp;
 

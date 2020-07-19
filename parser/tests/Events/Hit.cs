@@ -60,6 +60,18 @@ namespace EQLogParserTests.Event
         }
 
         [Fact]
+        public void Parse_Melee_Slay_Undead()
+        {
+            var hit = Parse("Pally slashes a wandering corpse for 216691 points of damage. (Slay Undead)");
+            Assert.NotNull(hit);
+            Assert.Equal("Pally", hit.Source);
+            Assert.Equal("A wandering corpse", hit.Target);
+            Assert.Equal(216691, hit.Amount);
+            Assert.Equal("slash", hit.Type);
+            Assert.Equal(LogEventMod.Slay_Undead | LogEventMod.Critical, hit.Mod);
+        }
+
+        [Fact]
         public void Parse_DD()
         {
             var hit = Parse("Fourier hit a tirun crusher for 4578 points of magic damage by Force of Magic VII.");
@@ -152,7 +164,7 @@ namespace EQLogParserTests.Event
             Assert.Equal(PLAYER, hit.Source);
             Assert.Equal("A kodiak bear", hit.Target);
             Assert.Equal(114, hit.Amount);
-            Assert.Equal("dmgshield", hit.Type);
+            Assert.Equal("ds", hit.Type);
         }
 
         [Fact]
@@ -163,7 +175,19 @@ namespace EQLogParserTests.Event
             Assert.Equal("Garantik", hit.Source);
             Assert.Equal("An Iron Legion admirer", hit.Target);
             Assert.Equal(144, hit.Amount);
-            Assert.Equal("dmgshield", hit.Type);
+            Assert.Equal("ds", hit.Type);
+        }
+
+        [Fact]
+        public void Parse_Self_Hit()
+        {
+            var hit = Parse("You hit yourself for 390 points of fire damage by Rain of Skyfire.");
+            Assert.NotNull(hit);
+            Assert.Equal(PLAYER, hit.Source);
+            Assert.Equal(PLAYER, hit.Target);
+            Assert.Equal(390, hit.Amount);
+            Assert.Equal("dd", hit.Type);
+            Assert.Equal("Rain of Skyfire", hit.Spell);
         }
 
     }

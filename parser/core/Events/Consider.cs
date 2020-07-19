@@ -22,10 +22,25 @@ namespace EQLogParser
             return String.Format("Consider: {0} ({1})", Name, Level);
         }
 
+        // http://www.zlizeq.com/Game_Mechanics-Faction_and_Consider
+        //... scowls at you, ready to attack
+        //... glares at you threateningly
+        //... glowers at you dubiously
+        //... looks your way apprehensively	
+        //... regards you indifferently	
+        //... judges you amiably	
+        //... kindly considers you	
+        //... looks upon you warmly	
+        //... regards you as an ally
+
         // [Fri Dec 28 16:33:01 2018] A grizzly bear glares at you threateningly -- looks kind of dangerous. (Lvl: 74)
         // [Fri Dec 28 16:23:01 2018] Herald of Druzzil Ro regards you indifferently -- what would you like your tombstone to say? (Lvl: 90)
-        // http://www.zlizeq.com/Game_Mechanics-Faction_and_Consider
-        private static readonly Regex ConRegex = new Regex(@"(.+)( - \<.+)? ((?:scowls|glares|glowers|regards|looks|judges|kindly|looks) .+?) -- (.+) \(Lvl: (\d+)\)$", RegexOptions.RightToLeft | RegexOptions.Compiled);
+        // [Fri Dec 28 16:23:01 2018] Cadcane the Unmourned - a rare creature - scowls at you, ready to attack -- what would you like your tombstone to say? (Lvl: 118)
+        // TODO: Is the level always shown or hidden sometimes?
+        private static readonly Regex ConRegex = new Regex(@"(.+)( -.+)? ((?:scowls|glares|glowers|regards|looks|judges|kindly) .+?) -- (.+) \(Lvl: (\d+)\)$", RegexOptions.RightToLeft | RegexOptions.Compiled);
+        
+        // [Fri Dec 28 16:23:01 2018] Roon - </c><c \"#E1B511\">a rare creature</c><c \"#00F0F0\"> - scowls at you, ready to attack -- looks kind of dangerous. (Lvl: 104)
+        private static readonly Regex ObsoleteConRegex = new Regex(@"(.+)( - \<.+)? ((?:scowls|glares|glowers|regards|looks|judges|kindly) .+?) -- (.+) \(Lvl: (\d+)\)$", RegexOptions.RightToLeft | RegexOptions.Compiled);
 
         public static LogConEvent Parse(LogRawEvent e)
         {

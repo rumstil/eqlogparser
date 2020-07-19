@@ -20,6 +20,7 @@ manifest.dat
 *.zip
 *.gz
 *.lnk
+/server
 /server/wwwroot/json
 /server-python
 /firebase

@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 namespace EQLogParser
 {
     /// <summary>
-    /// Generated when a player crafts an items.
+    /// Generated when a player crafts an item.
     /// </summary>
     public class LogCraftEvent : LogEvent
     {

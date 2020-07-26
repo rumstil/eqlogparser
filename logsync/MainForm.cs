@@ -21,6 +21,7 @@ namespace LogSync
         //private readonly SynchronizationContext syncContext;
         private CancellationTokenSource cancellationSource;
         private ConcurrentQueue<LogEvent> eventQueue;
+        private SpellParser spells;
         private FightTracker fightTracker;
         private List<FightInfo> fightList;
         private List<FightInfo> fightSearchList;
@@ -36,7 +37,8 @@ namespace LogSync
             SetDoubleBuffered(lvFights, true);
             config = new RegConfigAdapter();
             eventQueue = new ConcurrentQueue<LogEvent>();
-            fightTracker = new FightTracker();
+            spells = new SpellParser();
+            fightTracker = new FightTracker(spells);
             fightTracker.OnFightFinished += LogFight;
             fightList = new List<FightInfo>();
             fightStatus = new Dictionary<string, string>();
@@ -337,13 +339,13 @@ namespace LogSync
 
             // we don't know where to find the spell_us.txt file until we open a log file, we can then make a guess
             // spells should be one folder down from the log folder
-            if (!SpellParser.Default.IsReady)
+            if (!spells.IsReady)
             {
-                var spells = Path.GetDirectoryName(path) + @"\..\spells_us.txt";
-                if (File.Exists(spells))
+                var spellpath = Path.GetDirectoryName(path) + @"\..\spells_us.txt";
+                if (File.Exists(spellpath))
                 {
-                    LogInfo("Loading " + spells);
-                    SpellParser.Default.Load(spells);
+                    LogInfo("Loading " + spellpath);
+                    spells.Load(spellpath);
                 }
                 else
                 {

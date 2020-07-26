@@ -16,8 +16,8 @@ namespace EQLogParser
     /// </summary>
     public class FightTracker
     {
-        private CharTracker Chars = new CharTracker();
-        private List<LogEvent> Events = new List<LogEvent>(1000);
+        private readonly CharTracker Chars;
+        private readonly List<LogEvent> Events = new List<LogEvent>(1000);
         private string Server = null;
         private string Player = null;
         private string Zone = null;
@@ -32,7 +32,7 @@ namespace EQLogParser
         /// <summary>
         /// Finish a fight after this duration of no activity is detected.
         /// This should be as least as long as mez or root.
-        /// Changing my mind: this should be shorter than a mez/root because we don't want parked mobs to count as engaged and to have a fake duration.
+        /// Changing my mind: this should be shorter than a mez/root because we don't want parked mobs to count as engaged and to have an incorrect duration.
         /// </summary>
         //public TimeSpan FightTimeout = TimeSpan.FromSeconds(90);
         public TimeSpan FightTimeout = TimeSpan.FromSeconds(15);
@@ -40,8 +40,18 @@ namespace EQLogParser
         public event FightTrackerEvent OnFightStarted;
         public event FightTrackerEvent OnFightFinished;
 
+        /// <summary>
+        /// This constructor should only be used in unit tests.
+        /// Without access to spell information we won't be able to determine player classes.
+        /// </summary>
         public FightTracker()
         {
+            Chars = new CharTracker();
+        }
+
+        public FightTracker(ISpellLookup spells)
+        {
+            Chars = new CharTracker(spells);
         }
 
         public void HandleEvent(LogEvent e)
@@ -388,8 +398,6 @@ namespace EQLogParser
             var type = Chars.GetType(name);
             if (type == CharType.Friend)
                 return null;
-            //if (type == CharType.Foe && name.EndsWith("'s corpse"))
-            //    return null;
 
             // the fight list can get pretty long so we limit our check to the tail
             for (var i = ActiveFights.Count - 1; i >= 0 && i > ActiveFights.Count - 20; i--)

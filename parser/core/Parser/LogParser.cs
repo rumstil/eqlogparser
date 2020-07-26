@@ -108,12 +108,19 @@ namespace EQLogParser
             if (String.IsNullOrEmpty(text))
                 return null;
 
-            // first stage parser accepts a string and convert to a LogRawEvent
+            // convert a raw log message line to a LogRawEvent
             var raw = LogRawEvent.Parse(text);
+            raw.Player = Player;
+            return ParseEvent(raw);
+        }
+
+        /// <summary>
+        /// Try to convert a LogRawEvent to a more specific type of event.
+        /// </summary>
+        private LogEvent ParseEvent(LogRawEvent raw)
+        {
             if (raw == null)
                 return null;
-
-            raw.Player = Player ?? "Unknown";
 
             // ignore if timestamp out of range
             if (raw.Timestamp < MinDate || raw.Timestamp > MaxDate)
@@ -123,7 +130,6 @@ namespace EQLogParser
             if (Ignore.Contains(raw.Text, StringComparer.Ordinal))
                 return null;
 
-            // second stage parsers accept a LogRawEvent and convert to a LogEvent descendant
             // call each custom parser until one returns a non null result
             for (int i = 0; i < Parsers.Count; i++)
             {
@@ -131,7 +137,7 @@ namespace EQLogParser
                 if (result != null)
                 {
                     OnEvent?.Invoke(result);
-                    return result; 
+                    return result;
                 }
             }
 
@@ -141,12 +147,5 @@ namespace EQLogParser
             return raw;
         }
 
-        /// <summary>
-        /// Emit log owner as event to help ID player/mob names.
-        /// </summary>
-        //public void GetOwner()
-        //{
-        //    OnEvent(new LogWhoEvent() { Name = Player });
-        //}
     }
 }

@@ -4,8 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Net;
 using System.Text.Json;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,9 +17,6 @@ namespace logdump
 
     class Program
     {
-        static FightTracker fights;
-        //static IntervalTracker itracker;
-
         //static string LogPath = "";
         static string LogPath = "d:/games/everquest/logs/";
         //static string LogPath = Environment.GetEnvironmentVariable("EQLogPath");
@@ -35,7 +32,8 @@ namespace logdump
 
             var timer = Stopwatch.StartNew();
             Console.Error.WriteLine("Loading spells...");
-            SpellParser.Default.Load("d:/games/everquest/spells_us.txt");
+            var spells = new SpellParser();
+            spells.Load("d:/games/everquest/spells_us.txt");
             Console.Error.WriteLine("Spells loaded in {0}", timer.Elapsed);
             timer.Restart();
 
@@ -55,8 +53,7 @@ namespace logdump
             //parser.OnEvent += ShowLog;
 
             var completed = new List<FightInfo>();
-
-            fights = new FightTracker();
+            var fights = new FightTracker(spells);
             fights.OnFightStarted += f =>
             {
                 ShowFight(f);

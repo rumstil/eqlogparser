@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+
 
 namespace EQLogParser
 {
@@ -24,7 +24,7 @@ namespace EQLogParser
         public string LandOthers;
         public string WearsOff;
 
-        public string ClassName => ((ClassesMaskShort)ClassesMask).ToString().Replace('_', ' ');
+        public string ClassesNames => ((ClassesMaskShort)ClassesMask).ToString().Replace('_', ' ');
 
         public override string ToString()
         {
@@ -32,13 +32,16 @@ namespace EQLogParser
         }
     }
 
+    public interface ISpellLookup
+    {
+        SpellInfo GetSpell(string name);
+    }
+
     /// <summary>
     /// A minimalist spell data parser that loads just enough information to help with log parsing.
     /// </summary>
-    public class SpellParser
+    public class SpellParser : ISpellLookup
     {
-        public static SpellParser Default = new SpellParser();
-
         //private IReadOnlyDictionary<int, SpellInfo> LookupById = new Dictionary<int, SpellInfo>();
         private IReadOnlyDictionary<string, SpellInfo> LookupByName = new Dictionary<string, SpellInfo>();
 
@@ -165,18 +168,6 @@ namespace EQLogParser
         {
             if (LookupByName.TryGetValue(StripRank(name), out SpellInfo s))
                 return s;
-            return null;
-        }
-
-        /// <summary>
-        /// Get the class of a character based on a spell they cast.
-        /// TODO: Are there any proc buffs that are tagged with a class? 
-        /// </summary>
-        public string GetClass(string name)
-        {
-            var s = GetSpell(name);
-            if (s != null && s.ClassesCount == 1)
-                return s.ClassName;
             return null;
         }
 

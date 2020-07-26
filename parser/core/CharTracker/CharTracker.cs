@@ -1,9 +1,9 @@
-﻿using EQLogParser.Events;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using EQLogParser.Events;
 
 
 namespace EQLogParser
@@ -43,13 +43,15 @@ namespace EQLogParser
 
         private readonly Dictionary<string, CharInfo> CharsByName = new Dictionary<string, CharInfo>(); // StringComparer.InvariantCultureIgnoreCase);
 
-        private readonly Func<string, string> GetSpellClass;
-        private readonly Func<string, SpellInfo> GetSpell;
+        private readonly ISpellLookup Spells;
 
         public CharTracker()
         {
-            GetSpell = SpellParser.Default.GetSpell;
-            GetSpellClass = SpellParser.Default.GetClass;
+        }
+
+        public CharTracker(ISpellLookup spells)
+        {
+            Spells = spells;
         }
 
         public void HandleEvent(LogEvent e)
@@ -135,7 +137,7 @@ namespace EQLogParser
                 // todo: do any have a group heal/lifetap recourse with the same name?
                 if (target.Owner == null && !target.IsPlayer && heal.Spell != null && heal.Source != null && heal.Source != heal.Target)
                 {
-                    var s = GetSpell(heal.Spell);
+                    var s = Spells?.GetSpell(heal.Spell);
                     if (s != null && s.Target == (int)SpellTarget.Pet)
                         target.Owner = heal.Source;
                 }
@@ -161,17 +163,16 @@ namespace EQLogParser
             {
                 var c = Add(cast.Source);
 
-                if (c.Class == null && GetSpellClass != null)
+                if (c.Class == null)
                 {
-                    var cls = GetSpellClass(cast.Spell);
-                    if (cls != null)
+                    var spell = Spells?.GetSpell(cast.Spell);
+                    if (spell != null && spell.ClassesCount == 1)
                     {
-                        c.Class = cls;
+                        c.Class = spell.ClassesNames;
                         //Console.WriteLine("*** {0} ... {1} {2}", cast.Source, cast.Spell, cls);
                         //Console.ReadLine();
                     }
                 }
-
             }
 
             if (e is LogHitEvent hit)

@@ -27,6 +27,7 @@ namespace LogSync
         private List<FightInfo> fightSearchList;
         private Dictionary<string, string> fightStatus;
         private LootTracker lootTracker;
+        private CharTracker charTracker;
         private List<LootInfo> lootList;
         private Uploader uploader;
         private int ignoredCount;
@@ -45,6 +46,7 @@ namespace LogSync
             lootTracker = new LootTracker();
             lootTracker.OnLoot += LogLoot;
             lootList = new List<LootInfo>();
+            charTracker = new CharTracker();
             uploader = new Uploader(LogInfo);
             lvFights.LabelEdit = false; // until i figure something more user friendly out
         }
@@ -333,6 +335,9 @@ namespace LogSync
                 return;
             }
 
+            config.Write("filename", path);
+            LogInfo("Loading " + path);
+
             // always disable auto uploads when opening a file to avoid accidentally upload a lot of data
             chkAutoGroup.Checked = chkAutoGroup.Enabled = false;
             chkAutoRaid.Checked = chkAutoRaid.Enabled = false;
@@ -353,9 +358,6 @@ namespace LogSync
                 }
             }
 
-            config.Write("filename", path);
-            LogInfo("Loading " + path);
-
             // cancel previous log parsing task
             if (cancellationSource != null)
             {
@@ -369,6 +371,22 @@ namespace LogSync
                 fightSearchList = null;
                 lvFights.VirtualListSize = 0;
                 ignoredCount = 0;
+                charTracker = new CharTracker();
+            }
+
+            // read roster files to assist CharTracker
+            // this would probably be more useful if it ran in the background to wait on new roster files
+            var roster = new RosterParser();
+            var raids = new DirectoryInfo(Path.GetDirectoryName(path)).GetFiles(@"..\RaidRoster_*.txt").Where(x => x.CreationTime > DateTime.Today.AddDays(-7));
+            foreach (var f in raids)
+            {
+                //LogInfo("Loading " + f.FullName); // spammy
+                roster.Load(f.FullName);
+            }
+            foreach (var who in roster.Chars)
+            {
+                fightTracker.HandleEvent(who);
+                charTracker.HandleEvent(who);
             }
 
             // this progress event is a threadsafe way for the background task to update the GUI
@@ -385,6 +403,7 @@ namespace LogSync
                 {
                     fightTracker.HandleEvent(e);
                     lootTracker.HandleEvent(e);
+                    charTracker.HandleEvent(e);
                 }
             });
             cancellationSource = new CancellationTokenSource();

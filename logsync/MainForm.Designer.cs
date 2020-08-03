@@ -73,7 +73,7 @@
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripStatusLabel1,
             this.toolStripStatusLabel2});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 639);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 539);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.RenderMode = System.Windows.Forms.ToolStripRenderMode.Professional;
             this.statusStrip1.Size = new System.Drawing.Size(834, 22);
@@ -113,7 +113,7 @@
             this.lvFights.Location = new System.Drawing.Point(11, 82);
             this.lvFights.Margin = new System.Windows.Forms.Padding(3, 240, 3, 3);
             this.lvFights.Name = "lvFights";
-            this.lvFights.Size = new System.Drawing.Size(811, 362);
+            this.lvFights.Size = new System.Drawing.Size(811, 262);
             this.lvFights.TabIndex = 0;
             this.lvFights.UseCompatibleStateImageBehavior = false;
             this.lvFights.View = System.Windows.Forms.View.Details;
@@ -216,7 +216,7 @@
             this.panel2.Controls.Add(this.btnChannel);
             this.panel2.Controls.Add(this.textLog);
             this.panel2.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panel2.Location = new System.Drawing.Point(0, 449);
+            this.panel2.Location = new System.Drawing.Point(0, 349);
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(834, 190);
             this.panel2.TabIndex = 2;
@@ -337,14 +337,14 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(834, 661);
+            this.ClientSize = new System.Drawing.Size(834, 561);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.lvFights);
             this.Controls.Add(this.statusStrip1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.KeyPreview = true;
-            this.MinimumSize = new System.Drawing.Size(800, 600);
+            this.MinimumSize = new System.Drawing.Size(800, 500);
             this.Name = "MainForm";
             this.Text = "Form1";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);

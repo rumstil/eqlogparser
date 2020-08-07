@@ -13,7 +13,7 @@
         //public int HitMin;
         //public int HitMax;
 
-        public void Add(FightHit x)
+        public void Merge(FightHit x)
         {
             HitSum += x.HitSum;
             HitCount += x.HitCount;

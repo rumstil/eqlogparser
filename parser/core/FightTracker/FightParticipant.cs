@@ -59,11 +59,10 @@ namespace EQLogParser
         public List<FightMiss> DefenseTypes { get; set; } = new List<FightMiss>();
         // a list of who a healer healed
         public List<FightHeal> Heals { get; set; } = new List<FightHeal>();
-        // spells are stored with "hit:" or "heal:" prefix
-        // this is needed because some spells like lifetaps can do both
+        // a list of spells landing
         public List<FightSpell> Spells { get; set; } = new List<FightSpell>();
         // a list of buffs received
-        public List<FightBuff> Buffs { get; set; } = new List<FightBuff>();
+        //public List<FightBuff> Buffs { get; set; } = new List<FightBuff>();
 
         public override string ToString()
         {
@@ -216,7 +215,7 @@ namespace EQLogParser
             {
                 if (miss.Source == Name)
                 {
-                    var spell = AddSpell(miss.Spell, "miss");
+                    var spell = AddSpell(miss.Spell, "hit");
                     spell.ResistCount += 1;
                 }
                 // don't count spell resist/invul in defense stats
@@ -412,7 +411,7 @@ namespace EQLogParser
                     _at.Type = at.Type;
                     AttackTypes.Add(_at);
                 }
-                _at.Add(at);
+                _at.Merge(at);
             }
 
             foreach (var dt in p.DefenseTypes)
@@ -424,7 +423,7 @@ namespace EQLogParser
                     _dt.Type = dt.Type;
                     DefenseTypes.Add(_dt);
                 }
-                _dt.Add(dt);
+                _dt.Merge(dt);
             }
 
             foreach (var h in p.Heals)
@@ -436,7 +435,7 @@ namespace EQLogParser
                     _h.Target = h.Target;
                     Heals.Add(_h);
                 }
-                _h.Add(h);
+                _h.Merge(h);
             }
 
             foreach (var s in p.Spells)
@@ -450,7 +449,7 @@ namespace EQLogParser
                     //_s.Times =  // todo
                     Spells.Add(_s);
                 }
-                _s.Add(s);
+                _s.Merge(s);
 
             }
 

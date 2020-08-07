@@ -17,7 +17,7 @@ namespace EQLogParser
         public int Count { get; set; }
         public int Attempts { get; set; }
 
-        public void Add(FightMiss x)
+        public void Merge(FightMiss x)
         {
             Count += x.Count;
             Attempts += x.Attempts;

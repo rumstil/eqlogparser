@@ -213,7 +213,7 @@ namespace EQLogParser
         }
 
         /// <summary>
-        /// Finalize fight info when it is finished and pass it of to the OnFightFinished delegate.
+        /// Perform final summarization, sorting and clean-up once a fight has completed.
         /// </summary>
         public virtual void Finish()
         {
@@ -229,9 +229,13 @@ namespace EQLogParser
             TopHitSum = Participants.Max(x => x.OutboundHitSum);
             TopHealSum = Participants.Max(x => x.OutboundHealSum);
 
-            // sort by most damage to least damage
+            // sort participants by damage
             Participants = Participants.OrderByDescending(x => x.OutboundHitSum).ThenBy(x => x.Name).ToList();
-            foreach (var p in Participants)
+
+            // update participants (including target)
+            var everyone = Participants.ToList();
+            everyone.Add(Target);
+            foreach (var p in everyone)
             {
                 // calculate active duration
                 if (p.FirstAction.HasValue && p.LastAction.HasValue)
@@ -258,9 +262,6 @@ namespace EQLogParser
                 //while (p.TankDPS.Count < ticks)
                 //    p.TankDPS.Add(0);
 
-                // sort spells in alpha order
-                //p.Spells.Sort((a, b) => a.Name.CompareTo(b.Name));
-
                 // sort spells in damage/healing order
                 p.Spells = p.Spells.OrderBy(x => x.Type).ThenByDescending(x => x.HitSum).ThenBy(x => x.Name).ToList();
 
@@ -280,6 +281,13 @@ namespace EQLogParser
                     p.TankDPS.Clear();
             }
 
+            // update target
+            Target.Duration = Duration;
+
+            // don't track participants that were mostly idle
+            // these were probably added to the fight via casting events
+            Participants.RemoveAll(x => x.OutboundHealSum == 0 && x.OutboundHitSum == 0 && x.InboundHitSum == 0);
+
             // don't track replays on wipes because they take too much space
             // and by then things have gone downhill too much
             if (Deaths.Count > 10)
@@ -287,6 +295,9 @@ namespace EQLogParser
                 foreach (var d in Deaths)
                     d.Replay.Clear();
             }
+
+            // don't track pet deaths
+            Deaths.RemoveAll(x => AddParticipant(x.Name).PetOwner != null);
         }
 
         /// <summary>
@@ -353,7 +364,7 @@ namespace EQLogParser
                     var match = owner.AttackTypes.FirstOrDefault(x => x.Type == at.Type);
                     if (match != null)
                     {
-                        match.Add(at);
+                        match.Merge(at);
                     }
                     else
                     {
@@ -421,7 +432,7 @@ namespace EQLogParser
 
                 foreach (var s in p.Spells)
                 {
-                    writer.WriteLine("   cast {0} {1}: {2:N0}", s.Type, s.Name, s.HitSum);
+                    writer.WriteLine("   spell {0} {1}: {2:N0}", s.Type, s.Name, s.HitSum);
                 }
 
                 foreach (var h in p.Heals)

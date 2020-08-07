@@ -8,6 +8,9 @@ namespace EQLogParser
     /// </summary>
     public class FightSpell
     {
+        /// <summary>
+        /// Can be "hit", "heal", or "buff"
+        /// </summary>
         public string Type { get; set; }
         public string Name { get; set; }
         public int ResistCount { get; set; }
@@ -18,8 +21,6 @@ namespace EQLogParser
         public int CritCount { get; set; }
         public int CritSum { get; set; }
         public int TwinCount { get; set; }
-        //public int HealCount { get; set; }
-        //public int HealSum { get; set; }
         public int HealGross { get; set; }
 
         /// <summary>
@@ -27,7 +28,7 @@ namespace EQLogParser
         /// </summary>
         public List<int> Times = new List<int>();
 
-        public void Add(FightSpell x)
+        public void Merge(FightSpell x)
         {
             HitSum += x.HitSum;
             HitCount += x.HitCount;

@@ -367,7 +367,7 @@ namespace EQLogParser
         }
 
         /// <summary>
-        /// Finish an active fight. 
+        /// Finish an active fight and pass it off to the OnFightFinished delegate.
         /// </summary>
         private void FinishFight(FightInfo f)
         {

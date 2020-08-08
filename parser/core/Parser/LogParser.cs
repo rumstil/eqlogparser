@@ -122,6 +122,11 @@ namespace EQLogParser
             if (raw == null)
                 return null;
 
+            // GamParse exports the first line in single fight log files as 
+            // [Mon Jan 01 01:01:01 1990] 
+            if (raw.Timestamp.Year == 1990)
+                raw.Timestamp = MinDate;
+
             // ignore if timestamp out of range
             if (raw.Timestamp < MinDate || raw.Timestamp > MaxDate)
                 return null;

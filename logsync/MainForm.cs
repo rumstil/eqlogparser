@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -25,7 +26,7 @@ namespace LogSync
         private LogParser parser;
         private FightTracker fightTracker;
         private List<FightInfo> fightList;
-        private List<FightInfo> fightSearchList;
+        private List<FightInfo> fightListSearchResults;
         private Dictionary<string, string> fightStatus;
         private LootTracker lootTracker;
         private CharTracker charTracker;
@@ -100,6 +101,16 @@ namespace LogSync
                 for (var i = 0; i < lvFights.VirtualListSize; i++)
                     lvFights.SelectedIndices.Add(i);
                 lvFights.EndUpdate();
+            }
+
+            if (e.Control && e.KeyCode == Keys.C)
+            {
+                var f = GetSelectedListViewFights().FirstOrDefault();
+                if (f != null)
+                {
+                    var json = JsonSerializer.Serialize(f, new JsonSerializerOptions() { WriteIndented = true });
+                    Clipboard.SetText(json);
+                }
             }
         }
 
@@ -184,14 +195,14 @@ namespace LogSync
         {
             if (!String.IsNullOrWhiteSpace(textSearch.Text))
             {
-                fightSearchList = fightList
+                fightListSearchResults = fightList
                     .Where(x => x.Name.Contains(textSearch.Text, StringComparison.OrdinalIgnoreCase) || x.Zone.Contains(textSearch.Text, StringComparison.OrdinalIgnoreCase))
                     .ToList();
-                lvFights.VirtualListSize = fightSearchList.Count;
+                lvFights.VirtualListSize = fightListSearchResults.Count;
             }
             else
             {
-                fightSearchList = null;
+                fightListSearchResults = null;
                 lvFights.VirtualListSize = fightList.Count;
             }
             lvFights.SelectedIndices.Clear();
@@ -272,7 +283,7 @@ namespace LogSync
             //lnkSelectDate.Text = f.StartedOn.ToLocalTime().ToShortDateString();
             //lnkSelectZone.Text = f.Zone;
         }
-
+       
         private void lnkSelectDate_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             if (lvFights.SelectedItems.Count == 0)
@@ -305,8 +316,8 @@ namespace LogSync
 
         private FightInfo GetListViewFight(int index)
         {
-            if (fightSearchList != null)
-                return fightSearchList[index];
+            if (fightListSearchResults != null)
+                return fightListSearchResults[index];
 
             return fightList[index];
         }
@@ -370,7 +381,7 @@ namespace LogSync
                 fightTracker = new FightTracker();
                 fightTracker.OnFightFinished += LogFight;
                 fightList.Clear();
-                fightSearchList = null;
+                fightListSearchResults = null;
                 lvFights.VirtualListSize = 0;
                 ignoredCount = 0;
                 charTracker = new CharTracker();
@@ -441,11 +452,11 @@ namespace LogSync
 
             fightList.Insert(0, f);
 
-            if (fightSearchList != null)
+            if (fightListSearchResults != null)
             {
-                fightSearchList.Insert(0, f);
+                fightListSearchResults.Insert(0, f);
                 //fightSearchList.Add(f);
-                lvFights.VirtualListSize = fightSearchList.Count;
+                lvFights.VirtualListSize = fightListSearchResults.Count;
             }
             else
             {
@@ -501,6 +512,10 @@ namespace LogSync
         {
             if (!uploader.IsReady)
                 return;
+
+            //var hint = new StringWriter();
+            //f.DumpShort(hint);
+            //LogInfo(hint.ToString());
 
             fightStatus[f.ID] = "Uploading...";
             lvFights.Invalidate();

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.IO;
 using System.Linq;
 using System.Text.Json.Serialization;
@@ -375,14 +376,35 @@ namespace EQLogParser
                 foreach (var spell in pet.Spells.Where(x => x.Type == "hit"))
                 {
                     spell.Name = "pet:" + spell.Name;
-                    owner.Spells.Add(spell);
+                    var match = owner.Spells.FirstOrDefault(x => x.Type == spell.Type && x.Name == spell.Name);
+                    if (match != null)
+                    {
+                        match.Merge(spell);
+                    }
+                    else
+                    {
+                        owner.Spells.Add(spell);
+                    }
                 }
 
                 owner.OutboundHitCount += pet.OutboundHitCount;
                 owner.OutboundHitSum += pet.OutboundHitSum;
                 owner.OutboundMissCount += pet.OutboundMissCount;
 
-                // todo: owner.DPS should be modified
+                // merges DPS and HPS intervals (but not TankDPS)
+                for (var i = 0; i < pet.DPS.Count; i++)
+                {
+                    while (owner.DPS.Count <= i)
+                        owner.DPS.Add(0);
+                    owner.DPS[i] += pet.DPS[i];
+                }
+
+                for (var i = 0; i < pet.HPS.Count; i++)
+                {
+                    while (owner.HPS.Count <= i)
+                        owner.HPS.Add(0);
+                    owner.HPS[i] += pet.HPS[i];
+                }
 
                 // removing the pet has the downside of hiding pet tanking
                 //Participants.Remove(pet);
@@ -408,10 +430,7 @@ namespace EQLogParser
             TopHealSum = Participants.Max(x => x.OutboundHealSum);
         }
 
-        /// <summary>
-        /// For the greater glory of the command-line.
-        /// </summary>
-        public void Dump(TextWriter writer)
+        public void DumpAll(TextWriter writer)
         {
             writer.WriteLine();
             writer.WriteLine("=== {0} - {1:N0} HP - {2}s at {3}", Name, Target.InboundHitSum, Duration, StartedOn.ToLocalTime(), Zone);
@@ -442,8 +461,18 @@ namespace EQLogParser
 
 
             }
-            writer.WriteLine();
         }
+
+        public void DumpShort(TextWriter writer)
+        {
+            writer.WriteLine();
+            writer.WriteLine("=== {0} - {1:N0} HP - {2}s at {3}", Name, Target.InboundHitSum, Duration, StartedOn.ToLocalTime(), Zone);
+            foreach (var p in Participants.Take(5).Where(x => x.OutboundHitSum > 0))
+            {
+                writer.WriteLine(" {0,-10} --- {1:P0} {2,11:N0} / {3,6:N0} DPS", p, (float)p.OutboundHitSum / Target.InboundHitSum, p.OutboundHitSum, p.OutboundHitSum / Duration);
+            }
+        }
+
 
     }
 }

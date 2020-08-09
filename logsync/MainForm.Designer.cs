@@ -43,7 +43,6 @@
             this.columnHeader7 = new System.Windows.Forms.ColumnHeader();
             this.panel1 = new System.Windows.Forms.Panel();
             this.btnOpen = new System.Windows.Forms.Button();
-            this.label1 = new System.Windows.Forms.Label();
             this.textLogPath = new System.Windows.Forms.TextBox();
             this.panel2 = new System.Windows.Forms.Panel();
             this.textSearch = new System.Windows.Forms.TextBox();
@@ -110,10 +109,10 @@
             this.lvFights.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
             this.lvFights.HideSelection = false;
             this.lvFights.LabelEdit = true;
-            this.lvFights.Location = new System.Drawing.Point(11, 82);
+            this.lvFights.Location = new System.Drawing.Point(11, 55);
             this.lvFights.Margin = new System.Windows.Forms.Padding(3, 240, 3, 3);
             this.lvFights.Name = "lvFights";
-            this.lvFights.Size = new System.Drawing.Size(811, 262);
+            this.lvFights.Size = new System.Drawing.Size(811, 291);
             this.lvFights.TabIndex = 0;
             this.lvFights.UseCompatibleStateImageBehavior = false;
             this.lvFights.View = System.Windows.Forms.View.Details;
@@ -164,18 +163,17 @@
             // panel1
             // 
             this.panel1.Controls.Add(this.btnOpen);
-            this.panel1.Controls.Add(this.label1);
             this.panel1.Controls.Add(this.textLogPath);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Top;
             this.panel1.Location = new System.Drawing.Point(0, 0);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(834, 78);
+            this.panel1.Size = new System.Drawing.Size(834, 52);
             this.panel1.TabIndex = 0;
             // 
             // btnOpen
             // 
             this.btnOpen.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnOpen.Location = new System.Drawing.Point(703, 30);
+            this.btnOpen.Location = new System.Drawing.Point(703, 9);
             this.btnOpen.Name = "btnOpen";
             this.btnOpen.Size = new System.Drawing.Size(114, 33);
             this.btnOpen.TabIndex = 1;
@@ -183,21 +181,13 @@
             this.btnOpen.UseVisualStyleBackColor = true;
             this.btnOpen.Click += new System.EventHandler(this.btnOpen_Click);
             // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(11, 18);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(48, 15);
-            this.label1.TabIndex = 2;
-            this.label1.Text = "Log File";
-            // 
             // textLogPath
             // 
             this.textLogPath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.textLogPath.Location = new System.Drawing.Point(11, 36);
+            this.textLogPath.Location = new System.Drawing.Point(11, 15);
             this.textLogPath.Name = "textLogPath";
+            this.textLogPath.PlaceholderText = "Log File";
             this.textLogPath.ReadOnly = true;
             this.textLogPath.Size = new System.Drawing.Size(686, 23);
             this.textLogPath.TabIndex = 0;
@@ -375,7 +365,6 @@
         private System.Windows.Forms.ColumnHeader columnHeader5;
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.Button btnOpen;
-        private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox textLogPath;
         private System.Windows.Forms.ColumnHeader columnHeader7;
         private System.Windows.Forms.Panel panel2;

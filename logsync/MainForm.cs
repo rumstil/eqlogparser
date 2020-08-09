@@ -11,7 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using EQLogParser;
-
+using EQLogParser.Events;
 
 namespace LogSync
 {
@@ -20,8 +20,9 @@ namespace LogSync
         private readonly IConfigAdapter config;
         //private readonly SynchronizationContext syncContext;
         private CancellationTokenSource cancellationSource;
-        private ConcurrentQueue<LogEvent> eventQueue;
+        private ConcurrentQueue<LogEvent> parserEvents;
         private SpellParser spells;
+        private LogParser parser;
         private FightTracker fightTracker;
         private List<FightInfo> fightList;
         private List<FightInfo> fightSearchList;
@@ -37,8 +38,9 @@ namespace LogSync
             InitializeComponent();
             SetDoubleBuffered(lvFights, true);
             config = new RegConfigAdapter();
-            eventQueue = new ConcurrentQueue<LogEvent>();
+            parserEvents = new ConcurrentQueue<LogEvent>();
             spells = new SpellParser();
+            parser = new LogParser();
             fightTracker = new FightTracker(spells);
             fightTracker.OnFightFinished += LogFight;
             fightList = new List<FightInfo>();
@@ -389,7 +391,20 @@ namespace LogSync
                 charTracker.HandleEvent(who);
             }
 
-            // this progress event is a threadsafe way for the background task to update the GUI
+            // send init event
+            var open = LogParser.GetOpenEvent(path);
+            parser.Player = open.Player;
+            parserEvents.Enqueue(open);
+
+            // this event runs in a background thread and must be threadsafe
+            Action<string> enqueue = line =>
+            {
+                var e = parser.ParseLine(line);
+                if (e != null)
+                    parserEvents.Enqueue(e);
+            };
+
+            // this event runs in the main app thread
             // https://stackoverflow.com/questions/661561/how-do-i-update-the-gui-from-another-thread/18033198#18033198
             var progress = new Progress<LogReaderStatus>(p =>
             {
@@ -399,7 +414,7 @@ namespace LogSync
                 chkAutoGroup.Enabled = p.Percent > 0.9;
                 chkAutoRaid.Enabled = p.Percent > 0.9;
                 // the log reader reports events in batches so there may be a few events queued up
-                while (eventQueue.TryDequeue(out LogEvent e))
+                while (parserEvents.TryDequeue(out LogEvent e))
                 {
                     fightTracker.HandleEvent(e);
                     lootTracker.HandleEvent(e);
@@ -407,9 +422,8 @@ namespace LogSync
                 }
             });
             cancellationSource = new CancellationTokenSource();
-            var reader = new BackgroundLogReader(path, cancellationSource.Token, progress, eventQueue);
-            await Task.Factory.StartNew(reader.Run, TaskCreationOptions.LongRunning);
-            //await Task.Factory.StartNew(reader.Run, cancellationToken.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            var reader = new BackgroundLogReader(path, cancellationSource.Token, progress, enqueue);
+            await reader.Start();
             // this log message can occur after the form has been disposed
             //LogInfo("Closing " + path);
         }

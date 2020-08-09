@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using EQLogParser.Events;
+
 
 namespace EQLogParser
 {
@@ -93,6 +95,19 @@ namespace EQLogParser
                 return m.Groups[1].Value;
             }
             return null;
+        }
+
+        /// <summary>
+        /// Generate an open event based on info from the log file name.
+        /// </summary>
+        public static LogOpenEvent GetOpenEvent(string path)
+        {
+            return new LogOpenEvent() 
+            { 
+                Path = path,
+                Player = GetPlayerFromFileName(path), 
+                Server = GetServerFromFileName(path) 
+            };
         }
 
         /// <summary>

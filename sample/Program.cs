@@ -17,13 +17,9 @@ namespace logdump
 
     class Program
     {
-        //static string LogPath = "";
         static string LogPath = "d:/games/everquest/logs/";
-        //static string LogPath = Environment.GetEnvironmentVariable("EQLogPath");
 
-        //static string JsonPath = "c:/Proj/eq/logparser/server/wwwroot/json/";
         static string JsonPath = "c:/Proj/eq/raidloot2/web/wwwroot/fights/";
-        //static string JsonPath = Environment.GetEnvironmentVariable("EQLogJsonPath");
 
         static void Main(string[] args)
         {
@@ -38,18 +34,17 @@ namespace logdump
             timer.Restart();
 
             //var file = new LogReader("d:/games/everquest/logs/backup/sample.txt");
-            //var file = new LogReader(LogPath + "eqlog_Rumstil_erollisi.txt");
+            var file = new LogReader(LogPath + "eqlog_Rumstil_erollisi.txt");
             //var file = new LogReader(LogPath + "eqlog_Rumstil_test.txt");
-            var file = new LogReader(LogPath + "eqlog_Fourier_erollisi.txt");
-            //var file = new LogReader(LogPath + "eqlog_Fourier_test.txt");
+            //var file = new LogReader(LogPath + "eqlog_Fourier_erollisi.txt");
 
 
             var parser = new LogParser();
             parser.Player = LogParser.GetPlayerFromFileName(file.Path);
             //parser.MinDate = DateTime.MinValue;
             //parser.MinDate = DateTime.Today.AddDays(-1).ToUniversalTime();
-            parser.MinDate = DateTime.Parse("7/13/2020").ToUniversalTime();
-            parser.MaxDate = DateTime.Parse("7/13/2020 11:00 PM").ToUniversalTime();
+            //parser.MinDate = DateTime.Parse("7/13/2020").ToUniversalTime();
+            //parser.MaxDate = DateTime.Parse("7/13/2020 11:00 PM").ToUniversalTime();
             //parser.OnEvent += ShowLog;
 
             var completed = new List<FightInfo>();
@@ -80,18 +75,16 @@ namespace logdump
             fights.ForceFightTimeouts();
             Console.Error.WriteLine("Parse completed in {0}", timer.Elapsed);
 
-            var total = new MergedFightInfo();
-            //var temp = completed.OrderByDescending(x => x.UpdatedOn).Take(20);
-            var temp = completed;
-            foreach (var f in temp)
-                total.Merge(f);
-            total.Finish();
-            ShowFight(total);
+            //var total = new MergedFightInfo();
+            //var temp = completed;
+            //foreach (var f in temp)
+            //    total.Merge(f);
+            //total.Finish();
+            //ShowFight(total);
 
             //Console.Error.WriteLine("Fights: {0}", list.Count);
 
             // keep reading log file
-            //file.StartWatcherThread();
             //Console.Error.WriteLine("Watching log file... press any key to quit");
             //Console.ReadKey();
             //file.StopWatcherThread();
@@ -170,21 +163,10 @@ namespace logdump
 
         static void SaveFight(FightInfo f)
         { 
-            //var json = JsonConvert.SerializeObject(f, Formatting.Indented);
             //var json = JsonSerializer.Serialize(f);
             //var path = JsonPath + f.ID + ".json";
             //Console.WriteLine(path);
             //File.WriteAllText(path, json);
-            
-            //var web = new WebClient();
-            //web.Headers.Add("Content-Type", "application/json");
-            //web.UploadString("http://localhost:11794/upload", json);
-            //web.UploadString("https://logs.raidloot.com/upload", json);
-            // write to realtime database
-            //web.UploadString("https://eqlogdb.firebaseio.com/fights.json", json);
-            // write to cloud firestore (not working)
-            //web.UploadString("https://firestore.googleapis.com/v1/projects/eqlogdb/databases/(default)/documents/fights", json);
-            //web.Dispose();
         }
 
         static void DeleteJsonFiles()

@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using EQLogParser.Events;
 
 
 namespace EQLogParser
@@ -23,7 +20,7 @@ namespace EQLogParser
 
     /// <summary>
     /// A log reader that works in a background task.
-    /// Log events are passed to a ConcurrentQueue for handling by an event consumer.
+    /// Lines are passed to an delegate for further processing.
     /// </summary>
     public class BackgroundLogReader
     {
@@ -31,19 +28,17 @@ namespace EQLogParser
         private readonly IProgress<LogReaderStatus> progress;
         private readonly StreamReader reader;
         private readonly FileStream stream;
-        private readonly LogParser parser;
-        private readonly ConcurrentQueue<LogEvent> events;
+        private readonly Action<string> enqueue;
 
-        public BackgroundLogReader(string path, CancellationToken ct, IProgress<LogReaderStatus> progress, ConcurrentQueue<LogEvent> events)
+        /// <summary>
+        /// Init a new instance of the background log reader.
+        /// </summary>
+        /// <param name="enqueue">A delegate that runs in the background context and must be threadsafe.</param>
+        public BackgroundLogReader(string path, CancellationToken ct, IProgress<LogReaderStatus> progress, Action<string> enqueue)
         {
-            parser = new LogParser();
-            parser.Player = LogParser.GetPlayerFromFileName(path);
-            var server = LogParser.GetServerFromFileName(path);
-
             this.cancellationToken = ct;
             this.progress = progress;
-            this.events = events;
-            this.events.Enqueue(new LogOpenEvent() { Player = parser.Player, Server = server });
+            this.enqueue = enqueue;
             stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             if (path.EndsWith(".gz"))
             {
@@ -57,10 +52,18 @@ namespace EQLogParser
         }
 
         /// <summary>
+        /// Start the log reader task. 
+        /// </summary>
+        public Task Start()
+        {
+            return Task.Factory.StartNew(Run, TaskCreationOptions.LongRunning);
+        }
+
+        /// <summary>
         /// Read the log file until a cancellation is requested.
         /// Progress is reported every 500 events or 500ms (whichever comes first)
         /// </summary>
-        public void Run()
+        private void Run()
         {
             try
             {
@@ -81,12 +84,8 @@ namespace EQLogParser
                         continue;
                     }
 
-                    // send parsed event to the queue
-                    var e = parser.ParseLine(line);
-                    if (e != null)
-                    {
-                        events.Enqueue(e);
-                    }
+                    // send to queue
+                    enqueue(line);
 
                     // report progress (during initial bulk read where there are no sleeps)
                     count += 1;
@@ -98,7 +97,7 @@ namespace EQLogParser
 
             }
             finally
-            { 
+            {
                 reader.Close();
                 stream.Close();
             }

@@ -10,6 +10,8 @@ namespace EQLogParser.Events
     /// </summary>
     public class LogOpenEvent : LogEvent
     {
+        public string Path;
+
         /// <summary>
         /// Player name as it appear in log filename.
         /// </summary>

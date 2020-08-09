@@ -65,6 +65,7 @@ namespace EQLogParser
             {
                 Player = open.Player;
                 Server = open.Server;
+                LastTimeoutCheck = DateTime.MinValue;
             }
 
             // keep enough events to backtrack on player death
@@ -73,7 +74,8 @@ namespace EQLogParser
                 Events.RemoveRange(0, 500);
 
             // no need to check for timeouts more often than every few seconds
-            if (LastTimeoutCheck + TimeSpan.FromSeconds(5) <= Timestamp)
+            // however timestamp may jump back if we are handling external events like LogWhoEvent from a roster
+            if (LastTimeoutCheck + TimeSpan.FromSeconds(5) <= Timestamp || LastTimeoutCheck > Timestamp)
             {
                 CheckFightTimeouts();
                 LastTimeoutCheck = Timestamp;
@@ -317,18 +319,16 @@ namespace EQLogParser
 
                 if (f.UpdatedOn + FightTimeout <= Timestamp)
                 {
+                    ActiveFights.Remove(f);
+
                     // ignore fights without any damage activity
                     // e.g. miss messages arriving after death message
                     // e.g. mob casting but never engaged
-                    if (f.HP > 0)
+                    if (f.Target.InboundHitSum > 0)
                     {
                         f.Status = FightStatus.Timeout;
                         f.CohortCount = cohorts;
                         FinishFight(f);
-                    }
-                    else
-                    {
-                        ActiveFights.Remove(f);
                     }
                 }
                 else
@@ -349,19 +349,16 @@ namespace EQLogParser
             while (i < ActiveFights.Count)
             {
                 var f = ActiveFights[i];
+                ActiveFights.Remove(f);
 
                 // ignore fights without any damage activity
                 // e.g. miss messages arriving after death message
                 // e.g. mob casting but never engaged
-                if (f.HP > 0)
+                if (f.Target.InboundHitSum > 0)
                 {
                     f.Status = FightStatus.Timeout;
                     f.CohortCount = cohorts;
                     FinishFight(f);
-                }
-                else
-                {
-                    ActiveFights.Remove(f);
                 }
             }
         }
@@ -379,10 +376,10 @@ namespace EQLogParser
                 p.Class = Chars.GetClass(p.Name);
             }
 
-            f.Finish();
             f.Party = Party;
             f.Player = Player;
             f.Server = Server;
+            f.Finish();
 
             // after a fight is passed to this delegate it should never be modified (e.g. via the LastFight variable)
             OnFightFinished?.Invoke(f);

@@ -389,17 +389,26 @@ namespace LogSync
 
             // read roster files to assist CharTracker
             // this would probably be more useful if it ran in the background to wait on new roster files
-            var roster = new RosterParser();
-            var raids = new DirectoryInfo(Path.GetDirectoryName(path)).GetFiles(@"..\RaidRoster_*.txt").Where(x => x.CreationTime > DateTime.Today.AddDays(-7));
-            foreach (var f in raids)
+            // /output guild saves guild rosters. e.g. Derelict Space Toilet_erollisi-20201020-210532.txt
+            // /output raid saves raid rosters. e.g. RaidRoster_erollisi-20200802-190436
+            var server = LogParser.GetServerFromFileName(path);
+            if (!String.IsNullOrEmpty(server))
             {
-                //LogInfo("Loading " + f.FullName); // spammy
-                roster.Load(f.FullName);
-            }
-            foreach (var who in roster.Chars)
-            {
-                fightTracker.HandleEvent(who);
-                charTracker.HandleEvent(who);
+                var roster = new RosterParser();
+                var files = new DirectoryInfo(Path.GetDirectoryName(path)).Parent
+                    .GetFiles("*_" + server + "-*.txt")
+                    .Where(x => x.CreationTime > DateTime.Today.AddDays(-14))
+                    .Take(20);
+                foreach (var f in files)
+                {
+                    //LogInfo("Loading " + f.FullName); // spammy
+                    roster.Load(f.FullName);
+                }
+                foreach (var who in roster.Chars)
+                {
+                    fightTracker.HandleEvent(who);
+                    charTracker.HandleEvent(who);
+                }
             }
 
             // send init event

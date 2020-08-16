@@ -38,7 +38,7 @@ namespace EQLogParser
 
                     // guild format:
                     // Rumstil	115	Ranger	Member		08/02/20	The Overthere	Inactive		off	off	1954229	03/21/20	Inactive	
-                    if (parts.Length >= 3 && Regex.IsMatch(parts[1], @"^\d+$"))
+                    if (parts.Length >= 3 && Regex.IsMatch(line, @"^\w+\t\d+\w+\t"))
                     {
                         var who = new LogWhoEvent()
                         {
@@ -52,7 +52,7 @@ namespace EQLogParser
 
                     // raid format:
                     // 0   Rumstil 115 Ranger Raid Leader
-                    if (parts.Length >= 4 && Regex.IsMatch(parts[0], @"^\d+$"))
+                    if (parts.Length >= 4 && Regex.IsMatch(line, @"^\d+\t\w+\t\d+\t\w+\t"))
                     {
                         var who = new LogWhoEvent()
                         {

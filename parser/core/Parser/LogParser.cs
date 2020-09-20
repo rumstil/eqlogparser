@@ -123,9 +123,11 @@ namespace EQLogParser
             if (String.IsNullOrEmpty(text))
                 return null;
 
-            // convert a raw log message line to a LogRawEvent
+            // convert a raw log message line to a LogRawEvent (this can return a null)
             var raw = LogRawEvent.Parse(text);
-            raw.Player = Player;
+            if (raw != null)
+                raw.Player = Player;
+
             return ParseEvent(raw);
         }
 

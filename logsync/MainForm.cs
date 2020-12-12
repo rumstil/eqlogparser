@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -12,7 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using EQLogParser;
-using EQLogParser.Events;
+
 
 namespace LogSync
 {
@@ -21,37 +21,30 @@ namespace LogSync
         private readonly IConfigAdapter config;
         //private readonly SynchronizationContext syncContext;
         private CancellationTokenSource cancellationSource;
-        private ConcurrentQueue<LogEvent> parserEvents;
         private SpellParser spells;
         private LogParser parser;
-        private FightTracker fightTracker;
+        private BackgroundLogTracker tracker;
         private List<FightInfo> fightList;
         private List<FightInfo> fightListSearchResults;
         private Dictionary<string, string> fightStatus;
-        private LootTracker lootTracker;
-        private CharTracker charTracker;
         private List<LootInfo> lootList;
         private Uploader uploader;
-        private int ignoredCount;
 
         public MainForm()
         {
             InitializeComponent();
             SetDoubleBuffered(lvFights, true);
             config = new RegConfigAdapter();
-            parserEvents = new ConcurrentQueue<LogEvent>();
+            //config = new XmlConfigAdapter();
             spells = new SpellParser();
             parser = new LogParser();
-            fightTracker = new FightTracker(spells);
-            fightTracker.OnFightFinished += LogFight;
-            fightList = new List<FightInfo>();
+            tracker = new BackgroundLogTracker(spells);
+            fightList = new List<FightInfo>(2000);
             fightStatus = new Dictionary<string, string>();
-            lootTracker = new LootTracker();
-            lootTracker.OnLoot += LogLoot;
             lootList = new List<LootInfo>();
-            charTracker = new CharTracker();
             uploader = new Uploader(LogInfo);
             lvFights.LabelEdit = false; // until i figure something more user friendly out
+            _ = ProcessEventsAsync();
         }
 
         private async void MainForm_Shown(object sender, EventArgs e)
@@ -70,15 +63,13 @@ namespace LogSync
                 WatchFile(path);
             }
 
-            _ = await uploader.Hello(config);
+            await uploader.Hello(config);
         }
 
         private async void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             // the background task can finish after the form is disposed -- any attempts to update this form will then produce an exception
             // ideally we should be keeping an counter of background tasks and waiting until it returns to 0
-            fightTracker.OnFightFinished -= LogFight;
-            lootTracker.OnLoot -= LogLoot;
             if (cancellationSource != null)
             {
                 cancellationSource.Cancel();
@@ -164,7 +155,7 @@ namespace LogSync
             var total = new MergedFightInfo(selected);
             total.Finish();
             if (total.MobCount > 1)
-                LogFight(total);
+                AddFight(total);
         }
 
         private void btnBrowse_Click(object sender, EventArgs e)
@@ -377,116 +368,136 @@ namespace LogSync
                 cancellationSource.Cancel();
                 //await Task.Delay(600);
                 // reset the tracker by creating a new one
-                fightTracker.OnFightFinished -= LogFight;
-                fightTracker = new FightTracker();
-                fightTracker.OnFightFinished += LogFight;
+                tracker = new BackgroundLogTracker(spells);
                 fightList.Clear();
                 fightListSearchResults = null;
                 lvFights.VirtualListSize = 0;
-                ignoredCount = 0;
-                charTracker = new CharTracker();
             }
 
-            // read roster files to assist CharTracker
+            // read roster files to assist player tracking
             // this would probably be more useful if it ran in the background to wait on new roster files
-            // /output guild saves guild rosters. e.g. Derelict Space Toilet_erollisi-20201020-210532.txt
-            // /output raid saves raid rosters. e.g. RaidRoster_erollisi-20200802-190436
+            // "/output guild" saves guild rosters. e.g. Derelict Space Toilet_erollisi-20201020-210532.txt
+            // "/output raid" saves raid rosters. e.g. RaidRoster_erollisi-20200802-190436
             var server = LogParser.GetServerFromFileName(path);
             if (!String.IsNullOrEmpty(server))
             {
-                var roster = new RosterParser();
                 var files = new DirectoryInfo(Path.GetDirectoryName(path)).Parent
                     .GetFiles("*_" + server + "-*.txt")
                     .Where(x => x.CreationTime > DateTime.Today.AddDays(-14))
                     .Take(20);
-                foreach (var f in files)
-                {
-                    //LogInfo("Loading " + f.FullName); // spammy
-                    roster.Load(f.FullName);
-                }
-                foreach (var who in roster.Chars)
-                {
-                    fightTracker.HandleEvent(who);
-                    charTracker.HandleEvent(who);
-                }
+                var roster = RosterParser.Load(files);
+                foreach (var who in roster)
+                    tracker.HandleEvent(who);
             }
 
             // send init event
             var open = LogParser.GetOpenEvent(path);
             parser.Player = open.Player;
-            parserEvents.Enqueue(open);
+            tracker.HandleEvent(open);
 
-            // this event runs in a background thread and must be threadsafe
-            Action<string> enqueue = line =>
+            // this handler runs in a background thread and must be threadsafe
+            Action<string> handler = line =>
             {
                 var e = parser.ParseLine(line);
                 if (e != null)
-                    parserEvents.Enqueue(e);
+                    tracker.HandleEvent(e);
             };
 
             // this event runs in the main app thread
             // https://stackoverflow.com/questions/661561/how-do-i-update-the-gui-from-another-thread/18033198#18033198
             var progress = new Progress<LogReaderStatus>(p =>
             {
-                //toolStripStatusLabel1.Text = p.Percent.ToString("P0") + " " + p.Notes;
-                toolStripStatusLabel1.Text = p.Percent.ToString("P0");
-                statusStrip1.Refresh();
-                chkAutoGroup.Enabled = p.Percent > 0.9;
-                chkAutoRaid.Enabled = p.Percent > 0.9;
-                // the log reader reports events in batches so there may be a few events queued up
-                while (parserEvents.TryDequeue(out LogEvent e))
-                {
-                    fightTracker.HandleEvent(e);
-                    lootTracker.HandleEvent(e);
-                    charTracker.HandleEvent(e);
-                }
+                toolStripStatusLabel1.Text = p.Percent.ToString("P0") + " " + p.Notes;
+                //toolStripStatusLabel1.Text = p.Percent.ToString("P0");
+                chkAutoGroup.Enabled = p.Percent > 0.99;
+                chkAutoRaid.Enabled = p.Percent > 0.99;
             });
             cancellationSource = new CancellationTokenSource();
-            var reader = new BackgroundLogReader(path, cancellationSource.Token, progress, enqueue);
+            var reader = new BackgroundLogReader(path, cancellationSource.Token, progress, handler);
             await reader.Start();
+            //await ProcessLogFileAsync(path);
+
             // this log message can occur after the form has been disposed
             //LogInfo("Closing " + path);
         }
-
-        public void LogFight(FightInfo f)
+                
+        /*
+        /// <summary>
+        /// Process log file using task-based async pattern. 
+        /// This code is easy to read and doesn't block the UI but runs about 2x slower than a blocking reader.
+        /// </summary>
+        public async Task ProcessLogFileAsync(string path)
         {
-            // don't include trash thats killed too fast
-            //if ((f.Duration < 30 && f.HP < 1_000_000) || f.HP < 1000)
-            if (f.Duration < 15 || f.Target.InboundHitCount < 20 || f.HP < 1000)
+            var timer = Stopwatch.StartNew();
+            var log = new LogReader(path);
+            var count = 0;
+            while (true)
             {
-                //LogInfo("Ignoring " + f.Name);
-                ignoredCount += 1;
-                return;
+                var line = await log.ReadLineAsync();
+
+                // have we reached the end of the file?
+                if (line == null)
+                {
+                    await Task.Delay(100);
+                    continue;
+                }
+
+                // update progress
+                count += 1;
+                if (count % 500 == 0)
+                {
+                    //await Task.Yield(); // switch to main thread for UI update
+                    toolStripStatusLabel2.Text = $"{log.PercentRead:P1} in {timer.Elapsed.TotalSeconds:F1}s";
+                    statusStrip1.Refresh();
+                }
+
+                // parse line and update trackers
+                var e = parser.ParseLine(line);
+                if (e != null)
+                {
+                    tracker.HandleEvent(e);
+                }
             }
+        }
+        */
+
+        /// <summary>
+        /// Copy data from the background queues to the main UI.
+        /// </summary>
+        private async Task ProcessEventsAsync()
+        {
+            while (true)
+            {
+                while (tracker.Fights.TryDequeue(out FightInfo f))
+                    AddFight(f);
+
+                while (tracker.Loot.TryDequeue(out LootInfo l))
+                    AddLoot(l);
+
+                await Task.Delay(200);
+            }
+        }
+
+        private void AddFight(FightInfo f)
+        {
+            // ignore trash mobs
+            if (FightTracker.IsTrashMob(f))
+                return;
 
             fightList.Insert(0, f);
 
-            if (fightListSearchResults != null)
-            {
-                fightListSearchResults.Insert(0, f);
-                //fightSearchList.Add(f);
-                lvFights.VirtualListSize = fightListSearchResults.Count;
-            }
-            else
-            {
+            if (fightListSearchResults == null)
                 lvFights.VirtualListSize = fightList.Count;
-            }
-
-            if (f.MobCount > 0)
+            toolStripStatusLabel2.Text = lvFights.Items.Count + " fights";
+            
+            if (f.MobCount > 1)
             {
-                // select the new item
+                // if we just combined several fights then clear the selection
                 lvFights.SelectedIndices.Clear();
                 lvFights.SelectedIndices.Add(0);
                 lvFights.EnsureVisible(0);
-
-                // put it in edit mode
-                //lvFights.LabelEdit = true;
-                //lvFights.Focus();
-                //SendKeys.Send("{F2}");
-                //item.BeginEdit();
-                //return;
             }
-            else if (lvFights.SelectedIndices.Count > 0)
+            else if (lvFights.SelectedIndices.Count > 1)
             {
                 // if inserting the fight at index 0, we need to shift all the SelectedIndices down by one
                 var selected = lvFights.SelectedIndices.OfType<int>().ToList();
@@ -495,10 +506,6 @@ namespace LogSync
                     lvFights.SelectedIndices.Add(i + 1);
             }
 
-
-            toolStripStatusLabel2.Text = lvFights.Items.Count + " fights kept (" + ignoredCount + " ignored)";
-
-
             if (chkAutoGroup.Checked && f.Party == "Group")
                 UploadFight(f);
 
@@ -506,18 +513,18 @@ namespace LogSync
                 UploadFight(f);
         }
 
-        public void LogLoot(LootInfo l)
+        private void AddLoot(LootInfo l)
         {
             lootList.Add(l);
             //LogInfo($"Looted {l.Item} from {l.Source} in {l.Zone}");
         }
 
-        public void LogInfo(string text)
+        private void LogInfo(string text)
         {
             textLog.AppendText(text + "\r\n");
         }
 
-        public async void UploadFight(FightInfo f)
+        private async void UploadFight(FightInfo f)
         {
             if (!uploader.IsReady)
                 return;
@@ -535,7 +542,7 @@ namespace LogSync
             lvFights.Invalidate();
         }
 
-        public static void SetDoubleBuffered(Control control, bool enable)
+        private static void SetDoubleBuffered(Control control, bool enable)
         {
             // https://stackoverflow.com/questions/87795/how-to-prevent-flickering-in-listview-when-updating-a-single-listviewitems-text/3886695
             var doubleBufferPropertyInfo = control.GetType().GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);

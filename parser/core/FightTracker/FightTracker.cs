@@ -17,6 +17,7 @@ namespace EQLogParser
     public class FightTracker
     {
         private readonly CharTracker Chars;
+        private readonly BuffTracker Buffs;
         private readonly List<LogEvent> Events = new List<LogEvent>(1000);
         private string Server = null;
         private string Player = null;
@@ -52,11 +53,13 @@ namespace EQLogParser
         public FightTracker(ISpellLookup spells)
         {
             Chars = new CharTracker(spells);
+            Buffs = new BuffTracker(spells);
         }
 
         public void HandleEvent(LogEvent e)
         {
             Chars.HandleEvent(e);
+            Buffs.HandleEvent(e);
 
             Timestamp = e.Timestamp;
 
@@ -374,6 +377,7 @@ namespace EQLogParser
             {
                 p.PetOwner = Chars.GetOwner(p.Name);
                 p.Class = Chars.GetClass(p.Name);
+                p.Buffs = Buffs.Get(p.Name, f.StartedOn.AddSeconds(-6)).ToList();
             }
 
             f.Party = Party;
@@ -420,6 +424,11 @@ namespace EQLogParser
                 OnFightStarted(f);
 
             return f;
+        }
+
+        public static bool IsTrashMob(FightInfo f)
+        {
+            return f.Duration < 15 || f.Target.InboundHitCount < 20 || f.HP < 1000;
         }
 
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Diagnostics;
 using Microsoft.Win32;
 
 
@@ -16,18 +17,20 @@ namespace LogSync
         void WriteDate(string key, DateTime value);
     }
 
-
-    public class ConfigAdapter : IConfigAdapter
+    /// <summary>
+    /// XML file backed config.
+    /// </summary>
+    public class XmlConfigAdapter : IConfigAdapter
     {
         private Configuration config;
 
-        public ConfigAdapter()
+        public XmlConfigAdapter()
         {
             // .net core apps seem to run in a temp folder (at least a when publishing as a single file?)
             // this means it creates a fresh config every time
-            config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            //var map = new ExeConfigurationFileMap { ExeConfigFilename = "EXECONFIG_PATH" };
-            //config = ConfigurationManager.OpenMappedExeConfiguration(map, ConfigurationUserLevel.None);
+            // Application.ExecutablePath is the temp file path
+            // Process.GetCurrentProcess().MainModule.FileName is the real path
+            config = ConfigurationManager.OpenExeConfiguration(Process.GetCurrentProcess().MainModule.FileName);
         }
 
         public void Write(string key, string value)
@@ -48,6 +51,9 @@ namespace LogSync
         }
     }
 
+    /// <summary>
+    /// Windows Registry backed config.
+    /// </summary>
     public class RegConfigAdapter : IConfigAdapter
     {
         private readonly RegistryKey reg;

@@ -60,14 +60,15 @@ namespace logdump
             };
 
 
-            var lines = 0;
-            foreach (var s in file.Lines())
+            while (true)
             {
-                lines++;
+                var s = file.ReadLine();
+                if (s == null)
+                    break;
                 var e = parser.ParseLine(s);
                 if (e != null)
                     fights.HandleEvent(e);
-            }
+            };
 
 
             //TimeParsers(file);
@@ -96,15 +97,16 @@ namespace logdump
             parser.Player = LogParser.GetPlayerFromFileName(file.Path);
 
             // load raw log lines once 
-            var lines = 0;
             var events = new List<LogRawEvent>();
-            foreach (var s in file.Lines())
+            while (true)
             {
-                lines++;
+                var s = file.ReadLine();
+                if (s == null)
+                    break;
                 var e = LogRawEvent.Parse(s);
                 if (e != null)
                     events.Add(e);
-            }
+            };
             Console.Error.WriteLine("Loaded {0} events", events.Count);
 
             // time individual parsers
@@ -158,7 +160,7 @@ namespace logdump
             //f.Anonymize();
             //var duration = (f.Finished.Value - f.Started).TotalSeconds + 1;
 
-            f.Dump(Console.Out);
+            f.WriteAll(Console.Out);
         }
 
         static void SaveFight(FightInfo f)

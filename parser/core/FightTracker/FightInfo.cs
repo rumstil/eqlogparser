@@ -430,7 +430,7 @@ namespace EQLogParser
             TopHealSum = Participants.Max(x => x.OutboundHealSum);
         }
 
-        public void DumpAll(TextWriter writer)
+        public void WriteAll(TextWriter writer)
         {
             writer.WriteLine();
             writer.WriteLine("=== {0} - {1:N0} HP - {2}s at {3}", Name, Target.InboundHitSum, Duration, StartedOn.ToLocalTime(), Zone);
@@ -463,7 +463,7 @@ namespace EQLogParser
             }
         }
 
-        public void DumpShort(TextWriter writer)
+        public void WriteNotes(TextWriter writer)
         {
             writer.WriteLine();
             writer.WriteLine("=== {0} - {1:N0} HP - {2}s at {3}", Name, Target.InboundHitSum, Duration, StartedOn.ToLocalTime(), Zone);

@@ -9,7 +9,7 @@ namespace EQLogParser
     public class FightSpell
     {
         /// <summary>
-        /// Can be "hit", "heal", or "buff"
+        /// Can be "hit", "heal"
         /// </summary>
         public string Type { get; set; }
         public string Name { get; set; }

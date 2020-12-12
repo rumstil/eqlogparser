@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -89,7 +90,7 @@ namespace LogSync
 
             logger("Uploading " + f.Name);
             var json = JsonSerializer.Serialize(f);
-            //logger(json);
+            //File.WriteAllText(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\sample.json", json);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
             try
             {

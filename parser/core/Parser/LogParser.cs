@@ -99,6 +99,7 @@ namespace EQLogParser
 
         /// <summary>
         /// Generate an open event based on info from the log file name.
+        /// This is used by trackers to tell them who the "you" player is.
         /// </summary>
         public static LogOpenEvent GetOpenEvent(string path)
         {

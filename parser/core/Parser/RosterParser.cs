@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -9,13 +10,11 @@ using System.Text.RegularExpressions;
 namespace EQLogParser
 {
     /// <summary>
-    /// Parses raid roster and guild roster files and stores them as LogWhoEvents that can be fed to a tracker.
+    /// Parses raid roster and guild roster files and returns synthetic LogWhoEvents that can be fed to a tracker.
     /// </summary>
     public class RosterParser
     {
-        public readonly List<LogWhoEvent> Chars = new List<LogWhoEvent>();
-
-        public void Load(string path)
+        public static IEnumerable<LogWhoEvent> Load(string path)
         {
             if (!File.Exists(path))
                 throw new FileNotFoundException();
@@ -47,7 +46,7 @@ namespace EQLogParser
                             Level = Int32.Parse(parts[1]),
                             Class = LogWhoEvent.ParseClass(parts[2])
                         };
-                        Chars.Add(who);
+                        yield return who;
                     }
 
                     // raid format:
@@ -61,12 +60,19 @@ namespace EQLogParser
                             Level = Int32.Parse(parts[2]),
                             Class = LogWhoEvent.ParseClass(parts[3])
                         };
-                        Chars.Add(who);
+                        yield return who;
                     }
-
                 }
             }
 
         }
+
+        public static IEnumerable<LogWhoEvent> Load(IEnumerable<FileInfo> files)
+        {
+            foreach (var f in files)
+                foreach (var who in Load(f.FullName))
+                    yield return who;
+        }
+
     }
 }

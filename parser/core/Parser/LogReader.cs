@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 
 namespace EQLogParser
@@ -12,7 +13,10 @@ namespace EQLogParser
     {
         public readonly string Path;
         private readonly StreamReader reader;
+        private readonly GZipStream gzip;
         private readonly FileStream stream;
+
+        public float PercentRead => (float)stream.Position / stream.Length;
 
         public LogReader(string path, int index = 0)
         {
@@ -22,7 +26,7 @@ namespace EQLogParser
 
             if (path.EndsWith(".gz"))
             {
-                var gzip = new GZipStream(stream, CompressionMode.Decompress);
+                gzip = new GZipStream(stream, CompressionMode.Decompress);
                 reader = new StreamReader(gzip, Encoding.ASCII);
             }
             else
@@ -49,19 +53,19 @@ namespace EQLogParser
 
         public void Close()
         {
-            reader.Close();
-            stream.Close();
+            reader?.Close();
+            gzip?.Close();
+            stream?.Close();
         }
 
-        public IEnumerable<string> Lines()
+        public string ReadLine()
         {
-            while (true)
-            {
-                var line = reader.ReadLine();
-                if (line == null)
-                    yield break;
-                yield return line;
-            }
+            return reader.ReadLine();
+        }
+
+        public Task<string> ReadLineAsync()
+        {
+            return reader.ReadLineAsync();
         }
 
     }

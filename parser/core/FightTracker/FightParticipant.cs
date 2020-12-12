@@ -57,12 +57,12 @@ namespace EQLogParser
 
         public List<FightHit> AttackTypes { get; set; } = new List<FightHit>();
         public List<FightMiss> DefenseTypes { get; set; } = new List<FightMiss>();
-        // a list of who a healer healed
+        // a list of healing targets
         public List<FightHeal> Heals { get; set; } = new List<FightHeal>();
-        // a list of spells landing
+        // a list of outgoing dd, dot, and heals
         public List<FightSpell> Spells { get; set; } = new List<FightSpell>();
         // a list of buffs received
-        //public List<FightBuff> Buffs { get; set; } = new List<FightBuff>();
+        public List<FightBuff> Buffs { get; set; } = new List<FightBuff>();
 
         public override string ToString()
         {
@@ -450,7 +450,11 @@ namespace EQLogParser
                     Spells.Add(_s);
                 }
                 _s.Merge(s);
+            }
 
+            foreach (var b in p.Buffs)
+            {
+                Buffs.Add(b);
             }
 
         }

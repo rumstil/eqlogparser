@@ -83,7 +83,7 @@
             // 
             this.toolStripStatusLabel1.AutoSize = false;
             this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            this.toolStripStatusLabel1.Size = new System.Drawing.Size(50, 17);
+            this.toolStripStatusLabel1.Size = new System.Drawing.Size(80, 17);
             this.toolStripStatusLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // toolStripStatusLabel2
@@ -107,7 +107,6 @@
             this.lvFights.FullRowSelect = true;
             this.lvFights.GridLines = true;
             this.lvFights.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
-            this.lvFights.HideSelection = false;
             this.lvFights.LabelEdit = true;
             this.lvFights.Location = new System.Drawing.Point(11, 55);
             this.lvFights.Margin = new System.Windows.Forms.Padding(3, 240, 3, 3);

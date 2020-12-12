@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -18,6 +19,7 @@ namespace EQLogParser
         public int Id;
         public string Name;
         public int Target;
+        public int DurationTicks;
         public int ClassesMask;
         public int ClassesCount;
         public string LandSelf;
@@ -35,6 +37,7 @@ namespace EQLogParser
     public interface ISpellLookup
     {
         SpellInfo GetSpell(string name);
+        SpellInfo GetSpellFromEmote(string text);
     }
 
     /// <summary>
@@ -42,10 +45,14 @@ namespace EQLogParser
     /// </summary>
     public class SpellParser : ISpellLookup
     {
+        //public const int MAX_LEVEL = 115;
+
+        private IReadOnlyList<SpellInfo> List = new List<SpellInfo>();
         //private IReadOnlyDictionary<int, SpellInfo> LookupById = new Dictionary<int, SpellInfo>();
         private IReadOnlyDictionary<string, SpellInfo> LookupByName = new Dictionary<string, SpellInfo>();
+        private IReadOnlyDictionary<string, SpellInfo> LookupByEmote = new Dictionary<string, SpellInfo>();
 
-        public bool IsReady => LookupByName.Count > 0;
+        public bool IsReady => List.Count > 0;
 
         /// <summary>
         /// Load spell data.
@@ -56,8 +63,11 @@ namespace EQLogParser
             if (!File.Exists(path))
                 throw new FileNotFoundException();
 
-            var lookupById = new Dictionary<int, SpellInfo>(10000);
-            var lookupByName = new Dictionary<string, SpellInfo>(10000);
+
+            var list = new List<SpellInfo>(10000);
+            var lookupById = new Dictionary<int, SpellInfo>(list.Count);
+            var lookupByName = new Dictionary<string, SpellInfo>(list.Count);
+            var lookupByEmote = new Dictionary<string, SpellInfo>(list.Count);
 
             using (var f = File.OpenText(path))
             {
@@ -81,7 +91,8 @@ namespace EQLogParser
 
                     // 11 DURATIONBASE
                     // 12 DURATIONCAP
-                    //spell.DurationTicks = CalcDuration(Convert.ToInt32(fields[11]), Convert.ToInt32(fields[12]), 254);
+                    spell.DurationTicks = CalcDuration(Convert.ToInt32(fields[11]), Convert.ToInt32(fields[12]));
+                    //spell.Duration = Convert.ToInt32(fields[11]);
 
                     // 32 TYPENUMBER
                     spell.Target = Convert.ToInt32(fields[32]);
@@ -109,14 +120,17 @@ namespace EQLogParser
                         if (lookupByName.TryGetValue(name, out SpellInfo match))
                         {
                             match.ClassesMask |= spell.ClassesMask;
-                            match.ClassesCount = CountBits(match.ClassesMask);
+                            //match.ClassesCount = CountBits(match.ClassesMask);
+                            match.ClassesCount = BitOperations.PopCount((uint)match.ClassesMask);
                         }
                         else
                         {
                             lookupByName.Add(name, spell);
                         }
+
                     }
 
+                    list.Add(spell);
                     lookupById[spell.Id] = spell;
 
                     //Console.WriteLine("{0} {1} {2}", spell.Id, spell.Name, (SpellClassesMaskLong)spell.ClassesMask);
@@ -153,12 +167,21 @@ namespace EQLogParser
                         s.LandSelf = fields[3];
                         s.LandOthers = fields[4];
                         s.WearsOff = fields[5];
+
+                        // todo: emotes that aren't unique will misidentify spells
+                        // e.g. "eyes gleam."
+                        //if (!String.IsNullOrEmpty(s.LandSelf))
+                        //    lookupByEmote.TryAdd(s.LandSelf, s);
+                        //if (!String.IsNullOrEmpty(s.LandOthers))
+                        //    lookupByEmote.TryAdd(s.LandOthers, s);
                     }
                 }
             }
 
             //LookupById = lookupById;
             LookupByName = lookupByName;
+            LookupByEmote = lookupByEmote;
+            List = list;
         }
 
         /// <summary>
@@ -168,7 +191,29 @@ namespace EQLogParser
         {
             if (LookupByName.TryGetValue(StripRank(name), out SpellInfo s))
                 return s;
+
             return null;
+        }
+
+        /// <summary>
+        /// Lookup a spell by emote.
+        /// </summary>
+        public SpellInfo GetSpellFromEmote(string text)
+        {
+            // slow
+            //foreach (var spell in List)
+            //{
+            //    if (text.EndsWith(spell.LandOthers, StringComparison.OrdinalIgnoreCase) || text.EndsWith(spell.LandSelf, StringComparison.OrdinalIgnoreCase))
+            //        return spell;
+            //}
+
+            // Nielar's instincts are sharpened by the auspice of the hunter.
+            // Fred flees in terror.
+            // todo: this doesn't handle mob/pet names with spaces properly
+            text = Regex.Replace(text, @"^\w+", "");
+
+            LookupByEmote.TryGetValue(text, out SpellInfo s);
+            return s;
         }
 
         /// <summary>
@@ -190,46 +235,86 @@ namespace EQLogParser
         }
 
         /// <summary>
-        /// Get number of bits that are set.
-        /// https://stackoverflow.com/questions/109023/how-to-count-the-number-of-set-bits-in-a-32-bit-integer
+        /// Calculate a duration.
         /// </summary>
-        private static int CountBits(int i)
+        /// <returns>Numbers of ticks (6 second units)</returns>
+        private static int CalcDuration(int calc, int max, int level = 254)
         {
-            i = i - ((i >> 1) & 0x55555555);
-            i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
-            return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
-        }
+            int value = 0;
 
-
-        /*
-        public event LogEventHandler OnEvent;
-
-        public void HandleEvent(LogEvent e)
-        {
-            if (e is LogCastingEvent cast)
+            switch (calc)
             {
-                var s = GetSpell(cast.Spell);
-                if (s != null && !String.IsNullOrEmpty(s.LandSelf) && !String.IsNullOrEmpty(s.LandOthers))
-                {
-                    var extcast = new LogCastingEventWithSpellInfo
-                    {
-                        Id = cast.Id,
-                        Timestamp = cast.Timestamp,
-                        Source = cast.Source,
-                        Spell = cast.Spell,
-                        ClassName = s.ClassName,
-                        LandOthers = s.LandOthers,
-                        LandSelf = s.LandSelf
-                    };
-
-                    OnEvent(extcast);
-                    return;
-                }
+                case 0:
+                    value = 0;
+                    break;
+                case 1:
+                    value = level / 2;
+                    if (value < 1)
+                        value = 1;
+                    break;
+                case 2:
+                    value = (level / 2) + 5;
+                    if (value < 6)
+                        value = 6;
+                    break;
+                case 3:
+                    value = level * 30;
+                    break;
+                case 4:
+                    value = 50;
+                    break;
+                case 5:
+                    value = 2;
+                    break;
+                case 6:
+                    value = level / 2;
+                    break;
+                case 7:
+                    value = level;
+                    break;
+                case 8:
+                    value = level + 10;
+                    break;
+                case 9:
+                    value = level * 2 + 10;
+                    break;
+                case 10:
+                    value = level * 30 + 10;
+                    break;
+                case 11:
+                    value = (level + 3) * 30;
+                    break;
+                case 12:
+                    value = level / 2;
+                    if (value < 1)
+                        value = 1;
+                    break;
+                case 13:
+                    value = level * 4 + 10;
+                    break;
+                case 14:
+                    value = level * 5 + 10;
+                    break;
+                case 15:
+                    value = (level * 5 + 50) * 2;
+                    break;
+                case 50:
+                    value = 72000;
+                    break;
+                case 3600:
+                    value = 3600;
+                    break;
+                default:
+                    value = max;
+                    break;
             }
 
-            // pass the original event along if it wasn't handled yet
-            OnEvent(e);
+            if (max > 0 && value > max)
+                value = max;
+
+            return value;
         }
-        */
+
+
     }
 }

@@ -187,7 +187,7 @@ namespace LogSync
             if (!String.IsNullOrWhiteSpace(textSearch.Text))
             {
                 fightListSearchResults = fightList
-                    .Where(x => x.Name.Contains(textSearch.Text, StringComparison.OrdinalIgnoreCase) || x.Zone.Contains(textSearch.Text, StringComparison.OrdinalIgnoreCase))
+                    .Where(IsFilterMatch)
                     .ToList();
                 lvFights.VirtualListSize = fightListSearchResults.Count;
             }
@@ -358,7 +358,7 @@ namespace LogSync
                 }
                 else
                 {
-                    LogInfo("spells_us.txt not found. Class detection will not work properly.");
+                    LogInfo("spells_us.txt not found. Class detection and buff tracking will not work properly.");
                 }
             }
 
@@ -367,12 +367,13 @@ namespace LogSync
             {
                 cancellationSource.Cancel();
                 //await Task.Delay(600);
-                // reset the tracker by creating a new one
-                tracker = new BackgroundLogTracker(spells);
-                fightList.Clear();
-                fightListSearchResults = null;
-                lvFights.VirtualListSize = 0;
             }
+
+            // reset the tracker by creating a new one
+            tracker = new BackgroundLogTracker(spells);
+            fightList.Clear();
+            fightListSearchResults = null;
+            lvFights.VirtualListSize = 0;
 
             // read roster files to assist player tracking
             // this would probably be more useful if it ran in the background to wait on new roster files
@@ -481,13 +482,20 @@ namespace LogSync
         private void AddFight(FightInfo f)
         {
             // ignore trash mobs
-            if (FightTracker.IsTrashMob(f))
+            if (IsTrashMob(f))
                 return;
 
             fightList.Insert(0, f);
 
             if (fightListSearchResults == null)
+            {
                 lvFights.VirtualListSize = fightList.Count;
+            }
+            else if (IsFilterMatch(f) || f.MobCount > 1)
+            {
+                fightListSearchResults.Insert(0, f);
+                lvFights.VirtualListSize = fightListSearchResults.Count;
+            }
             toolStripStatusLabel2.Text = lvFights.Items.Count + " fights";
             
             if (f.MobCount > 1)
@@ -540,6 +548,17 @@ namespace LogSync
 
             fightStatus[f.ID] = result ? "Uploaded" : "Failed";
             lvFights.Invalidate();
+        }
+
+        private bool IsTrashMob(FightInfo f)
+        {
+            return f.Duration < 15 || f.Target.InboundHitCount < 20 || f.HP < 1000;
+        }
+
+        private bool IsFilterMatch(FightInfo f)
+        {
+            return f.Name.Contains(textSearch.Text, StringComparison.OrdinalIgnoreCase)
+                || f.Zone.Contains(textSearch.Text, StringComparison.OrdinalIgnoreCase);
         }
 
         private static void SetDoubleBuffered(Control control, bool enable)

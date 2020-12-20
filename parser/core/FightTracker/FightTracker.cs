@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Security;
 using System.Text;
 using System.Text.RegularExpressions;
 using EQLogParser.Events;
@@ -40,15 +39,6 @@ namespace EQLogParser
 
         public event FightTrackerEvent OnFightStarted;
         public event FightTrackerEvent OnFightFinished;
-
-        /// <summary>
-        /// This constructor should only be used in unit tests.
-        /// Without access to spell information we won't be able to determine player classes.
-        /// </summary>
-        public FightTracker()
-        {
-            Chars = new CharTracker();
-        }
 
         public FightTracker(ISpellLookup spells)
         {
@@ -254,6 +244,7 @@ namespace EQLogParser
             if (f != null)
             {
                 f.Status = FightStatus.Killed;
+                f.UpdatedOn = death.Timestamp;
                 f.CohortCount = ActiveFights.Count - 1;
                 FinishFight(f);
             }
@@ -377,7 +368,8 @@ namespace EQLogParser
             {
                 p.PetOwner = Chars.GetOwner(p.Name);
                 p.Class = Chars.GetClass(p.Name);
-                p.Buffs = Buffs.Get(p.Name, f.StartedOn.AddSeconds(-6)).ToList();
+                // go back a few seconds to include buffs cast in preparation for the fight
+                p.Buffs = Buffs.Get(p.Name, f.StartedOn.AddSeconds(-6), f.UpdatedOn, -6).ToList();
             }
 
             f.Party = Party;
@@ -424,11 +416,6 @@ namespace EQLogParser
                 OnFightStarted(f);
 
             return f;
-        }
-
-        public static bool IsTrashMob(FightInfo f)
-        {
-            return f.Duration < 15 || f.Target.InboundHitCount < 20 || f.HP < 1000;
         }
 
 

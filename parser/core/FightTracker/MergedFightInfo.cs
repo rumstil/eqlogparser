@@ -13,6 +13,7 @@ namespace EQLogParser
     {
         // keep a map of which tick each interval contains
         private List<int> intervals = new List<int>() { 0 };
+        private List<FightInfo> mobs = new List<FightInfo>();
 
         public MergedFightInfo()
         {
@@ -44,6 +45,7 @@ namespace EQLogParser
             }
 
             MobCount += 1;
+            mobs.Add(f);
 
             if (Zone != f.Zone)
                 Zone = "Multiple Zones";
@@ -56,6 +58,7 @@ namespace EQLogParser
             //    StartedOn = f.StartedOn;
             if (UpdatedOn < f.UpdatedOn)
                 UpdatedOn = f.UpdatedOn;
+
 
 
             /*
@@ -104,15 +107,18 @@ namespace EQLogParser
             while (intervals[^1] < tail)
                 intervals.Add(++current);
 
+            // get offset for shifting buff timeline
+            var time = interval * 6 + (f.StartedOn.Second % 6) - (StartedOn.Second % 6);
+
             foreach (var _p in f.Participants)
             {
                 var p = AddParticipant(_p.Name);
                 p.Class = _p.Class;
                 p.PetOwner = _p.PetOwner;
                 p.Level = _p.Level;
-                p.Duration += _p.Duration; // this doesn't handle overlaps well
+                p.Duration += _p.Duration; // this doesn't handle overlaps well but gets corrected in the finish() method
                 //p.Duration = (int)(UpdatedOn - StartedOn).TotalSeconds; // this is just the same as fight.duration and pointless
-                p.Merge(_p, interval);
+                p.Merge(_p, interval, time);
             }
 
         }
@@ -122,6 +128,11 @@ namespace EQLogParser
             base.Finish();
 
             Name = $"* {MobCount} combined mobs";
+
+            MobNotes = String.Join(", ", mobs.GroupBy(x => x.Name)
+                //.OrderByDescending(x => x.Sum(y => y.HP))
+                .OrderByDescending(x => x.Count())
+                .Select(x => String.Format("{0} x {1}", x.Count(), x.Key)));
 
             // todo: maybe if the combined fight is really long then reduce the number of interals by using 1 minute intervals?
 

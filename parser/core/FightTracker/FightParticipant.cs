@@ -26,12 +26,6 @@ namespace EQLogParser
         public int OutboundMissCount { get; set; }
         public int OutboundHitCount { get; set; } // includes all damage
         public long OutboundHitSum { get; set; }
-        // these can be derived from AttackTypes
-        //public int OutboundMeleeCount { get; set; } // includes melee/combat skills
-        //public int OutboundMeleeSum { get; set; }
-        //public int OutboundSpellCount { get; set; } // includes dd/dot  
-        //public int OutboundSpellSum { get; set; }
-        //public int OutboundRiposteSum;
         public int OutboundStrikeCount { get; set; }
 
         public int InboundMissCount { get; set; }
@@ -347,16 +341,11 @@ namespace EQLogParser
         /// <summary>
         /// Merge data from another participant into this participant.
         /// </summary>
-        public void Merge(FightParticipant p, int interval = 0)
+        public void Merge(FightParticipant p, int intervalOffset = 0, int timeOffset = 0)
         {
             OutboundMissCount += p.OutboundMissCount;
             OutboundHitCount += p.OutboundHitCount;
             OutboundHitSum += p.OutboundHitSum;
-            //OutboundMeleeCount += p.OutboundMeleeCount;
-            //OutboundMeleeSum += p.OutboundMeleeSum;
-            //OutboundSpellCount += p.OutboundSpellCount;
-            //OutboundSpellSum += p.OutboundSpellSum;
-            //OutboundRiposteSum;
             OutboundStrikeCount += p.OutboundStrikeCount;
 
             InboundMissCount += p.InboundMissCount;
@@ -382,23 +371,23 @@ namespace EQLogParser
             // merge intervals starting at 'interval' base
             for (var i = 0; i < p.DPS.Count; i++)
             {
-                while (DPS.Count <= interval + i)
+                while (DPS.Count <= intervalOffset + i)
                     DPS.Add(0);
-                DPS[interval + i] += p.DPS[i];
+                DPS[intervalOffset + i] += p.DPS[i];
             }
 
             for (var i = 0; i < p.TankDPS.Count; i++)
             {
-                while (TankDPS.Count <= interval + i)
+                while (TankDPS.Count <= intervalOffset + i)
                     TankDPS.Add(0);
-                TankDPS[interval + i] += p.TankDPS[i];
+                TankDPS[intervalOffset + i] += p.TankDPS[i];
             }
 
             for (var i = 0; i < p.HPS.Count; i++)
             {
-                while (HPS.Count <= interval + i)
+                while (HPS.Count <= intervalOffset + i)
                     HPS.Add(0);
-                HPS[interval + i] += p.HPS[i];
+                HPS[intervalOffset + i] += p.HPS[i];
             }
 
 
@@ -452,9 +441,13 @@ namespace EQLogParser
                 _s.Merge(s);
             }
 
-            foreach (var b in p.Buffs)
+            // >= 0 avoids any pre fight buffs
+            foreach (var b in p.Buffs.Where(x => x.Time >= 0))
             {
-                Buffs.Add(b);
+                if (timeOffset == 0)
+                    Buffs.Add(b);
+                else
+                    Buffs.Add(new FightBuff { Name = b.Name, Time = b.Time + timeOffset });
             }
 
         }

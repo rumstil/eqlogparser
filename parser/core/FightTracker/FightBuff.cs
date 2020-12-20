@@ -9,8 +9,11 @@ namespace EQLogParser
     public class FightBuff
     {
         public string Name { get; set; }
-        public DateTime LandedOn { get; set; }
-        //public List<(int Start, int End)> Times = new List<(int, int)>();
+        
+        /// <summary>
+        /// Number of seconds offset from start of fight.
+        /// </summary>
+        public int Time { get; set; }
     }
 
 }

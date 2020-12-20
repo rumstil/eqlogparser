@@ -18,7 +18,7 @@ namespace EQLogParserTests.Tracker
         [Fact]
         public void Fight_Ignored_If_Foe_Unknown()
         {
-            var tracker = new FightTracker();
+            var tracker = new FightTracker(new SpellParser());
             tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Type = "slash", Amount = 200 });
 
             // since the tracker doesn't know if Player1 or Mob1 is the foe it 
@@ -29,7 +29,7 @@ namespace EQLogParserTests.Tracker
         [Fact]
         public void Fight_Has_Correct_Timestamps()
         {
-            var tracker = new FightTracker();
+            var tracker = new FightTracker(new SpellParser());
             tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
 
             var t1 = DateTime.Now;
@@ -50,7 +50,7 @@ namespace EQLogParserTests.Tracker
         [Fact]
         public void One_Fight()
         {
-            var tracker = new FightTracker();
+            var tracker = new FightTracker(new SpellParser());
             tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
             tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Type = "slash", Amount = 200 });
 
@@ -63,7 +63,7 @@ namespace EQLogParserTests.Tracker
         [Fact]
         public void Two_Fights_Concurrent()
         {
-            var tracker = new FightTracker();
+            var tracker = new FightTracker(new SpellParser());
             tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
             Assert.Empty(tracker.ActiveFights);
 
@@ -81,7 +81,7 @@ namespace EQLogParserTests.Tracker
         [Fact]
         public void Two_Fights_Back_to_Back_With_Same_Mob_Name()
         {
-            var tracker = new FightTracker();
+            var tracker = new FightTracker(new SpellParser());
             tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
 
             tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Type = "slash", Amount = 100 });
@@ -99,7 +99,7 @@ namespace EQLogParserTests.Tracker
         public void Death_of_Mob()
         {
             FightInfo f = null;
-            var tracker = new FightTracker();
+            var tracker = new FightTracker(new SpellParser());
             tracker.OnFightFinished += (args) => f = args;
 
             tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
@@ -114,7 +114,7 @@ namespace EQLogParserTests.Tracker
         [Fact]
         public void Death_of_Player()
         {
-            var tracker = new FightTracker();
+            var tracker = new FightTracker(new SpellParser());
 
             tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
             tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Amount = 100 });
@@ -127,7 +127,7 @@ namespace EQLogParserTests.Tracker
         public void Timeout()
         {
             FightInfo f = null;
-            var tracker = new FightTracker();
+            var tracker = new FightTracker(new SpellParser());
             tracker.OnFightFinished += (args) => f = args;
 
             tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
@@ -143,7 +143,7 @@ namespace EQLogParserTests.Tracker
         [Fact]
         public void SumHits()
         {
-            var tracker = new FightTracker();
+            var tracker = new FightTracker(new SpellParser());
 
             tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
             tracker.HandleEvent(new LogWhoEvent { Name = "Player2" });
@@ -172,7 +172,7 @@ namespace EQLogParserTests.Tracker
         [Fact]
         public void Dont_Double_Count_Self_Heal()
         {
-            var tracker = new FightTracker();
+            var tracker = new FightTracker(new SpellParser());
 
             tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
             tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Amount = 100 });
@@ -187,7 +187,7 @@ namespace EQLogParserTests.Tracker
         [Fact]
         public void Ignore_Self_Hits()
         {
-            var tracker = new FightTracker();
+            var tracker = new FightTracker(new SpellParser());
 
             tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Player1", Amount = 100 });
             Assert.Empty(tracker.ActiveFights);
@@ -197,7 +197,7 @@ namespace EQLogParserTests.Tracker
         [Fact]
         public void Check_DPS_Intervals()
         {
-            var tracker = new FightTracker();
+            var tracker = new FightTracker(new SpellParser());
             tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
 
 
@@ -252,6 +252,8 @@ namespace EQLogParserTests.Tracker
             total.Merge(b);
             total.Finish();
 
+            // assert
+            Assert.Equal(2, total.Participants.Count);
             var p = total.Participants[0];
             Assert.Equal(0, p.DPS[0]); // :00 to :05
             Assert.Equal(3, p.DPS[1]); // :06 to :11
@@ -285,10 +287,46 @@ namespace EQLogParserTests.Tracker
             total.Merge(b);
             total.Finish();
 
+            // assert
+            Assert.Equal(2, total.Participants.Count);
             var p = total.Participants[0];
             Assert.Equal(0, p.DPS[0]); // :00 to :05
             Assert.Equal(10, p.DPS[1]); // :06 to :11
             Assert.Equal(23, p.DPS[2]); // :12 to :17
+        }
+
+        [Fact]
+        public void Merge_Buffs_With_Gap()
+        {
+            var a = new FightInfo();
+            a.StartedOn = DateTime.Parse("11:01:05");
+            a.UpdatedOn = a.StartedOn.AddSeconds(14); // 4 intervals: 0..5, 6..11, 12..15, 16..19
+            a.Target = new FightParticipant() { Name = "Mob1" };
+            var ap1 = new FightParticipant() { Name = "Player1", OutboundHitSum = 1 };
+            ap1.Buffs.Add(new FightBuff { Name = "Super Speed", Time = 2 });
+            a.Participants.Add(ap1);
+
+            // second fight starts with a gap after the first fight
+            var b = new FightInfo();
+            b.Target = new FightParticipant() { Name = "Mob2" };
+            b.StartedOn = a.StartedOn.AddMinutes(1);
+            b.UpdatedOn = b.StartedOn.AddSeconds(12);
+            var bp1 = new FightParticipant() { Name = "Player1", OutboundHitSum = 1 };
+            bp1.Buffs.Add(new FightBuff { Name = "Super Speed", Time = 3 });
+            b.Participants.Add(bp1);
+
+            // act
+            var total = new MergedFightInfo();
+            total.Merge(a);
+            total.Merge(b);
+            total.Finish();
+
+            // assert
+            Assert.Equal(1, total.Participants.Count);
+            var p = total.Participants[0];
+            Assert.Equal(2, p.Buffs.Count);
+            Assert.Equal(2, p.Buffs[0].Time);
+            Assert.Equal(27, p.Buffs[1].Time); // 24 from 4*6 intervals in first fight + 3 second offset
         }
 
     }

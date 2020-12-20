@@ -36,8 +36,9 @@ namespace EQLogParser
 
     public interface ISpellLookup
     {
+        //SpellInfo GetSpell(int id);
         SpellInfo GetSpell(string name);
-        SpellInfo GetSpellFromEmote(string text);
+        //SpellInfo GetSpellFromEmote(string text);
     }
 
     /// <summary>
@@ -185,6 +186,14 @@ namespace EQLogParser
         }
 
         /// <summary>
+        /// Lookup a spell by id.
+        /// </summary>
+        public SpellInfo GetSpell(int id)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
         /// Lookup a spell by name.
         /// </summary>
         public SpellInfo GetSpell(string name)
@@ -200,6 +209,10 @@ namespace EQLogParser
         /// </summary>
         public SpellInfo GetSpellFromEmote(string text)
         {
+            // there are two problems loading buffs from spell emotes
+            // 1. some buffs are irrelevant. e.g. promised heals
+            // 2. some emotes are not unique 
+
             // slow
             //foreach (var spell in List)
             //{
@@ -215,14 +228,6 @@ namespace EQLogParser
             LookupByEmote.TryGetValue(text, out SpellInfo s);
             return s;
         }
-
-        /// <summary>
-        /// Get the name of the spell for the given landed text.
-        /// </summary>
-        //public string GetLandedSpell(string landed)
-        //{
-        //    return null;
-        //}
 
         /// <summary>
         /// Strip any digit or roman numeral rank from the end of a spell name.

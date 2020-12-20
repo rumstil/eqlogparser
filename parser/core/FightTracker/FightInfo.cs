@@ -35,6 +35,7 @@ namespace EQLogParser
         public string Name { get; set; }
         public string Party { get; set; }
         //public bool IsRare { get; set; }
+        public string MobNotes { get; set; }
         public int MobCount { get; set; } // if this is a consolidated fight, this will be the original number of fights
         public int CohortCount { get; set; } // number of active fights when this finished
         public long TopHitSum { get; set; }
@@ -287,7 +288,7 @@ namespace EQLogParser
 
             // don't track participants that were mostly idle
             // these were probably added to the fight via casting events
-            Participants.RemoveAll(x => x.OutboundHealSum == 0 && x.OutboundHitSum == 0 && x.InboundHitSum == 0);
+            Participants.RemoveAll(x => x.OutboundHealSum == 0 && x.OutboundHitSum == 0 && x.InboundHitSum == 0 && !x.DPS.Any(y => y > 0));
 
             // don't track replays on wipes because they take too much space
             // and by then things have gone downhill too much

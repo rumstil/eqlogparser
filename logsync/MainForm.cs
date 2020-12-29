@@ -29,6 +29,7 @@ namespace LogSync
         private Dictionary<string, string> fightStatus;
         private List<LootInfo> lootList;
         private Uploader uploader;
+        private Discord discord;
 
         public MainForm()
         {
@@ -43,11 +44,13 @@ namespace LogSync
             fightStatus = new Dictionary<string, string>();
             lootList = new List<LootInfo>();
             uploader = new Uploader(LogInfo);
+            discord = new Discord(LogInfo);
+            discord.WebhookUrl = config.Read("WebhookUrl");
             lvFights.LabelEdit = false; // until i figure something more user friendly out
             _ = ProcessEventsAsync();
         }
 
-        private async void MainForm_Shown(object sender, EventArgs e)
+        private void MainForm_Shown(object sender, EventArgs e)
         {
             //LogInfo(Application.ExecutablePath);
             Text = Application.ProductName;
@@ -55,15 +58,25 @@ namespace LogSync
             // refresh the screen before we run tasks that may make it look frozen
             Refresh();
 
-            // open the last log file as long as it wasn't an archived gzip file
+            // open the last log file
             var path = config.Read("filename");
-            if (File.Exists(path) && !path.EndsWith(".gz"))
+            if (File.Exists(path))
             {
                 textLogPath.Text = path;
                 WatchFile(path);
             }
+            else if (String.IsNullOrEmpty(path))
+            {
+                var dir = new DirectoryInfo(@"C:/Users/Public/Daybreak Game Company/Installed Games/Everquest/Logs");
+                if (dir.Exists)
+                    openLogDialog.InitialDirectory = dir.FullName;
 
-            await uploader.Hello(config);
+                dir = new DirectoryInfo(@"C:/Users/Public/Sony Online Entertainment/Installed Games/Everquest/Logs");
+                if (dir.Exists)
+                    openLogDialog.InitialDirectory = dir.FullName;
+            }
+
+            _ = uploader.Hello(config);
         }
 
         private async void MainForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -342,9 +355,9 @@ namespace LogSync
             config.Write("filename", path);
             LogInfo("Loading " + path);
 
-            // always disable auto uploads when opening a file to avoid accidentally upload a lot of data
-            chkAutoGroup.Checked = chkAutoGroup.Enabled = false;
-            chkAutoRaid.Checked = chkAutoRaid.Enabled = false;
+            // always disable auto uploads when opening a file to avoid accidentally uploading a lot of data
+            chkAutoUpload.Checked = chkAutoUpload.Enabled = false;
+            chkAutoDiscord.Checked = chkAutoDiscord.Enabled = false;
 
             // we don't know where to find the spell_us.txt file until we open a log file, we can then make a guess
             // spells should be one folder down from the log folder
@@ -410,8 +423,8 @@ namespace LogSync
             {
                 toolStripStatusLabel1.Text = p.Percent.ToString("P0") + " " + p.Notes;
                 //toolStripStatusLabel1.Text = p.Percent.ToString("P0");
-                chkAutoGroup.Enabled = p.Percent > 0.99;
-                chkAutoRaid.Enabled = p.Percent > 0.99;
+                chkAutoUpload.Enabled = p.Percent > 0.99;
+                chkAutoDiscord.Enabled = p.Percent > 0.99;
             });
             cancellationSource = new CancellationTokenSource();
             var reader = new BackgroundLogReader(path, cancellationSource.Token, progress, handler);
@@ -514,10 +527,7 @@ namespace LogSync
                     lvFights.SelectedIndices.Add(i + 1);
             }
 
-            if (chkAutoGroup.Checked && f.Party == "Group")
-                UploadFight(f);
-
-            if (chkAutoRaid.Checked && f.Party == "Raid")
+            if (chkAutoUpload.Checked)
                 UploadFight(f);
         }
 
@@ -567,6 +577,7 @@ namespace LogSync
             var doubleBufferPropertyInfo = control.GetType().GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);
             doubleBufferPropertyInfo.SetValue(control, enable, null);
         }
+
 
     }
 }

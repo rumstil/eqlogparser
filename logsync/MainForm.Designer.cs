@@ -51,8 +51,8 @@
             this.label2 = new System.Windows.Forms.Label();
             this.btnCombine = new System.Windows.Forms.Button();
             this.btnUpload = new System.Windows.Forms.Button();
-            this.chkAutoRaid = new System.Windows.Forms.CheckBox();
-            this.chkAutoGroup = new System.Windows.Forms.CheckBox();
+            this.chkAutoDiscord = new System.Windows.Forms.CheckBox();
+            this.chkAutoUpload = new System.Windows.Forms.CheckBox();
             this.btnChannel = new System.Windows.Forms.Button();
             this.textLog = new System.Windows.Forms.TextBox();
             this.statusStrip1.SuspendLayout();
@@ -107,6 +107,7 @@
             this.lvFights.FullRowSelect = true;
             this.lvFights.GridLines = true;
             this.lvFights.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
+            this.lvFights.HideSelection = false;
             this.lvFights.LabelEdit = true;
             this.lvFights.Location = new System.Drawing.Point(11, 55);
             this.lvFights.Margin = new System.Windows.Forms.Padding(3, 240, 3, 3);
@@ -163,7 +164,6 @@
             // 
             this.panel1.Controls.Add(this.btnOpen);
             this.panel1.Controls.Add(this.textLogPath);
-            this.panel1.Dock = System.Windows.Forms.DockStyle.Top;
             this.panel1.Location = new System.Drawing.Point(0, 0);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(834, 52);
@@ -200,8 +200,8 @@
             this.panel2.Controls.Add(this.label2);
             this.panel2.Controls.Add(this.btnCombine);
             this.panel2.Controls.Add(this.btnUpload);
-            this.panel2.Controls.Add(this.chkAutoRaid);
-            this.panel2.Controls.Add(this.chkAutoGroup);
+            this.panel2.Controls.Add(this.chkAutoDiscord);
+            this.panel2.Controls.Add(this.chkAutoUpload);
             this.panel2.Controls.Add(this.btnChannel);
             this.panel2.Controls.Add(this.textLog);
             this.panel2.Dock = System.Windows.Forms.DockStyle.Bottom;
@@ -277,27 +277,28 @@
             this.btnUpload.UseVisualStyleBackColor = true;
             this.btnUpload.Click += new System.EventHandler(this.btnUpload_Click);
             // 
-            // chkAutoRaid
+            // chkAutoDiscord
             // 
-            this.chkAutoRaid.AutoSize = true;
-            this.chkAutoRaid.Location = new System.Drawing.Point(12, 61);
-            this.chkAutoRaid.Name = "chkAutoRaid";
-            this.chkAutoRaid.Size = new System.Drawing.Size(320, 19);
-            this.chkAutoRaid.TabIndex = 3;
-            this.chkAutoRaid.TabStop = false;
-            this.chkAutoRaid.Text = "Auto upload raid fights (that occur after this is checked)";
-            this.chkAutoRaid.UseVisualStyleBackColor = true;
+            this.chkAutoDiscord.AutoSize = true;
+            this.chkAutoDiscord.Location = new System.Drawing.Point(12, 61);
+            this.chkAutoDiscord.Name = "chkAutoDiscord";
+            this.chkAutoDiscord.Size = new System.Drawing.Size(380, 19);
+            this.chkAutoDiscord.TabIndex = 3;
+            this.chkAutoDiscord.TabStop = false;
+            this.chkAutoDiscord.Text = "Auto upload fights to discord.com (that occur after this is checked)";
+            this.chkAutoDiscord.UseVisualStyleBackColor = true;
+            this.chkAutoDiscord.Visible = false;
             // 
-            // chkAutoGroup
+            // chkAutoUpload
             // 
-            this.chkAutoGroup.AutoSize = true;
-            this.chkAutoGroup.Location = new System.Drawing.Point(12, 36);
-            this.chkAutoGroup.Name = "chkAutoGroup";
-            this.chkAutoGroup.Size = new System.Drawing.Size(332, 19);
-            this.chkAutoGroup.TabIndex = 2;
-            this.chkAutoGroup.TabStop = false;
-            this.chkAutoGroup.Text = "Auto upload group fights (that occur after this is checked)";
-            this.chkAutoGroup.UseVisualStyleBackColor = true;
+            this.chkAutoUpload.AutoSize = true;
+            this.chkAutoUpload.Location = new System.Drawing.Point(12, 36);
+            this.chkAutoUpload.Name = "chkAutoUpload";
+            this.chkAutoUpload.Size = new System.Drawing.Size(382, 19);
+            this.chkAutoUpload.TabIndex = 2;
+            this.chkAutoUpload.TabStop = false;
+            this.chkAutoUpload.Text = "Auto upload fights to raidloot.com (that occur after this is checked)";
+            this.chkAutoUpload.UseVisualStyleBackColor = true;
             // 
             // btnChannel
             // 
@@ -369,8 +370,8 @@
         private System.Windows.Forms.Panel panel2;
         private System.Windows.Forms.Button btnChannel;
         private System.Windows.Forms.TextBox textLog;
-        private System.Windows.Forms.CheckBox chkAutoRaid;
-        private System.Windows.Forms.CheckBox chkAutoGroup;
+        private System.Windows.Forms.CheckBox chkAutoDiscord;
+        private System.Windows.Forms.CheckBox chkAutoUpload;
         private System.Windows.Forms.Button btnUpload;
         private System.Windows.Forms.Button btnCombine;
         private System.Windows.Forms.LinkLabel lnkSelectZone;

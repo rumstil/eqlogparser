@@ -434,7 +434,7 @@ namespace EQLogParser
         public void WriteAll(TextWriter writer)
         {
             writer.WriteLine();
-            writer.WriteLine("=== {0} - {1:N0} HP - {2}s at {3}", Name, Target.InboundHitSum, Duration, StartedOn.ToLocalTime(), Zone);
+            writer.WriteLine("=== **{0}** - {1:N0} HP in {2}s at {3}", Name, Target.InboundHitSum, Duration, StartedOn.ToLocalTime(), Zone);
             foreach (var p in Participants)
             {
                 var pct = (float)p.OutboundHitSum / Target.InboundHitSum;
@@ -467,7 +467,7 @@ namespace EQLogParser
         public void WriteNotes(TextWriter writer)
         {
             writer.WriteLine();
-            writer.WriteLine("=== {0} - {1:N0} HP - {2}s at {3}", Name, Target.InboundHitSum, Duration, StartedOn.ToLocalTime(), Zone);
+            writer.WriteLine("**{0}** - {1:N0} HP in {2}s at {3}", Name, Target.InboundHitSum, Duration, StartedOn.ToLocalTime().ToShortTimeString(), Zone);
             foreach (var p in Participants.Take(5).Where(x => x.OutboundHitSum > 0))
             {
                 writer.WriteLine(" {0,-10} --- {1:P0} {2,11:N0} / {3,6:N0} DPS", p, (float)p.OutboundHitSum / Target.InboundHitSum, p.OutboundHitSum, p.OutboundHitSum / Duration);

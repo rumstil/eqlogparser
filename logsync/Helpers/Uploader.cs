@@ -25,7 +25,6 @@ namespace LogSync
         private HttpClient httpClient;
         private string uploadUrl = "https://www.raidloot.com";
         //private string uploadUrl = "http://localhost:61565";
-        private int uploadSize; // a crude bandwidth counter
         private HashSet<string> uploadLog;
         private string privateKey;
         private Action<string> logger;
@@ -98,14 +97,13 @@ namespace LogSync
                 var result = await httpClient.PostAsync(uploadUrl + "/logs/fight", content);
                 if (result.IsSuccessStatusCode)
                 {
-                    uploadSize += json.Length;
                     uploadLog.Add(f.ID);
                     //logger("Upload completed.");
                     return true;
                 }
                 else
                 {
-                    logger("Upload failed: " + result.StatusCode + " " + await result.Content.ReadAsStringAsync());
+                    logger("Upload error: " + result.StatusCode + " " + await result.Content.ReadAsStringAsync());
                     return false;
                 }
             }
@@ -127,7 +125,6 @@ namespace LogSync
                 var result = await httpClient.PostAsync(uploadUrl + "/logs/loot", content);
                 if (result.IsSuccessStatusCode)
                 {
-                    uploadSize += json.Length;
                     //logger("Upload completed.");
                     return true;
                 }

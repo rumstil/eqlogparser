@@ -34,7 +34,7 @@ namespace EQLogParser
         // [Sat May 07 20:44:12 2016] You remove Fourier from the party.
         // [Thu May 19 10:20:40 2016] You notify Rumstil that you agree to join the group.
         //private static readonly Regex PartyRegex = new Regex(@"^(.+?) (?:have|has) (joined|left|been removed from) the (group|raid)\.$", RegexOptions.Compiled);
-        private static readonly Regex PartyJoinedRegex = new Regex(@"^(.+?) (?:have|has) joined the (group|raid)\.$", RegexOptions.Compiled | RegexOptions.RightToLeft);
+        private static readonly Regex PartyJoinedRegex = new Regex(@"^(.+?)(?: have| has)? joined the (group|raid)\.$", RegexOptions.Compiled | RegexOptions.RightToLeft);
         private static readonly Regex PartyJoinedInviteeRegex = new Regex(@"^You notify (\w+) that you agree to join the (group|raid)\.$", RegexOptions.Compiled);
         private static readonly Regex PartyLeftRegex = new Regex(@"^(.+?) (?:have been|has been|has|were) (?:left|removed from) the (group|raid)\.$", RegexOptions.Compiled | RegexOptions.RightToLeft);
         private static readonly Regex PartyKickRegex = new Regex(@"^You remove (.+?) from the (group|party|raid)\.$", RegexOptions.Compiled);
@@ -58,7 +58,7 @@ namespace EQLogParser
                 if (m.Groups[1].Value == "party")
                     status = PartyStatus.GroupXP;
                 if (m.Groups[1].Value == "raid")
-                    status = PartyStatus.GroupXP;
+                    status = PartyStatus.RaidXP;
                 return new LogPartyEvent
                 {
                     Timestamp = e.Timestamp,

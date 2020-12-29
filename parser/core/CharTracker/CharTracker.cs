@@ -184,15 +184,15 @@ namespace EQLogParser
                     c.PlayerAggro = hit.Timestamp;
                 }
 
-                // this works, but it's probably unnecessary given spell and /who id
-                //c = Add(hit.Source);
-                //if (c.Class == null)
-                //{
-                //    if (hit.Type == "backstab")
-                //        c.Class = ClassesMask.Rogue.ToString();
-                //    if (hit.Type == "frenzy")
-                //        c.Class = ClassesMask.Berserker.ToString();
-                //}
+                // some extra class detection for mercs and melee boxes that may not cast spells
+                c = Add(hit.Source);
+                if (c.Class == null)
+                {
+                    if (hit.Type == "backstab")
+                        c.Class = ClassesMaskShort.ROG.ToString();
+                    //if (hit.Type == "frenzy")
+                    //    c.Class = ClassesMaskShort.Berserker.ToString();
+                }
             }
 
             if (e is LogMissEvent miss)

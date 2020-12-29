@@ -49,6 +49,10 @@ namespace EQLogParser
             "Star Ruby",
             "Sapphire",
             "Ruby",
+            "Peridot",
+            "Phosphite",
+            "Phosphorous Powder",
+            "Relic Fragments",
         };
 
         private string zone;

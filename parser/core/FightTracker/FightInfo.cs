@@ -434,10 +434,14 @@ namespace EQLogParser
         public void WriteAll(TextWriter writer)
         {
             writer.WriteLine();
-            writer.WriteLine("=== **{0}** - {1:N0} HP in {2}s at {3}", Name, Target.InboundHitSum, Duration, StartedOn.ToLocalTime(), Zone);
+            writer.WriteLine("**{0}** {1:N0} HP in {2}s at {3}", Name, Target.InboundHitSum, Duration, StartedOn.ToLocalTime(), Zone);
+            if (Participants.Count == 0)
+                return;
+
+            var top = Participants.Max(x => x.OutboundHitSum);
             foreach (var p in Participants)
             {
-                var pct = (float)p.OutboundHitSum / Target.InboundHitSum;
+                var pct = (float)p.OutboundHitSum / top;
 
                 writer.WriteLine(" {0} {1:P0} {2} to {3}", p, pct, p.FirstAction?.ToLocalTime().ToString("T"), p.LastAction?.ToLocalTime().ToString("T"));
 
@@ -467,11 +471,32 @@ namespace EQLogParser
         public void WriteNotes(TextWriter writer)
         {
             writer.WriteLine();
-            writer.WriteLine("**{0}** - {1:N0} HP in {2}s at {3}", Name, Target.InboundHitSum, Duration, StartedOn.ToLocalTime().ToShortTimeString(), Zone);
-            foreach (var p in Participants.Take(5).Where(x => x.OutboundHitSum > 0))
+            writer.WriteLine("**{0}** {1} HP in {2}s at {3}", Name, FormatNum(Target.InboundHitSum), Duration, StartedOn.ToLocalTime().ToShortTimeString(), Zone);
+            if (Participants.Count == 0)
+                return;
+
+            var top = Participants.Max(x => x.OutboundHitSum);
+            foreach (var p in Participants.Take(10).Where(x => x.OutboundHitSum > 0))
             {
-                writer.WriteLine(" {0,-10} --- {1:P0} {2,11:N0} / {3,6:N0} DPS", p, (float)p.OutboundHitSum / Target.InboundHitSum, p.OutboundHitSum, p.OutboundHitSum / Duration);
+                // percent = share of damage vs mob
+                //var pct = (float)p.OutboundHitSum / Target.InboundHitSum;
+                // percent = damage relative to top player
+                var pct = (float)p.OutboundHitSum / top;
+                writer.WriteLine(" {0,-20} --- {1,4:P0} {2,8} / {3,5} DPS", p, pct, FormatNum(p.OutboundHitSum), FormatNum(p.OutboundHitSum / Duration));
             }
+        }
+
+        static string FormatNum(long n)
+        {
+            if (n >= 1000000000)
+                return (n / 1000000000F).ToString("F2") + 'B';
+            if (n >= 1000000)
+                return (n / 1000000F).ToString("F2") + 'M';
+            if (n >= 10000)
+                return (n / 1000F).ToString("F0") + 'K';
+            if (n > 1000)
+                return (n / 1000F).ToString("F1") + 'K';
+            return n.ToString();
         }
 
 

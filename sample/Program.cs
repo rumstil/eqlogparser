@@ -160,7 +160,8 @@ namespace logdump
             //f.Anonymize();
             //var duration = (f.Finished.Value - f.Started).TotalSeconds + 1;
 
-            f.WriteAll(Console.Out);
+            //f.WriteAll(Console.Out);
+            f.WriteNotes(Console.Out);
         }
 
         static void SaveFight(FightInfo f)

@@ -267,11 +267,11 @@ namespace EQLogParser
 
         private void TrackParty(LogPartyEvent party)
         {
-            if (party.Status == PartyStatus.GroupXP || party.Status == PartyStatus.GroupJoined)
-                Party = "Group";
-
-            if (party.Status == PartyStatus.RaidXP || party.Status == PartyStatus.RaidJoined) 
+            if (party.Status == PartyStatus.RaidXP || party.Status == PartyStatus.RaidJoined)
                 Party = "Raid";
+
+            if (party.Status == PartyStatus.GroupXP)
+                Party = "Group";
 
             if (party.Status == PartyStatus.SoloXP)
                 Party = "Solo";

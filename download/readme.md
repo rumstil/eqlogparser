@@ -2,7 +2,7 @@
 
 In order to run the parser you will need to have the Microsoft .NET Core 3.1 Runtime installed on your computer. You can download it from Microsoft here:
 
-https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-desktop-3.1.6-windows-x86-installer
+https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-desktop-3.1.10-windows-x86-installer
 
 
 # Download

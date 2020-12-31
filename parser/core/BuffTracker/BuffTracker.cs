@@ -62,6 +62,9 @@ namespace EQLogParser
             // beastlord
             AddSpell("Group Bestial Alignment I");
 
+            // berserker
+            AddSpell("Cry Havoc");
+
             // cleric
             AddSpell("Divine Intervention");
             AddSpell("Divine Intervention Trigger", "has been rescued by divine intervention!");

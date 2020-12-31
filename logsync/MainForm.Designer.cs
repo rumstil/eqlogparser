@@ -55,6 +55,13 @@
             this.chkAutoUpload = new System.Windows.Forms.CheckBox();
             this.btnChannel = new System.Windows.Forms.Button();
             this.textLog = new System.Windows.Forms.TextBox();
+            this.lvPlayers = new System.Windows.Forms.ListView();
+            this.columnHeader8 = new System.Windows.Forms.ColumnHeader();
+            this.columnHeader9 = new System.Windows.Forms.ColumnHeader();
+            this.columnHeader10 = new System.Windows.Forms.ColumnHeader();
+            this.columnHeader11 = new System.Windows.Forms.ColumnHeader();
+            this.columnHeader12 = new System.Windows.Forms.ColumnHeader();
+            this.columnHeader13 = new System.Windows.Forms.ColumnHeader();
             this.statusStrip1.SuspendLayout();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
@@ -72,7 +79,7 @@
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripStatusLabel1,
             this.toolStripStatusLabel2});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 539);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 681);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.RenderMode = System.Windows.Forms.ToolStripRenderMode.Professional;
             this.statusStrip1.Size = new System.Drawing.Size(834, 22);
@@ -108,11 +115,10 @@
             this.lvFights.GridLines = true;
             this.lvFights.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
             this.lvFights.HideSelection = false;
-            this.lvFights.LabelEdit = true;
             this.lvFights.Location = new System.Drawing.Point(11, 55);
             this.lvFights.Margin = new System.Windows.Forms.Padding(3, 240, 3, 3);
             this.lvFights.Name = "lvFights";
-            this.lvFights.Size = new System.Drawing.Size(811, 291);
+            this.lvFights.Size = new System.Drawing.Size(811, 275);
             this.lvFights.TabIndex = 0;
             this.lvFights.UseCompatibleStateImageBehavior = false;
             this.lvFights.View = System.Windows.Forms.View.Details;
@@ -205,7 +211,7 @@
             this.panel2.Controls.Add(this.btnChannel);
             this.panel2.Controls.Add(this.textLog);
             this.panel2.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panel2.Location = new System.Drawing.Point(0, 349);
+            this.panel2.Location = new System.Drawing.Point(0, 491);
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(834, 190);
             this.panel2.TabIndex = 2;
@@ -323,11 +329,68 @@
             this.textLog.Size = new System.Drawing.Size(811, 91);
             this.textLog.TabIndex = 7;
             // 
+            // lvPlayers
+            // 
+            this.lvPlayers.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lvPlayers.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.columnHeader8,
+            this.columnHeader9,
+            this.columnHeader10,
+            this.columnHeader11,
+            this.columnHeader12,
+            this.columnHeader13});
+            this.lvPlayers.FullRowSelect = true;
+            this.lvPlayers.GridLines = true;
+            this.lvPlayers.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
+            this.lvPlayers.HideSelection = false;
+            this.lvPlayers.Location = new System.Drawing.Point(11, 340);
+            this.lvPlayers.Margin = new System.Windows.Forms.Padding(3, 240, 3, 3);
+            this.lvPlayers.Name = "lvPlayers";
+            this.lvPlayers.Size = new System.Drawing.Size(811, 145);
+            this.lvPlayers.TabIndex = 1;
+            this.lvPlayers.UseCompatibleStateImageBehavior = false;
+            this.lvPlayers.View = System.Windows.Forms.View.Details;
+            // 
+            // columnHeader8
+            // 
+            this.columnHeader8.Text = "Player";
+            this.columnHeader8.Width = 150;
+            // 
+            // columnHeader9
+            // 
+            this.columnHeader9.Text = "Class";
+            this.columnHeader9.Width = 50;
+            // 
+            // columnHeader10
+            // 
+            this.columnHeader10.Text = "Damage";
+            this.columnHeader10.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.columnHeader10.Width = 70;
+            // 
+            // columnHeader11
+            // 
+            this.columnHeader11.Text = "% vs Top";
+            this.columnHeader11.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.columnHeader11.Width = 70;
+            // 
+            // columnHeader12
+            // 
+            this.columnHeader12.Text = "DPS";
+            this.columnHeader12.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.columnHeader12.Width = 70;
+            // 
+            // columnHeader13
+            // 
+            this.columnHeader13.Text = "Notes";
+            this.columnHeader13.Width = 300;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(834, 561);
+            this.ClientSize = new System.Drawing.Size(834, 703);
+            this.Controls.Add(this.lvPlayers);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.lvFights);
@@ -378,6 +441,13 @@
         private System.Windows.Forms.LinkLabel lnkSelectDate;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.TextBox textSearch;
+        private System.Windows.Forms.ListView lvPlayers;
+        private System.Windows.Forms.ColumnHeader columnHeader8;
+        private System.Windows.Forms.ColumnHeader columnHeader9;
+        private System.Windows.Forms.ColumnHeader columnHeader10;
+        private System.Windows.Forms.ColumnHeader columnHeader11;
+        private System.Windows.Forms.ColumnHeader columnHeader12;
+        private System.Windows.Forms.ColumnHeader columnHeader13;
     }
 }
 

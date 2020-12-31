@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.Json.Serialization;
 
 namespace EQLogParser
@@ -486,7 +487,7 @@ namespace EQLogParser
             }
         }
 
-        static string FormatNum(long n)
+        public static string FormatNum(long n)
         {
             if (n >= 1000000000)
                 return (n / 1000000000F).ToString("F2") + 'B';

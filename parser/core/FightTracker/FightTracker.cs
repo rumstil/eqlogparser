@@ -364,18 +364,24 @@ namespace EQLogParser
         {
             ActiveFights.Remove(f);
 
+            f.Party = Party;
+            f.Player = Player;
+            f.Server = Server;
+
             foreach (var p in f.Participants)
             {
                 p.PetOwner = Chars.GetOwner(p.Name);
-                p.Class = Chars.GetClass(p.Name);
                 // go back a few seconds to include buffs cast in preparation for the fight
                 p.Buffs = Buffs.Get(p.Name, f.StartedOn.AddSeconds(-6), f.UpdatedOn, -6).ToList();
             }
 
-            f.Party = Party;
-            f.Player = Player;
-            f.Server = Server;
             f.Finish();
+
+            // set class last in case finish() method added pet owners to participant list
+            foreach (var p in f.Participants)
+            {
+                p.Class = Chars.GetClass(p.Name);
+            }
 
             // after a fight is passed to this delegate it should never be modified (e.g. via the LastFight variable)
             OnFightFinished?.Invoke(f);

@@ -39,6 +39,7 @@ namespace LogSync
             //config = new XmlConfigAdapter();
             spells = new SpellParser();
             parser = new LogParser();
+            //parser.MinDate = DateTime.Parse("2020-09-27");
             tracker = new BackgroundLogTracker(spells);
             fightList = new List<FightInfo>(2000);
             fightStatus = new Dictionary<string, string>();
@@ -46,7 +47,6 @@ namespace LogSync
             uploader = new Uploader(LogInfo);
             discord = new Discord(LogInfo);
             discord.WebhookUrl = config.Read("WebhookUrl");
-            lvFights.LabelEdit = false; // until i figure something more user friendly out
             _ = ProcessEventsAsync();
         }
 
@@ -279,6 +279,9 @@ namespace LogSync
             // this only fires for mouse selects
             btnCombine.Text = lvFights.SelectedIndices.Count + " → 1";
             btnCombine.Enabled = lvFights.SelectedIndices.Count > 1 && lvFights.SelectedIndices.Count < 500;
+            var selected = GetSelectedListViewFights();
+            if (selected.Count == 1)
+                ViewFight(selected[0]);
         }
 
         private void lvFights_Click(object sender, EventArgs e)
@@ -542,6 +545,33 @@ namespace LogSync
             textLog.AppendText(text + "\r\n");
         }
 
+        private void ViewFight(FightInfo f)
+        {
+            //var s = new StringBuilder();
+            //var writer = new StringWriter(s);
+            //f.WriteNotes(writer);
+            //LogInfo(s.ToString());
+
+            lvPlayers.BeginUpdate();
+            lvPlayers.Items.Clear();
+            var top = f.Participants.Max(x => x.OutboundHitSum);
+            // show participants that did damage
+            foreach (var p in f.Participants.Where(x => x.OutboundHitSum > 0))
+            {
+                var item = lvPlayers.Items.Add(p.Name);
+                item.SubItems.Add(p.Class);
+                item.SubItems.Add(FightInfo.FormatNum(p.OutboundHitSum));
+                item.SubItems.Add(((double)p.OutboundHitSum / top).ToString("P0"));
+                item.SubItems.Add(FightInfo.FormatNum(p.OutboundHitSum / f.Duration));
+                //var damage = String.Join(", ", p.AttackTypes.Take(3).Select(x => $"{(double)x.HitSum / p.OutboundHitSum:P0} {x.Type}"));
+                var notes = String.Join(", ", p.AttackTypes.Take(3).Select(x => $"{FightInfo.FormatNum(x.HitSum / f.Duration)} {x.Type}"));
+                if (p.Buffs.Any(x => x.Name == BuffTracker.DEATH))
+                    notes = "DIED - " + notes;
+                item.SubItems.Add(notes);
+            }
+            lvPlayers.EndUpdate();
+        }
+
         private async void UploadFight(FightInfo f)
         {
             if (!uploader.IsReady)
@@ -577,7 +607,5 @@ namespace LogSync
             var doubleBufferPropertyInfo = control.GetType().GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);
             doubleBufferPropertyInfo.SetValue(control, enable, null);
         }
-
-
     }
 }

@@ -64,7 +64,7 @@ namespace EQLogParser
                 case "Wizard": return "WIZ";
                 case "Magician": return "MAG";
                 case "Enchanter": return "ENC";
-                case "Beastlor": return "BST";
+                case "Beastlord": return "BST";
                 case "Berserker": return "BER";
                 default: return null;
             }

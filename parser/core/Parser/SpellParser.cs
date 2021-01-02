@@ -11,7 +11,8 @@ namespace EQLogParser
 {
     public enum SpellTarget
     {
-        Pet = 14
+        Pet = 14,
+        Pet2 = 38,
     }
 
     public class SpellInfo
@@ -51,7 +52,7 @@ namespace EQLogParser
         private IReadOnlyList<SpellInfo> List = new List<SpellInfo>();
         //private IReadOnlyDictionary<int, SpellInfo> LookupById = new Dictionary<int, SpellInfo>();
         private IReadOnlyDictionary<string, SpellInfo> LookupByName = new Dictionary<string, SpellInfo>();
-        private IReadOnlyDictionary<string, SpellInfo> LookupByEmote = new Dictionary<string, SpellInfo>();
+        //private IReadOnlyDictionary<string, SpellInfo> LookupByEmote = new Dictionary<string, SpellInfo>();
 
         public bool IsReady => List.Count > 0;
 
@@ -64,11 +65,9 @@ namespace EQLogParser
             if (!File.Exists(path))
                 throw new FileNotFoundException();
 
-
-            var list = new List<SpellInfo>(10000);
+            var list = new List<SpellInfo>(30000);
             var lookupById = new Dictionary<int, SpellInfo>(list.Count);
             var lookupByName = new Dictionary<string, SpellInfo>(list.Count);
-            var lookupByEmote = new Dictionary<string, SpellInfo>(list.Count);
 
             using (var f = File.OpenText(path))
             {
@@ -97,6 +96,9 @@ namespace EQLogParser
 
                     // 32 TYPENUMBER
                     spell.Target = Convert.ToInt32(fields[32]);
+                    // collapse pet targets to a single type
+                    if (spell.Target == (int)SpellTarget.Pet2)
+                        spell.Target = (int)SpellTarget.Pet;
 
                     // 38 WARRIORMIN .. BERSERKERMIN
                     for (int i = 0; i < 16; i++)
@@ -111,24 +113,21 @@ namespace EQLogParser
                         }
                     }
 
-                    // we could store all spells but that would take a lot of memory - so instead we will:
                     // only keep spells that can be cast by a player
-                    // only keep one rank since all ranks are equivalent in terms of castable class and landing text
                     if (spell.ClassesCount > 0)
                     {
-                        var name = StripRank(spell.Name);
-                        // handle spell name collisions. e.g. both PAL/CLR have a Merciful Light
-                        if (lookupByName.TryGetValue(name, out SpellInfo match))
+                        // handle spell name collisions. 
+                        // e.g. Merciful Light is both PAL/CLR
+                        // e.g. Inspire Fear is CLR and Inspire Fear II is None
+                        if (lookupByName.TryGetValue(spell.Name, out SpellInfo match))
                         {
                             match.ClassesMask |= spell.ClassesMask;
-                            //match.ClassesCount = CountBits(match.ClassesMask);
                             match.ClassesCount = BitOperations.PopCount((uint)match.ClassesMask);
                         }
                         else
                         {
-                            lookupByName.Add(name, spell);
+                            lookupByName.Add(spell.Name, spell);
                         }
-
                     }
 
                     list.Add(spell);
@@ -181,12 +180,11 @@ namespace EQLogParser
 
             //LookupById = lookupById;
             LookupByName = lookupByName;
-            LookupByEmote = lookupByEmote;
             List = list;
         }
 
         /// <summary>
-        /// Lookup a spell by id.
+        /// Lookup a spell by id. Need to store all ranks if doing this.
         /// </summary>
         public SpellInfo GetSpell(int id)
         {
@@ -194,16 +192,17 @@ namespace EQLogParser
         }
 
         /// <summary>
-        /// Lookup a spell by name.
+        /// Lookup a spell by name. 
         /// </summary>
         public SpellInfo GetSpell(string name)
         {
-            if (LookupByName.TryGetValue(StripRank(name), out SpellInfo s))
+            if (LookupByName.TryGetValue(name, out SpellInfo s))
                 return s;
 
             return null;
         }
 
+        /*
         /// <summary>
         /// Lookup a spell by emote.
         /// </summary>
@@ -228,6 +227,7 @@ namespace EQLogParser
             LookupByEmote.TryGetValue(text, out SpellInfo s);
             return s;
         }
+        */
 
         /// <summary>
         /// Strip any digit or roman numeral rank from the end of a spell name.

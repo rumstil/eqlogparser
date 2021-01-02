@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -16,14 +17,14 @@ namespace EQLogParser
 
     public class BuffInfo
     {
-        public string CharName;
+        public string Target;
         public string SpellName;
         public DateTime Timestamp;
         public int DurationTicks; // base duration prior to focus/aa
 
         public override string ToString()
         {
-            return $"Buff: {SpellName} => ${CharName}";
+            return $"Buff: {SpellName} => ${Target}";
         }
     }
 
@@ -61,6 +62,7 @@ namespace EQLogParser
 
             // beastlord
             AddSpell("Group Bestial Alignment I");
+            AddSpell("Bloodlust I");
 
             // berserker
             AddSpell("Cry Havoc");
@@ -75,6 +77,9 @@ namespace EQLogParser
             // enchanter
             AddSpell("Illusions of Grandeur I");
 
+            // necromancer
+            AddSpell("Curse of Muram"); // anguish robe
+
             // ranger
             AddSpell("Auspice of the Hunter I");
             AddSpell("Scarlet Cheetah Fang I");
@@ -84,7 +89,7 @@ namespace EQLogParser
             AddSpell("Outrider's Accuracy I");
             AddSpell("Bosquestalker's Discipline");
             AddSpell("Trueshot Discipline");
-            AddSpell("Imbued Ferocity");
+            AddSpell("Imbued Ferocity I");
 
             // shaman
             AddSpell("Prophet's Gift of the Ruchu"); // epic
@@ -98,7 +103,7 @@ namespace EQLogParser
                 // disabling this because it's still useful to track buffs before death
                 //Buffs.RemoveAll(x => x.CharName == death.Name);
                 // death is just a debuff
-                Buffs.Add(new BuffInfo { CharName = death.Name, SpellName = DEATH, Timestamp = death.Timestamp });
+                Buffs.Add(new BuffInfo { Target = death.Name, SpellName = DEATH, Timestamp = death.Timestamp });
             }
 
             if (e is LogRawEvent raw)
@@ -112,7 +117,7 @@ namespace EQLogParser
 
                     var buff = new BuffInfo()
                     {
-                        CharName = name,
+                        Target = name,
                         // all spells in a set use the same emote we won't actually know which rank landed
                         SpellName = SpellParser.StripRank(spell.Name),
                         Timestamp = e.Timestamp,
@@ -138,7 +143,7 @@ namespace EQLogParser
         public IEnumerable<FightBuff> Get(string name, DateTime from, DateTime to, int offset = 0)
         {
             return Buffs
-                .Where(x => x.CharName == name && x.Timestamp >= from && x.Timestamp <= to)
+                .Where(x => x.Target == name && x.Timestamp >= from && x.Timestamp <= to)
                 //.Select(x => new FightBuff { Name = x.SpellName, LandedOn = x.Timestamp });
                 .Select(x => new FightBuff { Name = x.SpellName, Time = (int)(x.Timestamp - from).TotalSeconds + offset });
         }

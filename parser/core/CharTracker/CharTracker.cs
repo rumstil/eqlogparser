@@ -29,6 +29,13 @@ namespace EQLogParser
         }
     }
 
+    internal class PetBuffEmote
+    {
+        public DateTime Timestamp;
+        public string Source;
+        public string LandOthers;
+    }
+
     /// <summary>
     /// Tracks PC, NPC, merc, and pet activity to determine who is a friend/foe and what class they are.
     /// Players are always considered friends. Obviously this won't work on a PvP server.
@@ -42,6 +49,8 @@ namespace EQLogParser
         private static readonly Regex PetTellOwnerRegex = new Regex(@"^(Attacking .+? Master|Sorry, Master\.\.\. calming down|Following you, Master|By your command, master|I live again\.\.)\.$", RegexOptions.Compiled);
 
         private readonly Dictionary<string, CharInfo> CharsByName = new Dictionary<string, CharInfo>(); // StringComparer.InvariantCultureIgnoreCase);
+
+        private readonly List<PetBuffEmote> PetBuffs = new List<PetBuffEmote>();
 
         private readonly ISpellLookup Spells;
 
@@ -145,10 +154,13 @@ namespace EQLogParser
                 if (heal.Source != null)
                 {
                     var source = Add(heal.Source);
-                    if (target.IsPlayer || target.Type == CharType.Friend)
+                    if (target.Type == CharType.Friend || target.IsPlayer)
                         source.Type = CharType.Friend;
                     else if (target.Type == CharType.Foe)
                         source.Type = CharType.Foe;
+
+                    if (source.Type == CharType.Friend || source.IsPlayer)
+                        target.Type = CharType.Friend;
                 }
             }
 
@@ -162,19 +174,47 @@ namespace EQLogParser
             if (e is LogCastingEvent cast)
             {
                 var c = Add(cast.Source);
+                var s = Spells?.GetSpell(cast.Spell);
 
-                if (c.Class == null)
+                if (s?.ClassesCount == 1)
                 {
-                    var spell = Spells?.GetSpell(cast.Spell);
-                    if (spell != null && spell.ClassesCount == 1)
+                    c.Class = s.ClassesNames;
+                    //Console.WriteLine("*** {0} ... {1} {2}", cast.Source, cast.Spell, cls);
+                    //Console.ReadLine();
+                }
+
+                if (s?.Target == (int)SpellTarget.Pet && !String.IsNullOrEmpty(s.LandOthers))
+                {
+                    PetBuffs.Add(new PetBuffEmote() { Timestamp = e.Timestamp, Source = cast.Source, LandOthers = s.LandOthers });
+                }
+            }
+            
+            if (e is LogRawEvent raw)
+            {
+                // we only need to keep track of buffs for a few seconds between casting time and landing time
+                PetBuffs.RemoveAll(x => x.Timestamp < e.Timestamp.AddSeconds(-5));
+                // search recently cast pet buffs to see if a spell emote matches and use it to tag a pet owner
+                // this could possibly misattribute the pet owner if two people cast the same buff at nearly the same time
+                for (var i = 0; i < PetBuffs.Count; i++)
+                {
+                    var pb = PetBuffs[i];
+                    if (raw.Text.EndsWith(pb.LandOthers))
                     {
-                        c.Class = spell.ClassesNames;
-                        //Console.WriteLine("*** {0} ... {1} {2}", cast.Source, cast.Spell, cls);
-                        //Console.ReadLine();
+                        var name = raw.Text.Substring(0, raw.Text.Length - pb.LandOthers.Length);
+                        var c = Get(name);
+                        // since this isn't 100% accurate we only set the owner if one isn't already present
+                        // todo: maybe keep track of a few guesses and only set owner after a few matches?
+                        if (c != null && c.Owner == null)
+                        {
+                            //Console.WriteLine("owner: {0} => {1}", name, pb.Source);
+                            c.Owner = pb.Source;
+                        }
+                        PetBuffs.RemoveAt(i);
+                        break;
                     }
                 }
             }
-
+            
             if (e is LogHitEvent hit)
             {
                 var c = Add(hit.Target);
@@ -254,6 +294,16 @@ namespace EQLogParser
         }
 
         /// <summary>
+        /// Get existing player or NPC from the list of tracked entities. 
+        /// Since this can return a null unlike the Add() function.
+        /// </summary>
+        public CharInfo Get(string name)
+        {
+            CharsByName.TryGetValue(name, out CharInfo c);
+            return c;
+        }
+
+        /// <summary>
         /// Add a player or NPC to the list of tracked entities. Will perform a dupe check.
         /// </summary>
         public CharInfo Add(string name)
@@ -296,6 +346,18 @@ namespace EQLogParser
                 return null;
             }
 
+            if (n1.Owner == name2 || n2.Owner == name1)
+            {
+                // ignore pets being damaged by their owners e.g. Spectral Symbiosis
+                return null;
+            }
+
+            if (n1.IsPlayer && n2.IsPlayer)
+            {
+                // ignore duels and charmed players
+                return null;
+            }
+
             else if ((n1.Type == CharType.Friend && n2.Type == CharType.Friend) || (n1.Type == CharType.Foe && n2.Type == CharType.Foe))
             {
                 // if they're both foes, one may be newly charmed and should be reverted
@@ -324,6 +386,19 @@ namespace EQLogParser
             }
 
             else if (n1.Type == CharType.Foe || n2.Type == CharType.Friend)
+            {
+                n1.Type = CharType.Foe;
+                n2.Type = CharType.Friend;
+                return name1;
+            }
+
+            else if (IsPetName(n1.Name))
+            {
+                n1.Type = CharType.Friend;
+                n2.Type = CharType.Foe;
+                return name2;
+            }
+            else if (IsPetName(n2.Name))
             {
                 n1.Type = CharType.Foe;
                 n2.Type = CharType.Friend;

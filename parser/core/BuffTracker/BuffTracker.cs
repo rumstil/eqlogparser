@@ -58,10 +58,11 @@ namespace EQLogParser
             // bard
             AddSpell("Fierce Eye I");
             AddSpell("Quick Time I");
+            AddSpell("Dance of Blades I");
             AddSpell("Spirit of Vesagran"); // epic
 
             // beastlord
-            AddSpell("Group Bestial Alignment I");
+            AddSpell("Bestial Alignment I"); // same emote as group version
             AddSpell("Bloodlust I");
 
             // berserker
@@ -69,10 +70,10 @@ namespace EQLogParser
 
             // cleric
             AddSpell("Divine Intervention");
-            AddSpell("Divine Intervention Trigger", "has been rescued by divine intervention!");
+            AddSpell("Divine Intervention Trigger", " has been rescued by divine intervention!");
 
             // druid
-            AddSpell("Group Spirit of the Great Wolf I");
+            AddSpell("Spirit of the Great Wolf I"); // same emote as group version
 
             // enchanter
             AddSpell("Illusions of Grandeur I");
@@ -83,8 +84,7 @@ namespace EQLogParser
             // ranger
             AddSpell("Auspice of the Hunter I");
             AddSpell("Scarlet Cheetah Fang I");
-            AddSpell("Guardian of the Forest I");
-            AddSpell("Group Guardian of the Forest I");
+            AddSpell("Guardian of the Forest I"); // same emote as group version
             AddSpell("Empowered Blades I");
             AddSpell("Outrider's Accuracy I");
             AddSpell("Bosquestalker's Discipline");
@@ -176,12 +176,16 @@ namespace EQLogParser
         /// </summary>
         private SpellInfo GetSpellFromEmote(string text)
         {
-            // Nielar's instincts are sharpened by the auspice of the hunter.
-            // Fred flees in terror.
-            // todo: this doesn't handle mob/merc/pet names with spaces properly
-            text = Regex.Replace(text, @"^\w+", "");
-
+            // lands on self?
             Emotes.TryGetValue(text, out SpellInfo s);
+            if (s != null)
+                return s;
+
+            // lands on others?
+            // strip name from start of string
+            // todo: this doesn't handle names with spaces properly (mob/merc/pet)
+            text = Regex.Replace(text, @"^\w+", "");
+            Emotes.TryGetValue(text, out s);
             return s;
         }
 

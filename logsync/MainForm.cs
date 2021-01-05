@@ -598,7 +598,9 @@ namespace LogSync
         private bool IsFilterMatch(FightInfo f)
         {
             return f.Name.Contains(textSearch.Text, StringComparison.OrdinalIgnoreCase)
-                || f.Zone.Contains(textSearch.Text, StringComparison.OrdinalIgnoreCase);
+                || f.Zone.Contains(textSearch.Text, StringComparison.OrdinalIgnoreCase)
+                || f.Participants.Any(x => x.Name.StartsWith(textSearch.Text, StringComparison.OrdinalIgnoreCase))
+                ;
         }
 
         private static void SetDoubleBuffered(Control control, bool enable)

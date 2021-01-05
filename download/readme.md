@@ -18,8 +18,15 @@ The first time you run the parser will you get a "Windows protected your PC" ale
 You may also get a Windows Firewall popup asking if the app can access the internet. You will need to allow this since part of the parser's job is to send data over the internet.
 
 
+# How it Works
 
+Prior to using the parser, you must use the "/log on" command in EQ to enable logging. You will probably also want to enable other players hits, spells and casting in the filters tab of the game options window if you want full and accurate information.
 
+Once your logging is enabled you can start up the parser during or after play.
+
+The app will scan your EQ log file, generate summaries of all mobs and events you have fought, and upload them to a private channel on the raidloot.com website. To give people access to your channel you just need to share the link with them. Your channel will keep track of your parses for about 48 hours -- after that they get removed.
+
+In addition to fights, the parser will also upload loot drops -- this information is only used to update the item drop database. Your looted items are not saved to your channel.
 
 
 

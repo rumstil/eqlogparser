@@ -355,9 +355,6 @@ namespace LogSync
                 return;
             }
 
-            config.Write("filename", path);
-            LogInfo("Loading " + path);
-
             // always disable auto uploads when opening a file to avoid accidentally uploading a lot of data
             chkAutoUpload.Checked = chkAutoUpload.Enabled = false;
             chkAutoDiscord.Checked = chkAutoDiscord.Enabled = false;
@@ -377,6 +374,9 @@ namespace LogSync
                     LogInfo("spells_us.txt not found. Class detection and buff tracking will not work properly.");
                 }
             }
+
+            config.Write("filename", path);
+            LogInfo("Loading " + path);
 
             // cancel previous log parsing task
             if (cancellationSource != null)
@@ -592,7 +592,8 @@ namespace LogSync
 
         private bool IsTrashMob(FightInfo f)
         {
-            return f.Duration < 15 || f.Target.InboundHitCount < 20 || f.HP < 1000;
+            // these rules should make sense for both high and low level players fighting level appropriate mobs
+            return f.Duration < 15 || f.Target.InboundHitCount < 20;
         }
 
         private bool IsFilterMatch(FightInfo f)

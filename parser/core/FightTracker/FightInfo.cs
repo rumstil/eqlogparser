@@ -52,7 +52,7 @@ namespace EQLogParser
         /// Friends attacking the mob or assisting them.
         /// </summary>
         public List<FightParticipant> Participants { get; set; } = new List<FightParticipant>();
-        
+
         // special target counters
         //public int StrikeCount;
         //public FightHitEvent LastHit;
@@ -61,7 +61,9 @@ namespace EQLogParser
         /// <summary>
         /// Fight duration in seconds. Always at least 1.
         /// </summary>
-        public int Duration => (int)(UpdatedOn - StartedOn).TotalSeconds + 1;
+        public int Duration { get; set; }
+        
+        public int Elapsed => (int)(UpdatedOn - StartedOn).TotalSeconds + 1;
 
         public long HP => Target.InboundHitSum;
 
@@ -178,7 +180,7 @@ namespace EQLogParser
 
         public void AddCasting(LogCastingEvent cast)
         {
-            AddParticipant(cast.Source).AddCasting(cast, Duration - 1);
+            AddParticipant(cast.Source).AddCasting(cast, Elapsed - 1);
         }
 
         //public void AddCastingFail(LogCastingFailEvent cast)
@@ -220,6 +222,7 @@ namespace EQLogParser
         /// </summary>
         public virtual void Finish()
         {
+            Duration = Elapsed;
             var ticks = Duration / 6;
 
             if (Participants.Count == 0)

@@ -50,7 +50,7 @@ namespace EQLogParser
             if (Zone != f.Zone)
                 Zone = "Multiple Zones";
 
-            Target.Merge(f.Target, 0);
+            //Target.Merge(f.Target, 0);
 
             if (StartedOn > f.StartedOn)
                 throw new Exception("Fights must be merged in order of start time.");
@@ -110,16 +110,18 @@ namespace EQLogParser
             // get offset for shifting buff timeline
             var time = interval * 6 + (f.StartedOn.Second % 6) - (StartedOn.Second % 6);
 
-            foreach (var _p in f.Participants)
+            foreach (var p in f.Participants)
             {
-                var p = AddParticipant(_p.Name);
-                p.Class = _p.Class;
-                p.PetOwner = _p.PetOwner;
-                p.Level = _p.Level;
-                p.Duration += _p.Duration; // this doesn't handle overlaps well but gets corrected in the finish() method
+                var _p = AddParticipant(p.Name);
+                _p.Class = p.Class;
+                _p.PetOwner = p.PetOwner;
+                _p.Level = p.Level;
+                _p.Duration += p.Duration; // this doesn't handle overlaps well but gets corrected in the finish() method
                 //p.Duration = (int)(UpdatedOn - StartedOn).TotalSeconds; // this is just the same as fight.duration and pointless
-                p.Merge(_p, interval, time);
+                _p.Merge(p, interval, time);
             }
+
+            Target.Merge(f.Target, interval, time);
 
         }
 
@@ -154,6 +156,12 @@ namespace EQLogParser
                 }
                 p.Duration = ticks * 6;
             }
+
+            // this rounds the duration up to 6 second intervals for each fight that was merged
+            Duration = Math.Max(Target.DPS.Count, Target.TankDPS.Count) * 6;
+            if (Elapsed < Duration)
+                Duration = Elapsed;
+
         }
 
     }

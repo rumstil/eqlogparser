@@ -217,22 +217,27 @@ namespace EQLogParser
             
             if (e is LogHitEvent hit)
             {
-                var c = Add(hit.Target);
-                if (c.IsPlayer)
+                var target = Add(hit.Target);
+                var source = Add(hit.Source);
+                if (target.IsPlayer)
                 {
-                    c = Add(hit.Source);
-                    c.PlayerAggro = hit.Timestamp;
+                    source.PlayerAggro = hit.Timestamp;
                 }
 
                 // some extra class detection for mercs and melee boxes that may not cast spells
-                c = Add(hit.Source);
-                if (c.Class == null)
+                if (source.Class == null)
                 {
                     if (hit.Type == "backstab")
-                        c.Class = ClassesMaskShort.ROG.ToString();
+                        source.Class = ClassesMaskShort.ROG.ToString();
                     //if (hit.Type == "frenzy")
                     //    c.Class = ClassesMaskShort.Berserker.ToString();
                 }
+
+                // only owners can damage pets? this should already be covered by detecting pet spells
+                //if (source.IsPlayer && IsPetName(target.Name))
+                //{
+                //    target.Owner = source.Name;
+                //}
             }
 
             if (e is LogMissEvent miss)
@@ -295,7 +300,7 @@ namespace EQLogParser
 
         /// <summary>
         /// Get existing player or NPC from the list of tracked entities. 
-        /// Since this can return a null unlike the Add() function.
+        /// This can return a null unlike the Add() function.
         /// </summary>
         public CharInfo Get(string name)
         {
@@ -358,7 +363,7 @@ namespace EQLogParser
                 return null;
             }
 
-            else if ((n1.Type == CharType.Friend && n2.Type == CharType.Friend) || (n1.Type == CharType.Foe && n2.Type == CharType.Foe))
+            if ((n1.Type == CharType.Friend && n2.Type == CharType.Friend) || (n1.Type == CharType.Foe && n2.Type == CharType.Foe))
             {
                 // if they're both foes, one may be newly charmed and should be reverted
                 // if they're both friends, one may be a charm break and should be reverted

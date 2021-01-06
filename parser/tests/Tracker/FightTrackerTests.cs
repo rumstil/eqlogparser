@@ -230,7 +230,39 @@ namespace EQLogParserTests.Tracker
         }
 
         [Fact]
-        public void Merge_DPS_Intervals_With_Gap()
+        public void Merge_DPS_Intervals_For_Target_With_Gap()
+        {
+            var a = new FightInfo();
+            a.StartedOn = DateTime.Parse("11:01:05");
+            a.UpdatedOn = a.StartedOn.AddSeconds(14);
+            a.Target = new FightParticipant() { Name = "Mob1", DPS = new List<int> { 0, 3, 0 } };
+
+            // second fight starts with a gap after the first fight
+            var b = new FightInfo();
+            b.Target = new FightParticipant() { Name = "Mob2", DPS = new List<int> { 7, 23 } };
+            b.StartedOn = a.StartedOn.AddMinutes(1);
+            b.UpdatedOn = b.StartedOn.AddSeconds(12);
+
+            // act
+            var total = new MergedFightInfo();
+            total.Merge(a);
+            total.Merge(b);
+            total.Finish();
+
+            // assert
+            var t = total.Target;
+            Assert.Equal(new[] { 0, 3, 0, 0, 7, 23 }, t.DPS);
+            //Assert.Equal(0, t.DPS[0]); // :00 to :05
+            //Assert.Equal(3, t.DPS[1]); // :06 to :11
+            //Assert.Equal(0, t.DPS[2]); // :12 to :17
+            //Assert.Equal(0, t.DPS[3]); // :18 to :23 (fight is 14 seconds long even though there isn't a tick for that)
+            //// then that gap to the second fight should be ignored and we continue from interval[4]
+            //Assert.Equal(7, t.DPS[4]); // :00 to :05 (one minute after first fight)
+            //Assert.Equal(23, t.DPS[5]); // :06 to :11
+        }
+
+        [Fact]
+        public void Merge_DPS_Intervals_For_Participant_With_Gap()
         {
             var a = new FightInfo();
             a.StartedOn = DateTime.Parse("11:01:05");
@@ -255,17 +287,18 @@ namespace EQLogParserTests.Tracker
             // assert
             Assert.Equal(2, total.Participants.Count);
             var p = total.Participants[0];
-            Assert.Equal(0, p.DPS[0]); // :00 to :05
-            Assert.Equal(3, p.DPS[1]); // :06 to :11
-            Assert.Equal(0, p.DPS[2]); // :12 to :17
-            Assert.Equal(0, p.DPS[3]); // :18 to :23 (fight is 14 seconds long even though there isn't a tick for that)
-            // then that gap to the second fight should be ignored and we continue from interval[4]
-            Assert.Equal(7, p.DPS[4]); // :00 to :05 (one minute after first fight)
-            Assert.Equal(23, p.DPS[5]); // :06 to :11
+            Assert.Equal(new[] { 0, 3, 0, 0, 7, 23 }, p.DPS);
+            //Assert.Equal(0, p.DPS[0]); // :00 to :05
+            //Assert.Equal(3, p.DPS[1]); // :06 to :11
+            //Assert.Equal(0, p.DPS[2]); // :12 to :17
+            //Assert.Equal(0, p.DPS[3]); // :18 to :23 (fight is 14 seconds long even though there isn't a tick for that)
+            //// then that gap to the second fight should be ignored and we continue from interval[4]
+            //Assert.Equal(7, p.DPS[4]); // :00 to :05 (one minute after first fight)
+            //Assert.Equal(23, p.DPS[5]); // :06 to :11
         }
 
         [Fact]
-        public void Merge_DPS_Intervals_With_Overlap()
+        public void Merge_DPS_Intervals_For_Participant_With_Overlap()
         {
             var a = new FightInfo();
             a.StartedOn = DateTime.Parse("11:01:05");
@@ -290,9 +323,10 @@ namespace EQLogParserTests.Tracker
             // assert
             Assert.Equal(2, total.Participants.Count);
             var p = total.Participants[0];
-            Assert.Equal(0, p.DPS[0]); // :00 to :05
-            Assert.Equal(10, p.DPS[1]); // :06 to :11
-            Assert.Equal(23, p.DPS[2]); // :12 to :17
+            Assert.Equal(new[] { 0, 10, 23 }, p.DPS);
+            //Assert.Equal(0, p.DPS[0]); // :00 to :05
+            //Assert.Equal(10, p.DPS[1]); // :06 to :11
+            //Assert.Equal(23, p.DPS[2]); // :12 to :17
         }
 
         [Fact]

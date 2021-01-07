@@ -168,7 +168,11 @@ namespace LogSync
             var total = new MergedFightInfo(selected);
             total.Finish();
             if (total.MobCount > 1)
+            {
                 AddFight(total);
+                lvFights.LabelEdit = true;
+                lvFights.Items[0].BeginEdit();
+            }
         }
 
         private void btnBrowse_Click(object sender, EventArgs e)
@@ -229,7 +233,6 @@ namespace LogSync
 
         private void lvFights_BeforeLabelEdit(object sender, LabelEditEventArgs e)
         {
-
         }
 
         private void lvFights_AfterLabelEdit(object sender, LabelEditEventArgs e)
@@ -245,19 +248,11 @@ namespace LogSync
                 // flag as synthetic
                 if (f.MobCount == 0)
                     f.MobCount = 1;
+                // reset status to allow another upload
+                fightStatus[f.ID] = null;
             }
 
-            //var item = lvFights.Items[e.Item];
-            //var f = item.Tag as FightInfo;
-            //if (String.IsNullOrWhiteSpace(e.Label))
-            //{
-            //    e.CancelEdit = true;
-            //}
-            //else
-            //{
-            //    f.Name = e.Label;
-            //}
-            //lvFights.LabelEdit = false;
+            lvFights.LabelEdit = false;
         }
 
         private void lvFights_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
@@ -529,8 +524,8 @@ namespace LogSync
                 foreach (var i in selected)
                     lvFights.SelectedIndices.Add(i + 1);
             }
-
-            if (chkAutoUpload.Checked)
+                        
+            if (chkAutoUpload.Checked && f.MobCount <= 1)
                 UploadFight(f);
         }
 

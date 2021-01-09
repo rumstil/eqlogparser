@@ -70,5 +70,125 @@ namespace EQLogParserTests.Tracker
             Assert.Equal(0, apet1.OutboundHitSum);
         }
 
+        [Fact]
+        public void Merge_DPS_Intervals_For_Target_With_Gap()
+        {
+            var a = new FightInfo();
+            a.StartedOn = DateTime.Parse("11:01:05");
+            a.UpdatedOn = a.StartedOn.AddSeconds(14);
+            a.Target = new FightParticipant() { Name = "Mob1", DPS = new List<int> { 0, 3, 0 } };
+
+            // second fight starts with a gap after the first fight
+            var b = new FightInfo();
+            b.Target = new FightParticipant() { Name = "Mob2", DPS = new List<int> { 7, 23 } };
+            b.StartedOn = a.StartedOn.AddMinutes(1);
+            b.UpdatedOn = b.StartedOn.AddSeconds(12);
+
+            // act
+            var total = new MergedFightInfo();
+            total.Merge(a);
+            total.Merge(b);
+            total.Finish();
+
+            // assert
+            var t = total.Target;
+            // :00 to :05, :06 to :11, :12 to :17, :18 to :23, gap should be ignored, :00 to :05, :06 to :11
+            Assert.Equal(new[] { 0, 3, 0, 0, 7, 23 }, t.DPS);
+        }
+
+        [Fact]
+        public void Merge_DPS_Intervals_For_Participant_With_Gap()
+        {
+            var a = new FightInfo();
+            a.StartedOn = DateTime.Parse("11:01:05");
+            a.UpdatedOn = a.StartedOn.AddSeconds(14);
+            a.Target = new FightParticipant() { Name = "Mob1" };
+            a.Participants.Add(new FightParticipant() { Name = "Player1", DPS = new List<int> { 0, 3, 0 } });
+            a.Participants.Add(new FightParticipant() { Name = "Player2", DPS = new List<int> { 2, 6, 3 } });
+
+            // second fight starts with a gap after the first fight
+            var b = new FightInfo();
+            b.Target = new FightParticipant() { Name = "Mob2" };
+            b.StartedOn = a.StartedOn.AddMinutes(1);
+            b.UpdatedOn = b.StartedOn.AddSeconds(12);
+            b.Participants.Add(new FightParticipant() { Name = "Player1", DPS = new List<int> { 7, 23 } });
+
+            // act
+            var total = new MergedFightInfo();
+            total.Merge(a);
+            total.Merge(b);
+            total.Finish();
+
+            // assert
+            Assert.Equal(2, total.Participants.Count);
+            var p = total.Participants[0];
+            // :00 to :05, :06 to :11, :12 to :17, :18 to :23, gap should be ignored, :00 to :05, :06 to :11
+            Assert.Equal(new[] { 0, 3, 0, 0, 7, 23 }, p.DPS);
+        }
+
+        [Fact]
+        public void Merge_DPS_Intervals_For_Participant_With_Overlap()
+        {
+            var a = new FightInfo();
+            a.StartedOn = DateTime.Parse("11:01:05");
+            a.UpdatedOn = a.StartedOn.AddSeconds(14);
+            a.Target = new FightParticipant() { Name = "Mob1" };
+            a.Participants.Add(new FightParticipant() { Name = "Player1", DPS = new List<int> { 0, 3, 0 } });
+            a.Participants.Add(new FightParticipant() { Name = "Player2", DPS = new List<int> { 2, 6, 3 } });
+
+            // second fight starts before the first is finished
+            var b = new FightInfo();
+            b.Target = new FightParticipant() { Name = "Mob2" };
+            b.StartedOn = a.StartedOn.AddSeconds(2);
+            b.UpdatedOn = b.StartedOn.AddSeconds(12);
+            b.Participants.Add(new FightParticipant() { Name = "Player1", DPS = new List<int> { 7, 23 } });
+
+            // act
+            var total = new MergedFightInfo();
+            total.Merge(a);
+            total.Merge(b);
+            total.Finish();
+
+            // assert
+            Assert.Equal(2, total.Participants.Count);
+            var p = total.Participants[0];
+            // :00 to :05, :06 to :11, :12 to :17
+            Assert.Equal(new[] { 0, 10, 23 }, p.DPS);
+        }
+
+        [Fact]
+        public void Merge_Buffs_With_Gap()
+        {
+            var a = new FightInfo();
+            a.StartedOn = DateTime.Parse("11:01:05");
+            a.UpdatedOn = a.StartedOn.AddSeconds(14); // 4 intervals: 0..5, 6..11, 12..15, 16..19
+            a.Target = new FightParticipant() { Name = "Mob1" };
+            var ap1 = new FightParticipant() { Name = "Player1", OutboundHitSum = 1 };
+            ap1.Buffs.Add(new FightBuff { Name = "Super Speed", Time = 2 });
+            a.Participants.Add(ap1);
+
+            // second fight starts with a gap after the first fight
+            var b = new FightInfo();
+            b.Target = new FightParticipant() { Name = "Mob2" };
+            b.StartedOn = a.StartedOn.AddMinutes(1);
+            b.UpdatedOn = b.StartedOn.AddSeconds(12);
+            var bp1 = new FightParticipant() { Name = "Player1", OutboundHitSum = 1 };
+            bp1.Buffs.Add(new FightBuff { Name = "Super Speed", Time = 3 });
+            b.Participants.Add(bp1);
+
+            // act
+            var total = new MergedFightInfo();
+            total.Merge(a);
+            total.Merge(b);
+            total.Finish();
+
+            // assert
+            Assert.Single(total.Participants);
+            var p = total.Participants[0];
+            Assert.Equal(2, p.Buffs.Count);
+            Assert.Equal(2, p.Buffs[0].Time);
+            Assert.Equal(27, p.Buffs[1].Time); // 24 from 4*6 intervals in first fight + 3 second offset
+        }
+
     }
 }

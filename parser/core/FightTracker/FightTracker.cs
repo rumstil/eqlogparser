@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using EQLogParser.Events;
 
 
@@ -27,7 +28,11 @@ namespace EQLogParser
         //private LogHitEvent LastHit;
         private FightInfo LastFight; // the fight that the previous event was assigned to
 
+        public readonly List<RaidTemplate> Templates = new List<RaidTemplate>();
         public readonly List<FightInfo> ActiveFights = new List<FightInfo>();
+        public readonly List<RaidFightInfo> ActiveRaids = new List<RaidFightInfo>();
+
+
 
         /// <summary>
         /// Finish a fight after this duration of no activity is detected.
@@ -44,6 +49,51 @@ namespace EQLogParser
         {
             Chars = new CharTracker(spells);
             Buffs = new BuffTracker(spells);
+        }
+
+        /// <summary>
+        /// Add a raid template.
+        /// </summary>
+        public void AddTemplate(RaidTemplate temp)
+        {
+            if (temp == null || temp.Name == null || temp.Zone == null || temp.Mobs == null)
+                throw new ArgumentNullException();
+            if (temp.Mobs.Length == 0)
+                temp.Mobs = new[] { temp.Name };
+            Templates.Add(temp);
+        }
+
+        /// <summary>
+        /// Add raid templates from an XML file.
+        /// </summary>
+        public void AddTemplateFromFile(Stream stream)
+        {
+            var xml = XElement.Load(stream, LoadOptions.None);
+            var items = xml.Elements();
+            foreach (var item in items)
+            {
+                var temp = new RaidTemplate()
+                {
+                    Zone = item.Element("Zone")?.Value,
+                    Name = item.Element("Name")?.Value,
+                    Mobs = item.Elements("Mob").Select(x => x.Value).ToArray(),
+                    EndsOnDeath = item.Elements("Mob").Where(x => x.Attribute("EndsOnDeath")?.Value == "true").Select(x => x.Value).ToArray(),
+                    //EndsOnDeath = item.Elements("EndsOnDeath").Select(x => x.Value).ToArray(),
+                };
+
+                if (!String.IsNullOrEmpty(temp.Zone) && !String.IsNullOrEmpty(temp.Name))
+                    AddTemplate(temp);
+            }
+        }
+
+        /// <summary>
+        /// Add raid templates from the Raids.xml resource (it's compiled into the assembly).
+        /// </summary>
+        public void AddTemplateFromResource()
+        {
+            var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+            var stream = assembly.GetManifestResourceStream("EQLogParser.FightTracker.Raids.xml");
+            AddTemplateFromFile(stream);
         }
 
         public void HandleEvent(LogEvent e)
@@ -334,8 +384,9 @@ namespace EQLogParser
 
         /// <summary>
         /// Force all active fights to time out.
+        /// If the optional "mobs" parameter is used this will only time out mobs matching the given list.
         /// </summary>
-        public void ForceFightTimeouts()
+        public void ForceFightTimeouts(string[] mobs = null)
         {
             var cohorts = ActiveFights.Count - 1;
 
@@ -343,6 +394,12 @@ namespace EQLogParser
             while (i < ActiveFights.Count)
             {
                 var f = ActiveFights[i];
+                if (mobs != null && !mobs.Contains(f.Name))
+                {
+                    i += 1;
+                    continue;
+                }
+
                 ActiveFights.Remove(f);
 
                 // ignore fights without any damage activity
@@ -364,7 +421,7 @@ namespace EQLogParser
         {
             ActiveFights.Remove(f);
 
-            f.Party = Party;
+            f.Party = Party ?? "Solo";
             f.Player = Player;
             f.Server = Server;
 
@@ -385,6 +442,36 @@ namespace EQLogParser
 
             // after a fight is passed to this delegate it should never be modified (e.g. via the LastFight variable)
             OnFightFinished?.Invoke(f);
+
+            var raid = GetRaid(f);
+            if (raid == null)
+                return;
+
+            raid.Merge(f);
+
+            // end the raid on boss death 
+            // todo: what about trash that's still alive after the boss dies?
+            // finishing a raid will force timeouts on related mobs and those timeouts can recursively call 
+            // this function again -- we use the status check to prevent infinite recursion
+            if (raid.Template.EndsOnDeath.Contains(f.Name) && f.Status == FightStatus.Killed)
+            {
+                FinishRaid(raid);
+            }
+        }
+
+        /// <summary>
+        /// Finish an active raid and pass it off to the OnFightFinished delegate.
+        /// </summary>
+        private void FinishRaid(RaidFightInfo raid)
+        {
+            ForceFightTimeouts(raid.Template.Mobs);
+
+            // this raid removal must occur after forcing timeouts otherwise the timeouts will create duplicate raids
+            ActiveRaids.Remove(raid);
+
+            raid.Finish();
+
+            OnFightFinished?.Invoke(raid);
         }
 
         /// <summary>
@@ -424,6 +511,32 @@ namespace EQLogParser
             return f;
         }
 
+        /// <summary>
+        /// Find the active raid involving the given foe or create a new raid if it doesn't exist.
+        /// Will return a null if there is no raid template defined for this mob.
+        /// </summary>
+        private RaidFightInfo GetRaid(FightInfo f)
+        {
+            // remove stale raids
+            ActiveRaids.RemoveAll(x => x.StartedOn < f.StartedOn.AddHours(-1));
+
+            // search active raids
+            var raid = ActiveRaids.FirstOrDefault(x => x.Template.Zone == f.Zone && x.Template.Mobs.Contains(f.Name));
+
+            // if none found, check if this is a new raid
+            if (raid == null)
+            {
+                var temp = Templates.FirstOrDefault(x => x.Zone == f.Zone && x.Mobs.Contains(f.Name));
+                if (temp == null)
+                    return null;
+
+                raid = new RaidFightInfo();
+                raid.Template = temp;
+                ActiveRaids.Add(raid);
+            }
+
+            return raid;
+        }
 
         //private string StripCorpse(string name)
         //{

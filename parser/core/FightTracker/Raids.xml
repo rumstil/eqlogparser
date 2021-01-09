@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Raids>
+  <!--<Raid>
+    <Name>Not a real Raid</Name>
+    <Zone>Blightfire Moors</Zone>
+    <Mob>A Mucktail miner</Mob>
+    <Mob>A Mucktail rock breaker</Mob>
+    <Mob EndsOnDeath="true">A Mucktail guard dog</Mob>
+    <Mob EndsOnDeath="true">A giant bog rat</Mob>
+  </Raid>-->
+
+  <Raid>
+    <Name>Kerafyrm Raid</Name>
+    <Zone>Crystallos, Lair of the Awakened</Zone>
+    <Mob EndsOnDeath="true">Kerafyrm the Awakened</Mob>
+    <Mob>A wyvern assassin</Mob>
+  </Raid>
+  <Raid>
+    <Name>Yar`Lir Raid</Name>
+    <Zone>Thundercrest Isles: An End to the Storms</Zone>
+    <Mob EndsOnDeath="true">Yar`Lir the Living Storm</Mob>
+    <Mob EndsOnDeath="true">Yar`Lir the Hurricane`s Eye</Mob>
+    <Mob EndsOnDeath="true">Yar`Lir the Mistress of Winds</Mob>
+    <Mob EndsOnDeath="true">Yar`Lir the Matriarch</Mob>
+  </Raid>
+</Raids>

@@ -4,4 +4,12 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Remove="FightTracker\Raids.xml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="FightTracker\Raids.xml" />
+  </ItemGroup>
+
 </Project>

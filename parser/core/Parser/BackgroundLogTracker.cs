@@ -27,6 +27,7 @@ namespace EQLogParser
             fights = new ConcurrentQueue<FightInfo>();
             fightTracker = new FightTracker(spells);
             fightTracker.OnFightFinished += x => fights.Enqueue(x);
+            fightTracker.AddTemplateFromResource();
             loot = new ConcurrentQueue<LootInfo>();
             lootTracker = new LootTracker();
             lootTracker.OnLoot += x => loot.Enqueue(x);

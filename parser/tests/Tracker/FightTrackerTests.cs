@@ -229,138 +229,69 @@ namespace EQLogParserTests.Tracker
             Assert.Equal(35, f.Participants[1].DPS[1]);
         }
 
-        [Fact]
-        public void Merge_DPS_Intervals_For_Target_With_Gap()
-        {
-            var a = new FightInfo();
-            a.StartedOn = DateTime.Parse("11:01:05");
-            a.UpdatedOn = a.StartedOn.AddSeconds(14);
-            a.Target = new FightParticipant() { Name = "Mob1", DPS = new List<int> { 0, 3, 0 } };
-
-            // second fight starts with a gap after the first fight
-            var b = new FightInfo();
-            b.Target = new FightParticipant() { Name = "Mob2", DPS = new List<int> { 7, 23 } };
-            b.StartedOn = a.StartedOn.AddMinutes(1);
-            b.UpdatedOn = b.StartedOn.AddSeconds(12);
-
-            // act
-            var total = new MergedFightInfo();
-            total.Merge(a);
-            total.Merge(b);
-            total.Finish();
-
-            // assert
-            var t = total.Target;
-            Assert.Equal(new[] { 0, 3, 0, 0, 7, 23 }, t.DPS);
-            //Assert.Equal(0, t.DPS[0]); // :00 to :05
-            //Assert.Equal(3, t.DPS[1]); // :06 to :11
-            //Assert.Equal(0, t.DPS[2]); // :12 to :17
-            //Assert.Equal(0, t.DPS[3]); // :18 to :23 (fight is 14 seconds long even though there isn't a tick for that)
-            //// then that gap to the second fight should be ignored and we continue from interval[4]
-            //Assert.Equal(7, t.DPS[4]); // :00 to :05 (one minute after first fight)
-            //Assert.Equal(23, t.DPS[5]); // :06 to :11
-        }
 
         [Fact]
-        public void Merge_DPS_Intervals_For_Participant_With_Gap()
+        public void Raid_Matched()
         {
-            var a = new FightInfo();
-            a.StartedOn = DateTime.Parse("11:01:05");
-            a.UpdatedOn = a.StartedOn.AddSeconds(14);
-            a.Target = new FightParticipant() { Name = "Mob1" };
-            a.Participants.Add(new FightParticipant() { Name = "Player1", DPS = new List<int>{ 0, 3, 0 } });
-            a.Participants.Add(new FightParticipant() { Name = "Player2", DPS = new List<int> { 2, 6, 3 } });
+            var temp = new RaidTemplate()
+            {
+                Zone = "Crystallos, Lair of the Awakened",
+                Name = "Kerafyrm",
+                Mobs = new[] { "Kerafyrm the Awakened", "A wyvern assassin" },
+                EndsOnDeath = new[] { "Kerafyrm the Awakened" }
+            };
 
-            // second fight starts with a gap after the first fight
-            var b = new FightInfo();
-            b.Target = new FightParticipant() { Name = "Mob2" };
-            b.StartedOn = a.StartedOn.AddMinutes(1);
-            b.UpdatedOn = b.StartedOn.AddSeconds(12);
-            b.Participants.Add(new FightParticipant() { Name = "Player1", DPS = new List<int> { 7, 23 } });
+            var tracker = new FightTracker(new SpellParser());
+            tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
+            tracker.HandleEvent(new LogWhoEvent { Name = "Player2" });
+            tracker.AddTemplate(temp);
+            var results = new List<FightInfo>();
+            tracker.OnFightFinished += e => results.Add(e);
 
             // act
-            var total = new MergedFightInfo();
-            total.Merge(a);
-            total.Merge(b);
-            total.Finish();
+            var time = DateTime.Now;
+            tracker.HandleEvent(new LogZoneEvent { Timestamp = time, Name = temp.Zone });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = time, Source = "Player1", Target = temp.Mobs[0], Amount = 100 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = time, Source = "Player2", Target = temp.Mobs[1], Amount = 20 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = time, Source = "Player2", Target = "Unrelated Mob", Amount = 30 });
+            tracker.HandleEvent(new LogDeathEvent { Timestamp = time, Name = temp.EndsOnDeath[0] });
 
             // assert
-            Assert.Equal(2, total.Participants.Count);
-            var p = total.Participants[0];
-            Assert.Equal(new[] { 0, 3, 0, 0, 7, 23 }, p.DPS);
-            //Assert.Equal(0, p.DPS[0]); // :00 to :05
-            //Assert.Equal(3, p.DPS[1]); // :06 to :11
-            //Assert.Equal(0, p.DPS[2]); // :12 to :17
-            //Assert.Equal(0, p.DPS[3]); // :18 to :23 (fight is 14 seconds long even though there isn't a tick for that)
-            //// then that gap to the second fight should be ignored and we continue from interval[4]
-            //Assert.Equal(7, p.DPS[4]); // :00 to :05 (one minute after first fight)
-            //Assert.Equal(23, p.DPS[5]); // :06 to :11
-        }
+            var raids = results.OfType<RaidFightInfo>().ToArray();
+            Assert.Single(raids);
+            Assert.Equal("Kerafyrm", raids[0].Name);
+            Assert.Equal("Crystallos, Lair of the Awakened", raids[0].Zone);            
+            Assert.Equal(2, raids[0].MobCount);
+            Assert.Equal(120, raids[0].HP);
+            Assert.Single(tracker.ActiveFights); // the unrelated mob
 
-        [Fact]
-        public void Merge_DPS_Intervals_For_Participant_With_Overlap()
-        {
-            var a = new FightInfo();
-            a.StartedOn = DateTime.Parse("11:01:05");
-            a.UpdatedOn = a.StartedOn.AddSeconds(14);
-            a.Target = new FightParticipant() { Name = "Mob1" };
-            a.Participants.Add(new FightParticipant() { Name = "Player1", DPS = new List<int> { 0, 3, 0 } });
-            a.Participants.Add(new FightParticipant() { Name = "Player2", DPS = new List<int> { 2, 6, 3 } });
 
-            // second fight starts before the first is finished
-            var b = new FightInfo();
-            b.Target = new FightParticipant() { Name = "Mob2" };
-            b.StartedOn = a.StartedOn.AddSeconds(2);
-            b.UpdatedOn = b.StartedOn.AddSeconds(12);
-            b.Participants.Add(new FightParticipant() { Name = "Player1", DPS = new List<int> { 7, 23 } });
+            /*
 
-            // act
-            var total = new MergedFightInfo();
-            total.Merge(a);
-            total.Merge(b);
-            total.Finish();
+            // this should be ignored
+            var f3 = new FightInfo() { Name = "Fippy Darkpaw", Zone = "Crystallos, Lair of the Awakened", Status = FightStatus.Killed };
+            f3.Target.InboundHitSum = 20;
+            tracker.HandleFight(f3);
 
-            // assert
-            Assert.Equal(2, total.Participants.Count);
-            var p = total.Participants[0];
-            Assert.Equal(new[] { 0, 10, 23 }, p.DPS);
-            //Assert.Equal(0, p.DPS[0]); // :00 to :05
-            //Assert.Equal(10, p.DPS[1]); // :06 to :11
-            //Assert.Equal(23, p.DPS[2]); // :12 to :17
-        }
+            // this should be included, and create a new raid
+            var f2 = new FightInfo() { Name = "A wyvern assassin", Zone = "Crystallos, Lair of the Awakened", Status = FightStatus.Killed };
+            f2.Target.InboundHitSum = 10;
+            tracker.HandleFight(f2);
 
-        [Fact]
-        public void Merge_Buffs_With_Gap()
-        {
-            var a = new FightInfo();
-            a.StartedOn = DateTime.Parse("11:01:05");
-            a.UpdatedOn = a.StartedOn.AddSeconds(14); // 4 intervals: 0..5, 6..11, 12..15, 16..19
-            a.Target = new FightParticipant() { Name = "Mob1" };
-            var ap1 = new FightParticipant() { Name = "Player1", OutboundHitSum = 1 };
-            ap1.Buffs.Add(new FightBuff { Name = "Super Speed", Time = 2 });
-            a.Participants.Add(ap1);
+            // this should finish the raid
+            var f1 = new FightInfo() { Name = "Kerafyrm the Awakened", Zone = "Crystallos, Lair of the Awakened", Status = FightStatus.Killed };
+            f1.Target.InboundHitSum = 100;
+            tracker.HandleFight(f1);
 
-            // second fight starts with a gap after the first fight
-            var b = new FightInfo();
-            b.Target = new FightParticipant() { Name = "Mob2" };
-            b.StartedOn = a.StartedOn.AddMinutes(1);
-            b.UpdatedOn = b.StartedOn.AddSeconds(12);
-            var bp1 = new FightParticipant() { Name = "Player1", OutboundHitSum = 1 };
-            bp1.Buffs.Add(new FightBuff { Name = "Super Speed", Time = 3 });
-            b.Participants.Add(bp1);
+            Assert.Single(results);
+            Assert.Equal("Kerafyrm", results[0].Name);
+            Assert.Equal("Crystallos, Lair of the Awakened", results[0].Zone);
+            Assert.Equal(2, results[0].MobCount);
+            Assert.Equal(110, results[0].HP);
 
-            // act
-            var total = new MergedFightInfo();
-            total.Merge(a);
-            total.Merge(b);
-            total.Finish();
+            */
 
-            // assert
-            Assert.Equal(1, total.Participants.Count);
-            var p = total.Participants[0];
-            Assert.Equal(2, p.Buffs.Count);
-            Assert.Equal(2, p.Buffs[0].Time);
-            Assert.Equal(27, p.Buffs[1].Time); // 24 from 4*6 intervals in first fight + 3 second offset
+
         }
 
     }

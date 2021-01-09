@@ -7,13 +7,13 @@ using System.Text;
 namespace EQLogParser
 {
     /// <summary>
-    /// This is an extension of the FightInfo class with some extra state tracking used in merging fights together.
+    /// An extension of the FightInfo class with some extra state tracking used in merging fights together.
     /// </summary>
     public class MergedFightInfo : FightInfo
     {
         // keep a map of which tick each interval contains
         private List<int> intervals = new List<int>() { 0 };
-        private List<FightInfo> mobs = new List<FightInfo>();
+        private List<FightInfo> fights = new List<FightInfo>();
 
         public MergedFightInfo()
         {
@@ -28,10 +28,11 @@ namespace EQLogParser
 
         /// <summary>
         /// Merge data from another fight into this fight.
+        /// The supplied fight must have started after any previously merged fights.
         /// </summary>
-        public void Merge(FightInfo f)
-        {
-            if (Target == null)
+        public virtual void Merge(FightInfo f)
+        { 
+            if (Target == null || String.IsNullOrEmpty(Target.Name))
             {
                 Target = new FightParticipant() { Name = "X" };
                 Name = "X";
@@ -45,7 +46,7 @@ namespace EQLogParser
             }
 
             MobCount += 1;
-            mobs.Add(f);
+            fights.Add(f);
 
             if (Zone != f.Zone)
                 Zone = "Multiple Zones";
@@ -129,12 +130,13 @@ namespace EQLogParser
         {
             base.Finish();
 
-            Name = $"* {MobCount} combined mobs";
+            MobCount = fights.Count;
 
-            MobNotes = String.Join(", ", mobs.GroupBy(x => x.Name)
-                //.OrderByDescending(x => x.Sum(y => y.HP))
-                .OrderByDescending(x => x.Count())
+            MobNotes = String.Join(", ", fights.GroupBy(x => x.Name)
+                .OrderByDescending(x => x.Sum(y => y.HP))
                 .Select(x => String.Format("{0} x {1}", x.Count(), x.Key)));
+
+            Name = $"* {MobCount} combined mobs";
 
             // todo: maybe if the combined fight is really long then reduce the number of interals by using 1 minute intervals?
 

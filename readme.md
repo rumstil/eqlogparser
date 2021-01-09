@@ -65,11 +65,13 @@ This is better. At this point the LogHitEvent is useful for building some kind o
 
 Instead, we hand this LogHitEvent off to the FightTracker class. The FightTracker consumes hit and other events to build out some stateful fight information. When the FightTracker detects a mob has died it emits a fight summary -- which is what most people want when they think of a log parser. These completed fight summaries can then finally be sent to some sort of UI or console output for display.
 
-There are two additonal tracker classes available:
+There are a few additonal tracker classes available:
 
 The CharTracker class keeps track of who is a friend or foe. This functionality is mostly useful to the FightTracker, but again we don't want to mix too many concerns in a single class so it's a separate class.
 
 The LootTracker class keeps track of which mobs dropped what loot. This is used to collect data that can increase the accuracy of information on the raidloot.com website.
+
+The BuffTracker class keeps track of which buffs players and pets have received.
 
 
 # Copyright

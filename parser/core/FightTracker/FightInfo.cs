@@ -67,7 +67,10 @@ namespace EQLogParser
 
         public long HP => Target.InboundHitSum;
 
-
+        /// <summary>
+        /// This constructor should only be used by serializers or unit tests.
+        /// We don't want an instance where Target or Target.Name isn't set.
+        /// </summary>
         public FightInfo()
         {
             ID = Guid.NewGuid().ToString();

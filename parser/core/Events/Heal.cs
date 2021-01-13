@@ -44,18 +44,24 @@ namespace EQLogParser
         // [Sun Jan 13 23:09:15 2019] Uteusher has been healed over time for 0 (900) hit points by Celestial Regeneration XVIII.
         // [Mon Mar 18 23:55:00 2019] You have been healed over time for 9525 hit points by Merciful Elixir Rk. II.
         private static readonly Regex HoTRegexNoSource = new Regex(@"^(\w+) ha(?:s|ve) been healed over time for (\d+)(?: \((\d+)\))? hit points by (.+?)\.(?: \((.+?)\))?$", RegexOptions.Compiled);
-        
+
+        // [Tue Aug 25 08:39:45 2020] You healed Rumstil for 4636 hit points by Vampiric Consumption.
+        // [Mon Sep 14 20:43:54 2020] Saity healed you for 62604 (82107) hit points by Sincere Light Rk. II.
+        private static readonly Regex InstantRegex = new Regex(@"^(.+?) healed (.+?) for (\d+)(?: \((\d+)\))? hit points(?: by (.+?))?\.(?: \((.+?)\))?$", RegexOptions.Compiled | RegexOptions.RightToLeft);
+
+        // prior to yyyy-mm-dd the emote and heal message were combined on a single line
+        // the obsolete regex still mostly works except in cases where the healer has a multi-word name
         // [Sun Jan 13 23:09:15 2019] You wither under a vampiric strike. You healed Rumstil for 668 (996) hit points by Vampiric Strike VIII.
         // [Sun Jan 13 23:09:15 2019] Lenantik is bathed in a devout light. Uteusher healed Lenantik for 2153 (9875) hit points by Devout Light.
         // [Sun Jan 13 23:09:15 2019] Lenantik is strengthened by Darkpaw spirits. You healed Lenantik for 1216 (1248) hit points by Darkpaw Focusing.
         // [Sun Jan 13 23:09:15 2019] A holy light surrounds you. You healed Rumstil for 361 hit points by HandOfHolyVengeanceVRecourse. (Critical)
         // [Sun Jan 13 23:09:15 2019] Xebn is healed by life-giving energy. Brugian healed Xebn for 84056 hit points by Furial Renewal.
         // [Sun Jan 13 23:09:15 2019] You healed Rumstil for 8 hit points by Blood of the Devoted.
-        private static readonly Regex InstantRegex = new Regex(@"(?:^|\. )([\w\s]+) healed (.+?) for (\d+)(?: \((\d+)\))? hit points(?: by (.+?))?\.(?: \((.+?)\))?$", RegexOptions.Compiled | RegexOptions.RightToLeft);
+        private static readonly Regex ObsoleteInstantRegex = new Regex(@"(?:^|\. )([\w\s]+) healed (.+?) for (\d+)(?: \((\d+)\))? hit points(?: by (.+?))?\.(?: \((.+?)\))?$", RegexOptions.Compiled | RegexOptions.RightToLeft);
 
         public static LogHealEvent Parse(LogRawEvent e)
         {
-            // this short-circuit exit is here strictly as an optmization 
+            // this short-circuit exit is here strictly as a speed optmization 
             if (e.Text.IndexOf("heal", StringComparison.Ordinal) < 0)
                 return null;
 
@@ -96,7 +102,7 @@ namespace EQLogParser
                 };
             }
 
-            m = InstantRegex.Match(e.Text);
+            m = ObsoleteInstantRegex.Match(e.Text);
             if (m.Success)
             {
                 return new LogHealEvent()

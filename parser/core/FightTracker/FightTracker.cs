@@ -40,7 +40,8 @@ namespace EQLogParser
         /// Changing my mind: this should be shorter than a mez/root because we don't want parked mobs to count as engaged and to have an incorrect duration.
         /// </summary>
         //public TimeSpan FightTimeout = TimeSpan.FromSeconds(90);
-        public TimeSpan FightTimeout = TimeSpan.FromSeconds(15);
+        public TimeSpan GroupFightTimeout = TimeSpan.FromSeconds(15);
+        public TimeSpan RaidFightTimeout = TimeSpan.FromMinutes(1);
 
         public event FightTrackerEvent OnFightStarted;
         public event FightTrackerEvent OnFightFinished;
@@ -356,12 +357,14 @@ namespace EQLogParser
 
             var cohorts = ActiveFights.Count - 1;
 
+            var timeout = Party == "Raid" ? RaidFightTimeout : GroupFightTimeout;
+
             int i = 0;
             while (i < ActiveFights.Count)
             {
                 var f = ActiveFights[i];
 
-                if (f.UpdatedOn + FightTimeout <= Timestamp)
+                if (f.UpdatedOn + timeout <= Timestamp)
                 {
                     ActiveFights.Remove(f);
 

@@ -58,6 +58,17 @@ namespace EQLogParserTests.Event
         }
 
         [Fact]
+        public void Parse_Instant_From_Ward()
+        {
+            var heal = Parse("Dude`s ward healed Sponge for 200 hit points by Nature's Restoration VIII.");
+            Assert.NotNull(heal);
+            Assert.Equal("Dude`s ward", heal.Source);
+            Assert.Equal("Sponge", heal.Target);
+            Assert.Equal(200, heal.Amount);
+            Assert.Equal("Nature's Restoration VIII", heal.Spell);
+        }
+
+        [Fact]
         public void Parse_Instant_No_Spell_Name()
         {
             // lifetap weapons don't list a spell name
@@ -74,7 +85,7 @@ namespace EQLogParserTests.Event
         [Fact]
         public void Parse_Instant_Partial()
         {
-            var heal = Parse("Lenantik is bathed in a devout light. Uteusher healed Lenantik for 2153 (9875) hit points by Devout Light.");
+            var heal = Parse("Uteusher healed Lenantik for 2153 (9875) hit points by Devout Light.");
             Assert.NotNull(heal);
             Assert.Equal("Uteusher", heal.Source);
             Assert.Equal("Lenantik", heal.Target);
@@ -87,7 +98,7 @@ namespace EQLogParserTests.Event
         public void Parse_Instant_Zero()
         {
             // make sure heals for zero aren't suppressed
-            var heal = Parse("Lenantik is bathed in a devout light. Uteusher healed Lenantik for 0 (9875) hit points by Devout Light.");
+            var heal = Parse("Uteusher healed Lenantik for 0 (9875) hit points by Devout Light.");
             Assert.NotNull(heal);
             Assert.Equal("Uteusher", heal.Source);
             Assert.Equal("Lenantik", heal.Target);

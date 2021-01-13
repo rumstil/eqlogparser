@@ -134,7 +134,7 @@ namespace EQLogParserTests.Tracker
             tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Type = "slash", Amount = 100 });
             Assert.Null(f);
 
-            tracker.HandleEvent(new LogRawEvent { Timestamp = DateTime.Now + tracker.FightTimeout, Text = "..." });
+            tracker.HandleEvent(new LogRawEvent { Timestamp = DateTime.Now + tracker.GroupFightTimeout, Text = "..." });
             Assert.NotNull(f);
             Assert.Equal("Mob1", f.Target.Name);
             Assert.Empty(tracker.ActiveFights);

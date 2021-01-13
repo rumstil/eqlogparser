@@ -43,6 +43,8 @@ namespace EQLogParser
     /// </summary>
     public class CharTracker
     {
+        private string Player = null;
+
         // # https://forums.daybreakgames.com/eq/index.php?threads/collecting-pet-names.249684/#post-3671490
         private static readonly Regex PetNameRegex = new Regex(@"^[GJKLVXZ]([aeio][bknrs]){0,2}(ab|er|n|tik)$", RegexOptions.Compiled);
         private static readonly Regex PetOwnerRegex = new Regex(@"^My leader is (\w+)\.$", RegexOptions.Compiled);
@@ -67,6 +69,7 @@ namespace EQLogParser
         {
             if (e is LogOpenEvent open)
             {
+                Player = open.Player;
                 var c = Add(open.Player);
                 c.IsPlayer = true;
                 c.Type = CharType.Friend;
@@ -77,6 +80,7 @@ namespace EQLogParser
                 // who command only shows players
                 var c = Add(who.Name);
                 c.IsPlayer = true;
+                c.Owner = null;
                 c.Type = CharType.Friend;
                 if (who.Level > 0)
                     c.Level = who.Level;
@@ -99,6 +103,7 @@ namespace EQLogParser
             {
                 var c = Add(party.Name);
                 c.IsPlayer = true;
+                c.Owner = null;
                 c.Type = CharType.Friend;
             }
 
@@ -120,19 +125,18 @@ namespace EQLogParser
                 }
 
                 var m = PetOwnerRegex.Match(chat.Message);
-                if (m.Success)
+                if (m.Success && !c.IsPlayer)
                 {
                     c.Owner = m.Groups[1].Value;
                     c.Type = CharType.Friend; // can you /pet leader a NPC pet?
-                    var owner = Add(c.Owner);
-                    owner.Type = CharType.Friend;
-                    owner.IsPlayer = true;
+                    Add(c.Owner);
                 }
 
                 m = PetTellOwnerRegex.Match(chat.Message);
-                if (m.Success)
+                if (m.Success && !c.IsPlayer)
                 {
                     c.Type = CharType.Friend;
+                    c.Owner = Player;
                 }
             }
 
@@ -324,6 +328,9 @@ namespace EQLogParser
 
                 if (name.EndsWith("`s warder") || name.EndsWith("'s warder"))
                     c.Owner = name.Substring(0, name.Length - 9);
+
+                if (name.EndsWith("`s ward") || name.EndsWith("'s ward"))
+                    c.Owner = name.Substring(0, name.Length - 7);
 
                 if (name.EndsWith("`s pet") || name.EndsWith("'s pet"))
                     c.Owner = name.Substring(0, name.Length - 6);

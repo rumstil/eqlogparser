@@ -42,6 +42,7 @@ namespace EQLogParserTests.Tracker
             chars.HandleEvent(new LogWhoEvent() { Name = "Rumstil" });
             Assert.Equal(CharType.Friend, chars.GetType("Rumstil`s pet"));
             Assert.Equal(CharType.Friend, chars.GetType("Rumstil`s warder"));
+            Assert.Equal(CharType.Friend, chars.GetType("Rumstil`s ward"));
 
             Assert.Equal(CharType.Unknown, chars.GetType("Xantik"));
             chars.HandleEvent(new LogChatEvent() { Source = "Xantik", Message = "My leader is Rumstil." });
@@ -57,10 +58,11 @@ namespace EQLogParserTests.Tracker
             // `pet and `warder are always assigned to the obvious owner
             Assert.Equal("Rumstil", chars.GetOwner("Rumstil`s pet"));
             Assert.Equal("Rumstil", chars.GetOwner("Rumstil`s warder"));
+            Assert.Equal("Rumstil", chars.GetOwner("Rumstil`s ward"));
 
             // other pets need to be announced first
             Assert.Null(chars.GetOwner("Xantik"));
-            chars.HandleEvent(new LogChatEvent() { Source = "Xantik", Message = "My leader is Rumstil." });
+            chars.HandleEvent(new LogChatEvent() { Source = "Xantik", Message = "My leader is Rumstil.", Channel = "say" });
             Assert.Equal("Rumstil", chars.GetOwner("Xantik"));
         }
 
@@ -71,5 +73,30 @@ namespace EQLogParserTests.Tracker
             Assert.False(CharTracker.IsPetName("Spot"));
         }
 
+        [Fact]
+        public void Spell_Should_Match()
+        {
+            var spells = new FakeSpellParser();
+            spells.Spells.Add(new SpellInfo() { Name = "Super Fire Arrow", ClassesMask = (int)ClassesMaskShort.RNG, ClassesCount = 1 });
+
+            var chars = new CharTracker(spells);
+            chars.HandleEvent(new LogCastingEvent() { Source = "Rumstil", Spell = "Super Fire Arrow" });
+            Assert.Equal("RNG", chars.GetClass("Rumstil"));
+        }
+
+        /*
+        // this test will only work if we use an hardcoded spell exclusion list
+        [Fact]
+        public void Spell_Shouldnt_Match()
+        {
+            var spells = new FakeSpellParser();
+            // Lure of Ice is a level 60 WIZ spell and also appears as a melee weapon proc
+            spells.Spells.Add(new SpellInfo() { Name = "Lure of Ice", ClassesMask = (int)ClassesMaskShort.WIZ, ClassesCount = 1 });
+
+            var chars = new CharTracker(spells);
+            chars.HandleEvent(new LogCastingEvent() { Source = "Rumstil", Spell = "Lure of Ice" });
+            Assert.Null(chars.GetClass("Rumstil"));
+        }
+        */
     }
 }

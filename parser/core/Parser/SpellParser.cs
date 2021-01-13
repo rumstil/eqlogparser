@@ -104,16 +104,19 @@ namespace EQLogParser
                     for (int i = 0; i < 16; i++)
                     {
                         var level = fields[38 + i];
-                        // 255 for uncastable
+                        // 255 for uncastable by this class
                         // 254 for AA
-                        if (level != "255")
+                        // as of 2021-1-12 there are 321 single class spells that are also item clicks/procs
+                        // however none of these are rank 2/3 spells 
+                        // so we can use spells to identify the caster class as long as the spell is rank 2/3 (and post TSS expansion)
+                        if (level != "255" && level != "254" && Regex.IsMatch(spell.Name, "Rk. I?II$", RegexOptions.RightToLeft))
                         {
                             spell.ClassesCount += 1;
                             spell.ClassesMask |= 1 << i;
                         }
                     }
 
-                    // only keep spells that can be cast by a player
+                    // name lookup can be restricted to contain spells that are player castable to reduce memory use
                     if (spell.ClassesCount > 0)
                     {
                         // handle spell name collisions. 

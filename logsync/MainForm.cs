@@ -372,6 +372,7 @@ namespace LogSync
 
             config.Write("filename", path);
             LogInfo("Loading " + path);
+            LogInfo("Mobs killed in under 10 seconds or 10 hits will not be listed.");
 
             // cancel previous log parsing task
             if (cancellationSource != null)
@@ -494,7 +495,10 @@ namespace LogSync
         {
             // ignore trash mobs
             if (IsTrashMob(f))
+            {
+                //LogInfo("Ignoring trash: " + f.Name);
                 return;
+            }
 
             fightList.Insert(0, f);
 
@@ -588,7 +592,7 @@ namespace LogSync
         private bool IsTrashMob(FightInfo f)
         {
             // these rules should make sense for both high and low level players fighting level appropriate mobs
-            return f.Duration < 15 || f.Target.InboundHitCount < 20;
+            return f.Duration < 10 || f.Target.InboundHitCount < 10;
         }
 
         private bool IsFilterMatch(FightInfo f)

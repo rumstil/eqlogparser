@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace EQLogParser.Events
+namespace EQLogParser
 {
     /// <summary>
     /// This should be sent to the trackers as the first HandleEvent() call after a log file is opened to ensure proper initialization.

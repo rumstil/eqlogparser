@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using EQLogParser.Events;
 
 
 namespace EQLogParser
@@ -242,6 +241,8 @@ namespace EQLogParser
                 //{
                 //    target.Owner = source.Name;
                 //}
+
+                GetFoe(hit.Source, hit.Target);
             }
 
             if (e is LogMissEvent miss)
@@ -253,6 +254,8 @@ namespace EQLogParser
                     c = Add(miss.Source);
                     c.PlayerAggro = miss.Timestamp;
                 }
+
+                GetFoe(miss.Source, miss.Target);
             }
 
             if (e is LogDeathEvent death)

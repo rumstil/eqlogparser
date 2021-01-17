@@ -12,23 +12,20 @@ namespace EQLogParserTests.Tracker
     public class CharTrackerTests
     {
         [Fact]
-        public void Player_Friend()
+        public void Owner_Is_Friend()
+        {
+            var chars = new CharTracker();
+            chars.HandleEvent(new LogOpenEvent() { Player = "Rumstil" });
+            Assert.Equal(CharType.Friend, chars.GetType("Rumstil"));
+        }
+
+        [Fact]
+        public void Who_Player_Is_Friend()
         {
             var chars = new CharTracker();
             // "/who" should always tag players
             chars.HandleEvent(new LogWhoEvent() { Name = "Rumstil" });
-            Assert.Equal("a mosquito", chars.GetFoe("Rumstil", "a mosquito"));
-            Assert.Equal("a mosquito", chars.GetFoe("a mosquito", "Rumstil"));
-        }
-
-        [Fact]
-        public void Healer_May_Be_Foe()
-        {
-            // mobs can be healers too, a heal shouldn't flag the source as a friend (unless the target is a player)
-            var chars = new CharTracker();
-            chars.HandleEvent(new LogHealEvent() { Source = "froglok jin shaman", Target = "froglok dar knight", Amount = 3, Spell = "Doomscale Focusing" });
-            Assert.Equal(CharType.Unknown, chars.GetType("froglok jin shaman"));
-            Assert.Equal(CharType.Unknown, chars.GetType("froglok dar knight"));
+            Assert.Equal(CharType.Friend, chars.GetType("Rumstil"));
         }
 
         [Fact]
@@ -67,10 +64,64 @@ namespace EQLogParserTests.Tracker
         }
 
         [Fact]
+        public void Friend_Outbound_Hit_Make_Foe()
+        {
+            var chars = new CharTracker();
+            chars.Add("Rumstil").Type = CharType.Friend;
+            chars.HandleEvent(new LogHitEvent() { Source = "Rumstil", Target = "froglok jin shaman", Amount = 1 });
+
+            // target should become a foe
+            Assert.Equal(CharType.Foe, chars.GetType("froglok jin shaman"));
+        }
+
+        [Fact]
+        public void Friend_Inbound_Hit_Make_Foe()
+        {
+            var chars = new CharTracker();
+            chars.Add("Rumstil").Type = CharType.Friend;
+            chars.HandleEvent(new LogHitEvent() { Source = "froglok jin shaman", Target = "Rumstil", Amount = 1 });
+
+            // source should become a foe
+            Assert.Equal(CharType.Foe, chars.GetType("froglok jin shaman"));
+        }
+
+        [Fact]
+        public void Foe_Outbound_Hit_Make_Friend()
+        {
+            var chars = new CharTracker();
+            chars.Add("froglok jin shaman").Type = CharType.Foe;
+            chars.HandleEvent(new LogHitEvent() { Source = "froglok jin shaman", Target = "Rumstil", Amount = 1 });
+
+            // target should become a friend
+            Assert.Equal(CharType.Friend, chars.GetType("Rumstil"));
+        }
+
+        [Fact]
+        public void Foe_Inbound_Hit_Make_Friend()
+        {
+            var chars = new CharTracker();
+            chars.Add("froglok jin shaman").Type = CharType.Foe;
+            chars.HandleEvent(new LogHitEvent() { Source = "Rumstil", Target = "froglok jin shaman", Amount = 1 });
+
+            // source should become a friend
+            Assert.Equal(CharType.Friend, chars.GetType("Rumstil"));
+        }
+
+        [Fact]
         public void IsPetName()
         {
             Assert.True(CharTracker.IsPetName("Xantik"));
             Assert.False(CharTracker.IsPetName("Spot"));
+        }
+
+        [Fact]
+        public void Healer_May_Be_Foe()
+        {
+            // mobs can be healers too, a heal shouldn't flag the source as a friend (unless the target is a player)
+            var chars = new CharTracker();
+            chars.HandleEvent(new LogHealEvent() { Source = "froglok jin shaman", Target = "froglok dar knight", Amount = 3, Spell = "Doomscale Focusing" });
+            Assert.Equal(CharType.Unknown, chars.GetType("froglok jin shaman"));
+            Assert.Equal(CharType.Unknown, chars.GetType("froglok dar knight"));
         }
 
         [Fact]

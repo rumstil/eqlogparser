@@ -1,5 +1,4 @@
-﻿using EQLogParser.Events;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -41,7 +40,7 @@ namespace EQLogParser
         /// <summary>
         /// A list of global drops. Obviously this needs to be expanded.
         /// </summary>
-        public List<string> Ignore = new List<string> 
+        public HashSet<string> Ignore = new HashSet<string> 
         {
             "Bone Chips",
             "Diamond",
@@ -53,6 +52,13 @@ namespace EQLogParser
             "Phosphite",
             "Phosphorous Powder",
             "Relic Fragments",
+            "High Quality Steel Gear",
+            "Faceted Crystal",
+            "Raw Faycite Crystal",
+            "Urticaceae",
+            "Aderirse Bur",
+            "Saltpeter",
+            "Crystallized Sulfur",
         };
 
         private string zone;
@@ -71,7 +77,7 @@ namespace EQLogParser
 
             if (e is LogLootEvent loot)
             {
-                if (!Ignore.Contains(loot.Item, StringComparer.Ordinal))
+                if (!Ignore.Contains(loot.Item, StringComparer.Ordinal) && zone != null)
                     OnLoot?.Invoke(new LootInfo { Item = loot.Item, Mob = loot.Source ?? "Unknown", Zone = zone, Date = e.Timestamp });
             }
 

@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
-using EQLogParser.Events;
 
 
 namespace EQLogParser
@@ -158,6 +157,11 @@ namespace EQLogParser
             if (e is LogPartyEvent party)
             {
                 TrackParty(party);
+            }
+
+            if (e is LogChatEvent chat)
+            {
+                TrackChat(chat);
             }
 
             if (e is LogRawEvent raw)
@@ -324,8 +328,24 @@ namespace EQLogParser
             if (party.Status == PartyStatus.GroupXP)
                 Party = "Group";
 
+            // may be group or solo -- lets just use group until an XP message says otherwise
+            if (party.Status == PartyStatus.RaidLeft)
+                Party = "Group";
+
             if (party.Status == PartyStatus.SoloXP)
                 Party = "Solo";
+
+            if (party.Status == PartyStatus.GroupLeft && Party == "Group")
+                Party = "Solo";
+        }
+
+        private void TrackChat(LogChatEvent chat)
+        {
+            if (chat.Channel == "raid")
+                Party = "Raid";
+
+            if (chat.Channel == "group" && Party == "Solo")
+                Party = "Group";
         }
 
         private void TrackMisc(LogRawEvent raw)

@@ -63,14 +63,14 @@ namespace EQLogParserTests.Event
             Assert.Equal("group", chat.Channel);
             Assert.Equal("omg", chat.Message);
 
-            chat = null;
             chat = Parse("You tell your raid, 'afk 2 hours'");
             Assert.NotNull(chat);
             Assert.Equal(PLAYER, chat.Source);
             Assert.Equal("raid", chat.Channel);
             Assert.Equal("afk 2 hours", chat.Message);
 
-            // there is a double space in raid tells
+            // current raid tells have a single space after the comma
+            // older raid tells have a double space after the comma
             chat = Parse("Leader tells the raid,  'begin zerg'");
             Assert.NotNull(chat);
             Assert.Equal("Leader", chat.Source);

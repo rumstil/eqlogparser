@@ -41,7 +41,6 @@ namespace EQLogParser
         public int CohortCount { get; set; } // number of active fights when this finished
         public long TopHitSum { get; set; }
         public long TopHealSum { get; set; }
-        public List<FightDeath> Deaths { get; set; } = new List<FightDeath>();
             
         /// <summary>
         /// Mob being attacked.
@@ -194,6 +193,8 @@ namespace EQLogParser
         {
             AddParticipant(death.Name).DeathCount += 1;
 
+            /*
+
             var audit = new FightDeath();
             //audit.Timestamp = death.Timestamp;
             audit.Time = (int)(death.Timestamp - StartedOn).TotalSeconds;
@@ -213,6 +214,7 @@ namespace EQLogParser
             }
 
             Deaths.Add(audit);
+            */
         }
 
         public override string ToString()
@@ -296,17 +298,6 @@ namespace EQLogParser
             // don't track participants that were mostly idle
             // these were probably added to the fight via casting events
             Participants.RemoveAll(x => x.OutboundHealSum == 0 && x.OutboundHitSum == 0 && x.InboundHitSum == 0 && !x.DPS.Any(y => y > 0));
-
-            // don't track replays on wipes because they take too much space
-            // and by then things have gone downhill too much
-            if (Deaths.Count > 10)
-            {
-                foreach (var d in Deaths)
-                    d.Replay.Clear();
-            }
-
-            // don't track pet deaths
-            Deaths.RemoveAll(x => AddParticipant(x.Name).PetOwner != null);
         }
 
         /// <summary>
@@ -342,11 +333,6 @@ namespace EQLogParser
 
                 foreach (var h in p.Heals)
                     h.Target = Anon(h.Target);
-            }
-
-            foreach (var d in Deaths)
-            {
-                d.Name = Anon(d.Name);
             }
 
             // invert the dictionary from "real=>alias" to "alias=>real"

@@ -23,4 +23,13 @@
     <Mob EndsOnDeath="true">Yar`Lir the Mistress of Winds</Mob>
     <Mob EndsOnDeath="true">Yar`Lir the Matriarch</Mob>
   </Raid>
+  <Raid>
+    <Name>Icebound Avatar of War Raid</Name>
+    <Zone>Kael Drakkel</Zone>
+    <Mob EndsOnDeath="true">Icebound Avatar of War</Mob>
+    <Mob>An animated blade</Mob>
+    <Mob>A minion of Vallon</Mob>
+  </Raid>
+
+
 </Raids>

@@ -444,6 +444,10 @@ namespace EQLogParser
         {
             ActiveFights.Remove(f);
 
+            // players and pets may end up as fights before we know their status or if they are charmed
+            if (Chars.GetType(f.Name) == CharType.Friend)
+                return;
+
             f.Party = Party ?? "Solo";
             f.Player = Player;
             f.Server = Server;
@@ -466,6 +470,7 @@ namespace EQLogParser
             // after a fight is passed to this delegate it should never be modified (e.g. via the LastFight variable)
             OnFightFinished?.Invoke(f);
 
+            // see if the fight is part of a raid
             var raid = GetRaid(f);
             if (raid == null)
                 return;
@@ -540,6 +545,9 @@ namespace EQLogParser
         /// </summary>
         private RaidFightInfo GetRaid(FightInfo f)
         {
+            if (f.Party != "Raid")
+                return null;
+
             // remove stale raids
             ActiveRaids.RemoveAll(x => x.StartedOn < f.StartedOn.AddHours(-1));
 

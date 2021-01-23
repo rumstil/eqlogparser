@@ -15,6 +15,7 @@ namespace EQLogParser
         public string Name { get; set; }
         public string[] Mobs { get; set; }
         public string[] EndsOnDeath { get; set; }
+        //public string[] StartsOnText { get; set; }
         //public string[] EndsOnText { get; set; }
         //public int TimeOut { get; set; }
     }

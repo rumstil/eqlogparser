@@ -500,6 +500,9 @@ namespace LogSync
                 return;
             }
 
+            if (f.Zone == null)
+                f.Zone = "Unknown";
+
             fightList.Insert(0, f);
 
             if (fightListSearchResults == null)

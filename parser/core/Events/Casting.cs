@@ -3,10 +3,15 @@ using System.Text.RegularExpressions;
 
 /*
 
+2019-11-20
+- Added a chat filter for others' disciplines that can turn off these messages, and modified 
+the existing discipline filter so you can turn off your own activate messages.
+
 2019-04-10
 - Messages indicating the start of a spell cast now include a link to the spell description.
 - Spell interrupts, fizzles, and reflect messages now contain the name of the spell that failed.
 - Messages indicating that a spell has worn off now include a link to the spell description.
+
 
 */
 
@@ -19,6 +24,7 @@ namespace EQLogParser
     {
         public string Source;
         public string Spell;
+        public bool CombatSkill;
         //public string Cancelled;
 
         public override string ToString()
@@ -28,6 +34,9 @@ namespace EQLogParser
 
         // [Sun May 01 08:44:59 2016] You begin casting Group Perfected Invisibility.
         private static readonly Regex CastRegex = new Regex(@"^(.+?) begins? (?:casting|singing) (.+)\.$", RegexOptions.Compiled);
+
+        // [Sun Jul 05 21:33:07 2020] Rumstil activates Enraging Axe Kicks.
+        private static readonly Regex DiscRegex = new Regex(@"^(.+?) activates? (.+)\.$", RegexOptions.Compiled);
 
         // obsolete with 2019-04-10 test server patch
         // [Sun May 01 08:44:56 2016] a woundhealer goblin begins to cast a spell. <Inner Fire>
@@ -44,6 +53,18 @@ namespace EQLogParser
                     Timestamp = e.Timestamp,
                     Source = e.FixName(m.Groups[1].Value),
                     Spell = m.Groups[2].Value
+                };
+            }
+
+            m = DiscRegex.Match(e.Text);
+            if (m.Success)
+            {
+                return new LogCastingEvent
+                {
+                    Timestamp = e.Timestamp,
+                    Source = e.FixName(m.Groups[1].Value),
+                    Spell = m.Groups[2].Value,
+                    CombatSkill = true
                 };
             }
 

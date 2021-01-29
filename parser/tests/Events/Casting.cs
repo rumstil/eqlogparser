@@ -19,6 +19,7 @@ namespace EQLogParserTests.Event
             Assert.NotNull(cast);
             Assert.Equal(PLAYER, cast.Source);
             Assert.Equal("Group Perfected Invisibility", cast.Spell);
+            Assert.False(cast.CombatSkill);
         }
 
         [Fact]
@@ -28,6 +29,7 @@ namespace EQLogParserTests.Event
             Assert.NotNull(cast);
             Assert.Equal("Saity", cast.Source);
             Assert.Equal("Promised Remedy Rk. II", cast.Spell);
+            Assert.False(cast.CombatSkill);
         }
 
         [Fact]
@@ -65,5 +67,26 @@ namespace EQLogParserTests.Event
             Assert.Equal("Celine", cast.Source);
             Assert.Equal("Requiem of Time", cast.Spell);
         }
+
+        [Fact]
+        public void Parse_Disc_Self()
+        {
+            var cast = Parse("You activate Weapon Shield Discipline.");
+            Assert.NotNull(cast);
+            Assert.Equal(PLAYER, cast.Source);
+            Assert.Equal("Weapon Shield Discipline", cast.Spell);
+            Assert.True(cast.CombatSkill);
+        }
+
+        [Fact]
+        public void Parse_Disc_Other()
+        {
+            var cast = Parse("Rumstil activates Weapon Shield Discipline.");
+            Assert.NotNull(cast);
+            Assert.Equal("Rumstil", cast.Source);
+            Assert.Equal("Weapon Shield Discipline", cast.Spell);
+            Assert.True(cast.CombatSkill);
+        }
+
     }
 }

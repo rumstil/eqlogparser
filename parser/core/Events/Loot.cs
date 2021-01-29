@@ -27,10 +27,13 @@ namespace EQLogParser
         // [Thu Dec 19 18:59:56 2019] --You have looted a Viable Chokidai Egg from a chokidai egg sac .--
         private static readonly Regex ItemLootedRegex = new Regex(@"^--(\w+) \w+ looted (an?|\d+) ([^\.]+)(?:from ([^\.]+))?\s?\.--$", RegexOptions.Compiled | RegexOptions.RightToLeft);
 
+        // [Thu Jan 14 20:40:08 2021] Dude grabbed a Restless Ice Cloth Legs Ornament from an icebound chest .
+        private static readonly Regex ItemGrabbedRegex = new Regex(@"^(\w+) grabbed a (.+) from ([^\.]+?)\s?\.$", RegexOptions.Compiled);
+
+
         public static LogLootEvent Parse(LogRawEvent e)
         {
             var m = ItemLootedRegex.Match(e.Text);
-
             if (m.Success)
             {
                 return new LogLootEvent
@@ -40,6 +43,19 @@ namespace EQLogParser
                     Item = m.Groups[3].Value.Trim(),
                     Source = e.FixName(m.Groups[4].Value.Replace("'s corpse", "")),
                     Qty = System.Char.IsDigit(m.Groups[2].Value[0]) ? Int32.Parse(m.Groups[2].Value) : 1,
+                };
+            }
+
+            m = ItemGrabbedRegex.Match(e.Text);
+            if (m.Success)
+            {
+                return new LogLootEvent
+                {
+                    Timestamp = e.Timestamp,
+                    Char = e.FixName(m.Groups[1].Value),
+                    Item = m.Groups[2].Value.Trim(),
+                    Source = e.FixName(m.Groups[3].Value.Replace("'s corpse", "").TrimEnd()),
+                    Qty = 1,
                 };
             }
 

@@ -4,7 +4,7 @@ namespace EQLogParser
 {
     /// <summary>
     /// A mask of class types. 
-    /// These should be the same literal text as returned by /who (with underscores converted to spaces).
+    /// These should use the same literal text as returned by /who (with underscores converted to spaces).
     /// </summary>
     [Flags]
     public enum ClassesMaskLong
@@ -20,5 +20,17 @@ namespace EQLogParser
         SHM = 512, NEC = 1024, WIZ = 2048, MAG = 4096, ENC = 8192, BST = 16384, BER = 32768
         //ALL = 65535
     }
+
+    public enum ClassesIndexLong
+    {
+        Warrior, Cleric, Paladin, Ranger, ShadowKnight, Druid, Monk, Bard, Rogue, Shaman,
+        Necro, Wizard, Mage, Enchanter, Beastlord, Berserker
+    }
+
+    public enum ClassesIndexShort
+    {
+        WAR, CLR, PAL, RNG, SHD, DRU, MNK, BRD, ROG, SHM, NEC, WIZ, MAG, ENC, BST, BER
+    }
+
 
 }

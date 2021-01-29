@@ -43,14 +43,20 @@ namespace EQLogParserTests.Event
         [Fact]
         public void Parse_Prefixed()
         {
-            // afk/trader
+            // afk
             var who = Parse(" AFK [105 Huntmaster (Ranger)] Rumstil (Halfling)  ZONE: kattacastrumb");
             Assert.NotNull(who);
             Assert.Equal("Rumstil", who.Name);
             Assert.Equal("RNG", who.Class);
             Assert.Equal(105, who.Level);
-        }
 
+            // trader
+            who = Parse(" TRADER[1 Enchanter] Buymystuff (High Elf)");
+            Assert.NotNull(who);
+            Assert.Equal("Buymystuff", who.Name);
+            Assert.Equal("ENC", who.Class);
+            Assert.Equal(1, who.Level);
+        }
 
     }
 }

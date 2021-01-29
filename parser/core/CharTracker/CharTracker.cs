@@ -164,6 +164,16 @@ namespace EQLogParser
 
                     if (source.Type == CharType.Friend || source.IsPlayer)
                         target.Type = CharType.Friend;
+
+                    // more class detection in case casting messages aren't being logged
+                    // not sure this is safe since some heals may misflag
+                    // e.g. [18286/4217] Mark of the Unsullied Rk. II
+                    //if (source.Class == null && heal.Spell != null)
+                    //{
+                    //    var s = Spells?.GetSpell(heal.Spell);
+                    //    if (s?.ClassesCount == 1)
+                    //        source.Class = s.ClassesNames;
+                    //}
                 }
             }
 
@@ -177,13 +187,12 @@ namespace EQLogParser
             if (e is LogCastingEvent cast)
             {
                 var c = Add(cast.Source);
+
                 var s = Spells?.GetSpell(cast.Spell);
 
                 if (s?.ClassesCount == 1)
                 {
                     c.Class = s.ClassesNames;
-                    //Console.WriteLine("*** {0} ... {1} {2}", cast.Source, cast.Spell, cls);
-                    //Console.ReadLine();
                 }
 
                 if (s?.Target == (int)SpellTarget.Pet && !String.IsNullOrEmpty(s.LandOthers))
@@ -227,13 +236,22 @@ namespace EQLogParser
                     source.PlayerAggro = hit.Timestamp;
                 }
 
-                // some extra class detection for mercs and melee boxes that may not cast spells
                 if (source.Class == null)
                 {
+                    // backstab detection for rogue mercs and low level rogues
                     if (hit.Type == "backstab")
                         source.Class = ClassesMaskShort.ROG.ToString();
-                    //if (hit.Type == "frenzy")
-                    //    c.Class = ClassesMaskShort.Berserker.ToString();
+                    // frenzy detection for low level berserkers
+                    if (hit.Type == "frenzy")
+                        source.Class = ClassesMaskShort.BER.ToString();
+
+                    // more class detection in case casting messages aren't being logged
+                    if (hit.Spell != null)
+                    {
+                        var s = Spells?.GetSpell(hit.Spell);
+                        if (s?.ClassesCount == 1)
+                            source.Class = s.ClassesNames;
+                    }
                 }
 
                 // only owners can damage pets? this should already be covered by detecting pet spells

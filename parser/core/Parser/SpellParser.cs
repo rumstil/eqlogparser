@@ -26,6 +26,8 @@ namespace EQLogParser
         public string LandSelf;
         public string LandOthers;
         public string WearsOff;
+        public bool Beneficial;
+        public bool CombatSkill;
 
         public string ClassesNames => ((ClassesMaskShort)ClassesMask).ToString().Replace('_', ' ');
 
@@ -39,7 +41,7 @@ namespace EQLogParser
     {
         //SpellInfo GetSpell(int id);
         SpellInfo GetSpell(string name);
-        //SpellInfo GetSpellFromEmote(string text);
+        //string GetSpellClass(string name);
     }
 
     /// <summary>
@@ -52,7 +54,6 @@ namespace EQLogParser
         private IReadOnlyList<SpellInfo> List = new List<SpellInfo>();
         //private IReadOnlyDictionary<int, SpellInfo> LookupById = new Dictionary<int, SpellInfo>();
         private IReadOnlyDictionary<string, SpellInfo> LookupByName = new Dictionary<string, SpellInfo>();
-        //private IReadOnlyDictionary<string, SpellInfo> LookupByEmote = new Dictionary<string, SpellInfo>();
 
         public bool IsReady => List.Count > 0;
 
@@ -94,29 +95,45 @@ namespace EQLogParser
                     spell.DurationTicks = CalcDuration(Convert.ToInt32(fields[11]), Convert.ToInt32(fields[12]));
                     //spell.Duration = Convert.ToInt32(fields[11]);
 
+                    // 30 BENEFICIAL
+                    spell.Beneficial = fields[30] == "1";
+
                     // 32 TYPENUMBER
                     spell.Target = Convert.ToInt32(fields[32]);
                     // collapse pet targets to a single type
                     if (spell.Target == (int)SpellTarget.Pet2)
                         spell.Target = (int)SpellTarget.Pet;
 
+                    // 100 IS_SKILL
+                    spell.CombatSkill = fields[100] == "1";
+
                     // 38 WARRIORMIN .. BERSERKERMIN
+                    // determine which classes can use this spell
                     for (int i = 0; i < 16; i++)
                     {
-                        var level = fields[38 + i];
-                        // 255 for uncastable by this class
-                        // 254 for AA
-                        // as of 2021-1-12 there are 321 single class spells that are also item clicks/procs
-                        // however none of these are rank 2/3 spells 
-                        // so we can use spells to identify the caster class as long as the spell is rank 2/3 (and post TSS expansion)
-                        if (level != "255" && level != "254" && Regex.IsMatch(spell.Name, "Rk. I?II$", RegexOptions.RightToLeft))
-                        {
-                            spell.ClassesCount += 1;
-                            spell.ClassesMask |= 1 << i;
-                        }
+                        var level = Int32.Parse(fields[38 + i]);
+                        if (level == 255)
+                            continue;
+
+                        // 254 = AA
+                        // e.g. [36832] Savage Spirit XV
+                        // but can misflag people when used on procs
+                        // e.g. [35199] Arcane Hymn Strike III
+                        if (level == 254 && (spell.DurationTicks == 0 || !Regex.IsMatch(spell.Name, @"\s[XVI]{1,4}$", RegexOptions.RightToLeft)))
+                            continue;
+
+                        // item procs/clicks can misflag people as another class
+                        // as of 2021-1-12 there are 321 player spells that are also item clicks/procs, however none of these are rank 2/3 spells 
+                        // so we can safely use rank 2/3 spells to identify the caster class
+                        // combat skills are probably also safe to use
+                        if (level < 254 && !(spell.CombatSkill || Regex.IsMatch(spell.Name, "Rk. I?II$", RegexOptions.RightToLeft)))
+                            continue;
+
+                        spell.ClassesMask |= 1 << i;
+                        spell.ClassesCount += 1;
                     }
 
-                    // name lookup can be restricted to contain spells that are player castable to reduce memory use
+                    // lookupByName can be restricted to only contain spells that are player castable to reduce memory use
                     if (spell.ClassesCount > 0)
                     {
                         // handle spell name collisions. 
@@ -199,11 +216,24 @@ namespace EQLogParser
         /// </summary>
         public SpellInfo GetSpell(string name)
         {
-            if (LookupByName.TryGetValue(name, out SpellInfo s))
-                return s;
-
-            return null;
+            LookupByName.TryGetValue(name, out SpellInfo s);
+            return s;
         }
+
+        /// <summary>
+        /// Lookup a spell casting classes by name. 
+        /// </summary>
+        private string GetSpellClass(string name)
+        {
+            if (!LookupByName.TryGetValue(name, out SpellInfo s))
+                return null;
+
+            if (s.ClassesCount != 1)
+                return null;
+
+            return s?.ClassesNames;
+        }
+
 
         /*
         /// <summary>

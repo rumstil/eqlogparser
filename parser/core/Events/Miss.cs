@@ -48,7 +48,7 @@ namespace EQLogParser
         // [Thu May 19 15:31:33 2016] A sea naga stormcaller tries to hit Fourier, but Fourier's magical skin absorbs the blow!
         // [Sat Feb 23 14:56:59 2019] A grove guardian tries to smash Jantik, but Jantik's magical skin absorbs the blow! (Riposte Strikethrough)
         // [Fri Dec 28 23:31:08 2018] You try to shoot a sarnak conscript, but miss! (Double Bow Shot)
-        private static readonly Regex MeleeMissRegex = new Regex(@"^(.+) \w+ to (\w+)(?: on)? (.+?), but .*?(miss|riposte|parry|parries|dodge|block|INVULNERABLE|magical skin absorbs the blow)e?s?!(?:\s\(([^\(\)]+)\))?$", RegexOptions.Compiled | RegexOptions.RightToLeft);
+        private static readonly Regex MeleeMissRegex = new Regex(@"^(.+) \w+ to (\w+)(?: on)? (.+?), but .*?(miss|riposte|parry|parries|dodge|block|blocks with \w\w\w shield|INVULNERABLE|magical skin absorbs the blow)e?s?!(?:\s\(([^\(\)]+)\))?$", RegexOptions.Compiled | RegexOptions.RightToLeft);
 
         // [Mon Mar 25 21:55:36 2019] YOUR magical skin absorbs the damage of a Bloodmoon boneeater's thorns.
 
@@ -72,6 +72,8 @@ namespace EQLogParser
                     type = "rune";
                 if (type == "INVULNERABLE")
                     type = "invul";
+                if (type.StartsWith("blocks with"))
+                    type = "shield";
 
                 return new LogMissEvent()
                 {

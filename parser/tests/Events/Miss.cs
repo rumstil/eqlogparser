@@ -24,7 +24,7 @@ namespace EQLogParserTests.Event
         }
 
         [Fact]
-        public void Parse_Special()
+        public void Parse_With_Mod()
         {
             var miss = Parse("You try to shoot a sarnak conscript, but miss! (Double Bow Shot)");
             Assert.NotNull(miss);
@@ -52,6 +52,26 @@ namespace EQLogParserTests.Event
             Assert.Equal("A tirun crusher", miss.Source);
             Assert.Equal(PLAYER, miss.Target);
             Assert.Equal("rune", miss.Type);
+        }
+
+        [Fact]
+        public void Parse_Block()
+        {
+            var miss = Parse("A living heap tries to slash Tincan, but Tincan blocks!");
+            Assert.NotNull(miss);
+            Assert.Equal("A living heap", miss.Source);
+            Assert.Equal("Tincan", miss.Target);
+            Assert.Equal("block", miss.Type);
+        }
+
+        [Fact]
+        public void Parse_Shield_Block()
+        {
+            var miss = Parse("Tallon Zek tries to shoot Tincan, but Tincan blocks with his shield!");
+            Assert.NotNull(miss);
+            Assert.Equal("Tallon Zek", miss.Source);
+            Assert.Equal("Tincan", miss.Target);
+            Assert.Equal("shield", miss.Type);
         }
 
         [Fact]

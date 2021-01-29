@@ -10,8 +10,7 @@ namespace EQLogParser
     /// </summary>
     public class FightMiss
     {
-        //public static readonly string[] MissOrder = new[] { "invul", "riposte", "parry", "dodge", "block", "miss", "rune" }; // the way it was for 20 years
-        public static readonly string[] MissOrder = new[] { "miss", "invul", "riposte", "parry", "dodge", "block", "rune" }; // lets change it up for shits and giggles
+        public static readonly string[] MissOrder = new[] { "miss", "invul", "block", "riposte", "parry", "dodge", "shield", "rune" }; 
 
         public string Type { get; set; }
         public int Count { get; set; }

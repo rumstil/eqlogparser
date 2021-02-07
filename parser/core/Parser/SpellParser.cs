@@ -31,6 +31,8 @@ namespace EQLogParser
 
         public string ClassesNames => ((ClassesMaskShort)ClassesMask).ToString().Replace('_', ' ');
 
+        public bool PetTarget => Target == (int)SpellTarget.Pet || Target == (int)SpellTarget.Pet2;
+
         public override string ToString()
         {
             return String.Format("{0} {1}", Id, Name);
@@ -117,7 +119,7 @@ namespace EQLogParser
 
                         // 254 = AA
                         // e.g. [36832] Savage Spirit XV
-                        // but can misflag people when used on procs
+                        // but some can misflag people when used on procs so we also add a duration check
                         // e.g. [35199] Arcane Hymn Strike III
                         if (level == 254 && (spell.DurationTicks == 0 || !Regex.IsMatch(spell.Name, @"\s[XVI]{1,4}$", RegexOptions.RightToLeft)))
                             continue;
@@ -126,7 +128,7 @@ namespace EQLogParser
                         // as of 2021-1-12 there are 321 player spells that are also item clicks/procs, however none of these are rank 2/3 spells 
                         // so we can safely use rank 2/3 spells to identify the caster class
                         // combat skills are probably also safe to use
-                        if (level < 254 && !(spell.CombatSkill || Regex.IsMatch(spell.Name, "Rk. I?II$", RegexOptions.RightToLeft)))
+                        if (level < 254 && !(spell.CombatSkill || Regex.IsMatch(spell.Name, @"Rk\.\s?I?II$", RegexOptions.RightToLeft)))
                             continue;
 
                         spell.ClassesMask |= 1 << i;

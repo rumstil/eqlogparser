@@ -31,8 +31,14 @@ namespace EQLogParser
     internal class PetBuffEmote
     {
         public DateTime Timestamp;
+        public string Name;
         public string Source;
-        public string LandOthers;
+        public string Emote;
+
+        public override string ToString()
+        {
+            return String.Format("{0} {1} ({2})", Name, Emote, Source);
+        }
     }
 
     /// <summary>
@@ -149,8 +155,8 @@ namespace EQLogParser
                 // todo: do any have a group heal/lifetap recourse with the same name?
                 if (target.Owner == null && !target.IsPlayer && heal.Spell != null && heal.Source != null && heal.Source != heal.Target)
                 {
-                    var s = Spells?.GetSpell(heal.Spell);
-                    if (s != null && s.Target == (int)SpellTarget.Pet)
+                    var spell = Spells?.GetSpell(heal.Spell);
+                    if (spell?.IsPetTarget == true)
                         target.Owner = heal.Source;
                 }
 
@@ -188,31 +194,33 @@ namespace EQLogParser
             {
                 var c = Add(cast.Source);
 
-                var s = Spells?.GetSpell(cast.Spell);
+                var spell = Spells?.GetSpell(cast.Spell);
 
-                if (s?.ClassesCount == 1)
+                if (spell?.ClassesCount == 1)
                 {
-                    c.Class = s.ClassesNames;
+                    c.Class = spell.ClassesNames;
                 }
 
-                if (s?.Target == (int)SpellTarget.Pet && !String.IsNullOrEmpty(s.LandOthers))
+                if (spell?.LandPet != null)
                 {
-                    PetBuffs.Add(new PetBuffEmote() { Timestamp = e.Timestamp, Source = cast.Source, LandOthers = s.LandOthers });
+                    PetBuffs.Add(new PetBuffEmote() { Timestamp = e.Timestamp, Source = cast.Source, Name = spell.Name, Emote = spell.LandPet });
                 }
             }
             
             if (e is LogRawEvent raw)
             {
                 // we only need to keep track of buffs for a few seconds between casting time and landing time
-                PetBuffs.RemoveAll(x => x.Timestamp < e.Timestamp.AddSeconds(-5));
+                if (PetBuffs.Count > 0)
+                    PetBuffs.RemoveAll(x => x.Timestamp < e.Timestamp.AddSeconds(-5));
+
                 // search recently cast pet buffs to see if a spell emote matches and use it to tag a pet owner
                 // this could possibly misattribute the pet owner if two people cast the same buff at nearly the same time
                 for (var i = 0; i < PetBuffs.Count; i++)
                 {
                     var pb = PetBuffs[i];
-                    if (raw.Text.EndsWith(pb.LandOthers))
+                    if (raw.Text.EndsWith(pb.Emote))
                     {
-                        var name = raw.Text.Substring(0, raw.Text.Length - pb.LandOthers.Length);
+                        var name = raw.Text.Substring(0, raw.Text.Length - pb.Emote.Length);
                         var c = Get(name);
                         // since this isn't 100% accurate we only set the owner if one isn't already present
                         // todo: maybe keep track of a few guesses and only set owner after a few matches?
@@ -236,21 +244,26 @@ namespace EQLogParser
                     source.PlayerAggro = hit.Timestamp;
                 }
 
-                if (source.Class == null)
-                {
-                    // backstab detection for rogue mercs and low level rogues
-                    if (hit.Type == "backstab")
-                        source.Class = ClassesMaskShort.ROG.ToString();
-                    // frenzy detection for low level berserkers
-                    if (hit.Type == "frenzy")
-                        source.Class = ClassesMaskShort.BER.ToString();
+                // backstab detection for rogue mercs and low level rogues
+                if (hit.Type == "backstab")
+                    source.Class = ClassesMaskShort.ROG.ToString();
+                // frenzy detection for low level berserkers
+                if (hit.Type == "frenzy")
+                    source.Class = ClassesMaskShort.BER.ToString();
 
-                    // more class detection in case casting messages aren't being logged
-                    if (hit.Spell != null)
+                if (hit.Spell != null)
+                {
+                    var spell = Spells?.GetSpell(hit.Spell);
+
+                    if (source.Class == null && spell?.ClassesCount == 1)
                     {
-                        var s = Spells?.GetSpell(hit.Spell);
-                        if (s?.ClassesCount == 1)
-                            source.Class = s.ClassesNames;
+                        source.Class = spell.ClassesNames;
+                    }
+
+                    // some spells will damage pets to provide their owner a benefit in return
+                    if (spell?.IsPetTarget == true)
+                    {
+                        target.Owner = source.Name;
                     }
                 }
 

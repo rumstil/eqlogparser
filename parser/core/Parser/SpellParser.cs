@@ -25,13 +25,14 @@ namespace EQLogParser
         public int ClassesCount;
         public string LandSelf;
         public string LandOthers;
+        public string LandPet;
         public string WearsOff;
-        public bool Beneficial;
-        public bool CombatSkill;
+        public bool IsBeneficial;
+        public bool IsCombatSkill;
 
         public string ClassesNames => ((ClassesMaskShort)ClassesMask).ToString().Replace('_', ' ');
 
-        public bool PetTarget => Target == (int)SpellTarget.Pet || Target == (int)SpellTarget.Pet2;
+        public bool IsPetTarget => Target == (int)SpellTarget.Pet || Target == (int)SpellTarget.Pet2;
 
         public override string ToString()
         {
@@ -98,16 +99,13 @@ namespace EQLogParser
                     //spell.Duration = Convert.ToInt32(fields[11]);
 
                     // 30 BENEFICIAL
-                    spell.Beneficial = fields[30] == "1";
+                    spell.IsBeneficial = fields[30] == "1";
 
                     // 32 TYPENUMBER
                     spell.Target = Convert.ToInt32(fields[32]);
-                    // collapse pet targets to a single type
-                    if (spell.Target == (int)SpellTarget.Pet2)
-                        spell.Target = (int)SpellTarget.Pet;
 
                     // 100 IS_SKILL
-                    spell.CombatSkill = fields[100] == "1";
+                    spell.IsCombatSkill = fields[100] == "1";
 
                     // 38 WARRIORMIN .. BERSERKERMIN
                     // determine which classes can use this spell
@@ -128,28 +126,24 @@ namespace EQLogParser
                         // as of 2021-1-12 there are 321 player spells that are also item clicks/procs, however none of these are rank 2/3 spells 
                         // so we can safely use rank 2/3 spells to identify the caster class
                         // combat skills are probably also safe to use
-                        if (level < 254 && !(spell.CombatSkill || Regex.IsMatch(spell.Name, @"Rk\.\s?I?II$", RegexOptions.RightToLeft)))
+                        if (level < 254 && !(spell.IsCombatSkill || Regex.IsMatch(spell.Name, @"Rk\.\s?I?II$", RegexOptions.RightToLeft)))
                             continue;
 
                         spell.ClassesMask |= 1 << i;
                         spell.ClassesCount += 1;
                     }
 
-                    // lookupByName can be restricted to only contain spells that are player castable to reduce memory use
-                    if (spell.ClassesCount > 0)
+                    // handle spell name collisions. 
+                    // e.g. Merciful Light is both PAL/CLR
+                    // e.g. Inspire Fear is CLR and Inspire Fear II is None
+                    if (lookupByName.TryGetValue(spell.Name, out SpellInfo match))
                     {
-                        // handle spell name collisions. 
-                        // e.g. Merciful Light is both PAL/CLR
-                        // e.g. Inspire Fear is CLR and Inspire Fear II is None
-                        if (lookupByName.TryGetValue(spell.Name, out SpellInfo match))
-                        {
-                            match.ClassesMask |= spell.ClassesMask;
-                            match.ClassesCount = BitOperations.PopCount((uint)match.ClassesMask);
-                        }
-                        else
-                        {
-                            lookupByName.Add(spell.Name, spell);
-                        }
+                        match.ClassesMask |= spell.ClassesMask;
+                        match.ClassesCount = BitOperations.PopCount((uint)match.ClassesMask);
+                    }
+                    else
+                    {
+                        lookupByName.Add(spell.Name, spell);
                     }
 
                     list.Add(spell);
@@ -197,6 +191,15 @@ namespace EQLogParser
                         //if (!String.IsNullOrEmpty(s.LandOthers))
                         //    lookupByEmote.TryAdd(s.LandOthers, s);
                     }
+                }
+
+                // set LandPet emote on pet spells if the emote is only used by pet spells
+                // e.g. "shrinks" is used by both pet and non pet spells
+                var nonPet = list.Where(x => !x.IsPetTarget).Select(x => x.LandOthers).ToHashSet();
+                foreach (var spell in list.Where(x => x.IsPetTarget))
+                {
+                    if (!nonPet.Contains(spell.LandOthers))
+                        spell.LandPet = spell.LandOthers;
                 }
             }
 

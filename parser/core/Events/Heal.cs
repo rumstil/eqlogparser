@@ -39,7 +39,7 @@ namespace EQLogParser
         // [Sun Jan 13 23:09:15 2019] Uteusher healed you over time for 1797 hit points by Devout Elixir.
         // [Sun Jan 13 23:09:15 2019] Uteusher healed you over time for 208 (1797) hit points by Devout Elixir.
         // [Sun Jan 13 23:09:15 2019] Prime healed Blurr over time for 1049 hit points by Prophet's Gift of the Ruchu. (Lucky Critical)
-        private static readonly Regex HoTRegex = new Regex(@"^(\w+) healed (.+?) over time for (\d+)(?: \((\d+)\))? hit points by (.+?)\.(?: \((.+?)\))?$", RegexOptions.Compiled);
+        private static readonly Regex HoTRegex = new Regex(@"^(.+?) healed (.+?) over time for (\d+)(?: \((\d+)\))? hit points by (.+?)\.(?: \((.+?)\))?$", RegexOptions.Compiled);
 
         // [Sun Jan 13 23:09:15 2019] Uteusher has been healed over time for 0 (900) hit points by Celestial Regeneration XVIII.
         // [Mon Mar 18 23:55:00 2019] You have been healed over time for 9525 hit points by Merciful Elixir Rk. II.
@@ -57,7 +57,7 @@ namespace EQLogParser
         // [Sun Jan 13 23:09:15 2019] A holy light surrounds you. You healed Rumstil for 361 hit points by HandOfHolyVengeanceVRecourse. (Critical)
         // [Sun Jan 13 23:09:15 2019] Xebn is healed by life-giving energy. Brugian healed Xebn for 84056 hit points by Furial Renewal.
         // [Sun Jan 13 23:09:15 2019] You healed Rumstil for 8 hit points by Blood of the Devoted.
-        private static readonly Regex ObsoleteInstantRegex = new Regex(@"(?:^|\. )([\w\s]+) healed (.+?) for (\d+)(?: \((\d+)\))? hit points(?: by (.+?))?\.(?: \((.+?)\))?$", RegexOptions.Compiled | RegexOptions.RightToLeft);
+        private static readonly Regex ObsoleteInstantRegex = new Regex(@"\. (.+?) healed (.+?) for (\d+)(?: \((\d+)\))? hit points(?: by (.+?))?\.(?: \((.+?)\))?$", RegexOptions.Compiled | RegexOptions.RightToLeft);
 
         public static LogHealEvent Parse(LogRawEvent e)
         {
@@ -98,6 +98,23 @@ namespace EQLogParser
                     Amount = Int32.Parse(m.Groups[2].Value),
                     GrossAmount = m.Groups[3].Success ? Int32.Parse(m.Groups[3].Value) : Int32.Parse(m.Groups[2].Value),
                     Spell = m.Groups[4].Success ? m.Groups[4].Value : null,
+                    Mod = mod
+                };
+            }
+
+            // InstantRegex will incorrectly capture the obsolete messages 
+            // the check for the '.' used to exclude them
+            m = InstantRegex.Match(e.Text);
+            if (m.Success && !m.Groups[1].Value.Contains('.'))
+            {
+                return new LogHealEvent()
+                {
+                    Timestamp = e.Timestamp,
+                    Source = e.FixName(m.Groups[1].Value),
+                    Target = m.Groups[2].Value == "himself" || m.Groups[2].Value == "herself" || m.Groups[2].Value == "itself" ? e.FixName(m.Groups[1].Value) : e.FixName(m.Groups[2].Value),
+                    Amount = Int32.Parse(m.Groups[3].Value),
+                    GrossAmount = m.Groups[4].Success ? Int32.Parse(m.Groups[4].Value) : Int32.Parse(m.Groups[3].Value),
+                    Spell = m.Groups[5].Success ? m.Groups[5].Value : null,
                     Mod = mod
                 };
             }

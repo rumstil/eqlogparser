@@ -1,15 +1,6 @@
 ﻿using EQLogParser;
 using Xunit;
 
-/*
-At some point the heal description was split to a separate line.
-e.g. 
-Lenantik is bathed in a devout light. Uteusher healed Lenantik for 9875 hit points by Devout Light.
-is now
-Lenantik is bathed in a devout light. 
-Uteusher healed Lenantik for 9875 hit points by Devout Light.
-
-*/
 
 namespace EQLogParserTests.Event
 {
@@ -58,7 +49,7 @@ namespace EQLogParserTests.Event
         }
 
         [Fact]
-        public void Parse_Instant_From_Ward()
+        public void Parse_Instant_From_Long_Name()
         {
             var heal = Parse("Dude`s ward healed Sponge for 200 hit points by Nature's Restoration VIII.");
             Assert.NotNull(heal);
@@ -206,6 +197,17 @@ namespace EQLogParserTests.Event
             Assert.Equal(1797, heal.Amount);
             Assert.Equal(1797, heal.GrossAmount);
             Assert.Equal("Devout Elixir", heal.Spell);
+        }
+
+        [Fact]
+        public void Parse_Hot_From_Long_Name()
+        {
+            var heal = Parse("a steadfast servant healed Sponge over time for 1562 hit points by Servant's Elixir IX.");
+            Assert.NotNull(heal);
+            Assert.Equal("A steadfast servant", heal.Source);
+            Assert.Equal("Sponge", heal.Target);
+            Assert.Equal(1562, heal.Amount);
+            Assert.Equal("Servant's Elixir IX", heal.Spell);
         }
 
         [Fact]

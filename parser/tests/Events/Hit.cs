@@ -96,7 +96,6 @@ namespace EQLogParserTests.Event
             Assert.Equal(LogEventMod.Critical, hit.Mod);
         }
 
-        [Fact]
         private void Parse_Obsolete_DD()
         {
             var hit = Parse("Rumstil hit a scaled wolf for 726 points of non-melee damage.");
@@ -107,7 +106,6 @@ namespace EQLogParserTests.Event
             Assert.Equal("dd", hit.Type);
         }
 
-        [Fact]
         private void Parse_Obsolete_DD_Critical()
         {
             var hit = Parse("Rumstil hit a kodiak bear for 2515 points of non-melee damage. (Critical)");
@@ -154,6 +152,18 @@ namespace EQLogParserTests.Event
             Assert.Equal(34993, hit.Amount);
             Assert.Equal("dot", hit.Type);
             Assert.Equal("Mind Tempest", hit.Spell);
+        }
+
+        // is this worthwhile if we can't assign it to anyone?
+        private void Parse_Unattributed_DoT()
+        {
+            var hit = Parse("Vallon Zek has taken 3343 damage by Slitheren Venom Rk. III.");
+            Assert.NotNull(hit);
+            Assert.Null(hit.Source);
+            Assert.Equal("Vallon Zek", hit.Target);
+            Assert.Equal(3343, hit.Amount);
+            Assert.Equal("dot", hit.Type);
+            Assert.Equal("Slitheren Venom Rk. III", hit.Spell);
         }
 
         [Fact]

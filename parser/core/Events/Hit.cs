@@ -62,7 +62,7 @@ namespace EQLogParser
         // [Fri Dec 28 16:30:41 2018] A tree snake bites Lenantik for 470 points of damage.
         // [Fri Dec 28 23:31:14 2018] You shoot a Sebilisian bonecaster for 10717 points of damage. (Critical Double Bow Shot)
         // this has a negative look ahead to avoid matching obsolete nuke damage messages
-        private static readonly Regex MeleeHitRegex = new Regex(@"^(.+?) (hit|shoot|kick|slash|crush|pierce|bash|slam|strike|punch|backstab|bite|claw|smash|slice|gore|maul|rend|burn|sting|frenzy on|frenzies on)e?s? (?!by non-melee)(.+?) for (\d+) points? of damage\.(?:\s\(([^\(\)]+)\))?$", RegexOptions.Compiled | RegexOptions.RightToLeft);
+        private static readonly Regex MeleeHitRegex = new Regex(@"^(.+?) (hit|shoot|kick|slash|crush|pierce|bash|slam|strike|punch|backstab|bite|claw|smash|slice|gore|maul|rend|burn|sting|sweep|learn|frenzy on|frenzies on)e?s? (?!by non-melee)(.+?) for (\d+) points? of damage\.(?:\s\(([^\(\)]+)\))?$", RegexOptions.Compiled | RegexOptions.RightToLeft);
 
         // [Fri Dec 28 15:43:53 2018] A lizard is burned by YOUR flames for 380 points of non-melee damage.
         // [Wed Apr 17 21:51:16 2019] An Iron Legion admirer is pierced by Garantik's thorns for 144 points of non-melee damage.

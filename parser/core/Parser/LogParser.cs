@@ -9,20 +9,19 @@ namespace EQLogParser
 {
     public delegate LogEvent LogEventParser(LogRawEvent e);
 
-    public delegate void LogEventHandler(LogEvent e);
+    //public delegate void LogEventHandler(LogEvent e);
 
     /// <summary>
     /// This is the main interface for log parsing. 
     /// You feed it log lines via the ParseLine() function and it returns them as events.
     /// All of the parsing is done outside of this class in the individual event parsers.
-    /// This class is mostly stateless and doesn't do much more than parsing of events.
     /// </summary>
     public class LogParser
     {
         public List<string> Ignore = new List<string>();
         public List<LogEventParser> Parsers = new List<LogEventParser>();
 
-        public event LogEventHandler OnEvent;
+        //public event LogEventHandler OnEvent;
 
         // 2018-12-18 TBL expansion changed log format significantly and most of the hit parsing will not 
         // work for earlier log files
@@ -38,6 +37,7 @@ namespace EQLogParser
             Ignore.Add("Your target is too far away, get closer!");
             Ignore.Add("Your target is too close to use a ranged weapon!");
             Ignore.Add("You cannot see your target.");
+            Ignore.Add("You can't reach that, get closer.");
             Ignore.Add("You can't use that command right now...");
             //Ignore.Add("Try attacking someone other than yourself. It's more productive.");
 
@@ -125,9 +125,10 @@ namespace EQLogParser
 
             // convert a raw log message line to a LogRawEvent (this can return a null)
             var raw = LogRawEvent.Parse(text);
-            if (raw != null)
-                raw.Player = Player;
+            if (raw == null)
+                return null;
 
+            raw.Player = Player;
             return ParseEvent(raw);
         }
 
@@ -136,9 +137,6 @@ namespace EQLogParser
         /// </summary>
         private LogEvent ParseEvent(LogRawEvent raw)
         {
-            if (raw == null)
-                return null;
-
             // GamParse exports the first line in single fight log files as 
             // [Mon Jan 01 01:01:01 1990] 
             if (raw.Timestamp.Year == 1990)
@@ -158,14 +156,14 @@ namespace EQLogParser
                 var result = Parsers[i](raw);
                 if (result != null)
                 {
-                    OnEvent?.Invoke(result);
+                    //OnEvent?.Invoke(result);
                     return result;
                 }
             }
 
             // if no match was found then just return the raw event
             // this is useful for catching parsing left-overs that slipped through regex checks
-            OnEvent?.Invoke(raw);
+            //OnEvent?.Invoke(raw);
             return raw;
         }
 

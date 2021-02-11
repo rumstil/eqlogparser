@@ -34,7 +34,7 @@ namespace EQLogParser
                 // seeking can only be used in an uncompressed stream
                 if (index > 0 && stream.Length > index)
                     stream.Position = index;
-                if (index < 0 && stream.Length > index)
+                if (index < 0 && stream.Length > -index)
                     stream.Position = stream.Length + index;
 
                 reader = new StreamReader(stream, Encoding.ASCII);

@@ -40,7 +40,7 @@ namespace EQLogParser
         /// </summary>
         //public TimeSpan FightTimeout = TimeSpan.FromSeconds(90);
         public TimeSpan GroupFightTimeout = TimeSpan.FromSeconds(15);
-        public TimeSpan RaidFightTimeout = TimeSpan.FromMinutes(1);
+        public TimeSpan RaidFightTimeout = TimeSpan.FromMinutes(2);
 
         public event FightTrackerEvent OnFightStarted;
         public event FightTrackerEvent OnFightFinished;
@@ -209,7 +209,7 @@ namespace EQLogParser
 
             }
 
-            var f = GetFight(foe);
+            var f = GetOrAddFight(foe);
             if (f == null)
                 return;
 
@@ -224,7 +224,7 @@ namespace EQLogParser
             if (foe == null)
                 return;
 
-            var f = GetFight(foe);
+            var f = GetOrAddFight(foe);
             if (f == null)
                 return;
 
@@ -305,17 +305,15 @@ namespace EQLogParser
             }
             else
             {
-                var replay = Replay(death.Timestamp.AddSeconds(-3));
-
                 if (death.KillShot != null)
                 {
                     f = GetFight(death.KillShot);
                     if (f != null)
-                        f.AddDeath(death, replay);
+                        f.AddDeath(death);
                 }
                 else if (LastFight != null && LastFight.Status == FightStatus.Active)
                 {
-                    LastFight.AddDeath(death, replay);
+                    LastFight.AddDeath(death);
                 }
             }
         }
@@ -352,20 +350,6 @@ namespace EQLogParser
         {
 
 
-        }
-
-        /// <summary>
-        /// Get all events that occured since the specified timestamp.
-        /// </summary>
-        private IEnumerable<LogEvent> Replay(DateTime timestamp)
-        {
-            var i = Events.Count - 1;
-            if (i < 0)
-                yield break;
-            while (i > 0 && Events[i - 1].Timestamp >= timestamp)
-                i--;
-            for (int j = i; j < Events.Count; j++)
-                yield return Events[j];
         }
 
         /// <summary>
@@ -503,16 +487,10 @@ namespace EQLogParser
         }
 
         /// <summary>
-        /// Find the active fight involving the given foe name or create a new fight if it doesn't exist.
-        /// This will return a null if it the name is a friend.
+        /// Find the active fight involving the given foe name or return null if it doesn't exist.
         /// </summary>
         private FightInfo GetFight(string name)
         {
-            // fights are always "foe" focused so we need to return a null if the name is a friend
-            var type = Chars.GetType(name);
-            if (type == CharType.Friend)
-                return null;
-
             // the fight list can get pretty long so we limit our check to the tail
             for (var i = ActiveFights.Count - 1; i >= 0 && i > ActiveFights.Count - 20; i--)
             {
@@ -523,8 +501,26 @@ namespace EQLogParser
                 }
             }
 
+            return null;
+        }
+
+        /// <summary>
+        /// Find the active fight involving the given foe name or create a new fight if it doesn't exist.
+        /// This will return a null if it the name is a friend.
+        /// </summary>
+        private FightInfo GetOrAddFight(string name)
+        {
+            var f = GetFight(name);
+            if (f != null)
+                return f;
+
+            // fights are always "foe" focused so we need to return a null if the name is a friend
+            var type = Chars.GetType(name);
+            if (type == CharType.Friend)
+                return null;
+
             // start a new fight
-            var f = new FightInfo();
+            f = new FightInfo();
             //f.Id = name.Replace(' ', '-') + "-" + Environment.TickCount.ToString();
             f.Zone = Zone;
             f.Name = name;

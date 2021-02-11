@@ -75,7 +75,7 @@ namespace EQLogParser
             if (e is LogOpenEvent open)
             {
                 Player = open.Player;
-                var c = Add(open.Player);
+                var c = GetOrAdd(open.Player);
                 c.IsPlayer = true;
                 c.Type = CharType.Friend;
             }
@@ -83,7 +83,7 @@ namespace EQLogParser
             if (e is LogWhoEvent who)
             {
                 // who command only shows players
-                var c = Add(who.Name);
+                var c = GetOrAdd(who.Name);
                 c.IsPlayer = true;
                 c.Owner = null;
                 c.Type = CharType.Friend;
@@ -95,7 +95,7 @@ namespace EQLogParser
 
             if (e is LogConEvent con)
             {
-                var c = Add(con.Name);
+                var c = GetOrAdd(con.Name);
                 if (con.Level > 0)
                     c.Level = con.Level;
                 // your own pet is aimable
@@ -106,7 +106,7 @@ namespace EQLogParser
 
             if (e is LogPartyEvent party)
             {
-                var c = Add(party.Name);
+                var c = GetOrAdd(party.Name);
                 c.IsPlayer = true;
                 c.Owner = null;
                 c.Type = CharType.Friend;
@@ -114,7 +114,7 @@ namespace EQLogParser
 
             if (e is LogChatEvent chat)
             {
-                var c = Add(chat.Source);
+                var c = GetOrAdd(chat.Source);
 
                 // NPCs use say, tell and shout
                 // pets use say, tell
@@ -134,7 +134,7 @@ namespace EQLogParser
                 {
                     c.Owner = m.Groups[1].Value;
                     c.Type = CharType.Friend; // can you /pet leader a NPC pet?
-                    Add(c.Owner);
+                    GetOrAdd(c.Owner);
                 }
 
                 m = PetTellOwnerRegex.Match(chat.Message);
@@ -148,7 +148,7 @@ namespace EQLogParser
             if (e is LogHealEvent heal)
             {
                 // mobs can heal mobs so we can't tag healers without more info
-                var target = Add(heal.Target);
+                var target = GetOrAdd(heal.Target);
 
                 // some heals are pet only spells
                 // however, they may have a recourse heal with the same name... e.g. Growl of the Jaguar
@@ -162,7 +162,7 @@ namespace EQLogParser
 
                 if (heal.Source != null)
                 {
-                    var source = Add(heal.Source);
+                    var source = GetOrAdd(heal.Source);
                     if (target.Type == CharType.Friend || target.IsPlayer)
                         source.Type = CharType.Friend;
                     else if (target.Type == CharType.Foe)
@@ -185,20 +185,26 @@ namespace EQLogParser
 
             if (e is LogLootEvent loot)
             {
-                var c = Add(loot.Char);
+                var c = GetOrAdd(loot.Char);
                 c.IsPlayer = true;
                 c.Type = CharType.Friend;
             }
 
             if (e is LogCastingEvent cast)
             {
-                var c = Add(cast.Source);
+                var c = GetOrAdd(cast.Source);
 
                 var spell = Spells?.GetSpell(cast.Spell);
 
                 if (spell?.ClassesCount == 1)
                 {
-                    c.Class = spell.ClassesNames;
+                    // as of 2021-1-12 there are 321 player spells that are also item clicks/procs
+                    // however, ancients and rank 2/3 spells are never procs/clicks
+                    if (cast.Type == CastingType.Disc || cast.Type == CastingType.Song
+                        || spell.Name.StartsWith("Ancient:")
+                        || Regex.IsMatch(spell.Name, @"Rk\.\s?I?II$", RegexOptions.RightToLeft)
+                        || (Regex.IsMatch(spell.Name, @"\s[XVI]{1,4}$", RegexOptions.RightToLeft) && spell.DurationTicks > 0))
+                        c.Class = spell.ClassesNames;
                 }
 
                 if (spell?.LandPet != null)
@@ -206,7 +212,7 @@ namespace EQLogParser
                     PetBuffs.Add(new PetBuffEmote() { Timestamp = e.Timestamp, Source = cast.Source, Name = spell.Name, Emote = spell.LandPet });
                 }
             }
-            
+
             if (e is LogRawEvent raw)
             {
                 // we only need to keep track of buffs for a few seconds between casting time and landing time
@@ -234,11 +240,11 @@ namespace EQLogParser
                     }
                 }
             }
-            
+
             if (e is LogHitEvent hit)
             {
-                var target = Add(hit.Target);
-                var source = Add(hit.Source);
+                var target = GetOrAdd(hit.Target);
+                var source = GetOrAdd(hit.Source);
                 if (target.IsPlayer)
                 {
                     source.PlayerAggro = hit.Timestamp;
@@ -247,6 +253,7 @@ namespace EQLogParser
                 // backstab detection for rogue mercs and low level rogues
                 if (hit.Type == "backstab")
                     source.Class = ClassesMaskShort.ROG.ToString();
+
                 // frenzy detection for low level berserkers
                 if (hit.Type == "frenzy")
                     source.Class = ClassesMaskShort.BER.ToString();
@@ -255,7 +262,9 @@ namespace EQLogParser
                 {
                     var spell = Spells?.GetSpell(hit.Spell);
 
-                    if (source.Class == null && spell?.ClassesCount == 1)
+                    // procs/clicks could misidentify the class
+                    // however, rank 2/3 spells are never procs/clicks
+                    if (spell?.ClassesCount == 1 && Regex.IsMatch(spell.Name, @"Rk\.\s?I?II$", RegexOptions.RightToLeft))
                     {
                         source.Class = spell.ClassesNames;
                     }
@@ -278,11 +287,11 @@ namespace EQLogParser
 
             if (e is LogMissEvent miss)
             {
-                var c = Add(miss.Target);
+                var c = GetOrAdd(miss.Target);
 
                 if (c.IsPlayer)
                 {
-                    c = Add(miss.Source);
+                    c = GetOrAdd(miss.Source);
                     c.PlayerAggro = miss.Timestamp;
                 }
 
@@ -291,7 +300,7 @@ namespace EQLogParser
 
             if (e is LogDeathEvent death)
             {
-                var c = Add(death.Name);
+                var c = GetOrAdd(death.Name);
                 c.PlayerAggro = null;
                 if (!c.IsPlayer)
                     c.Type = CharType.Unknown;
@@ -313,13 +322,13 @@ namespace EQLogParser
         /// </summary>
         public CharType GetType(string name)
         {
-            var c = Add(name);
+            var c = GetOrAdd(name);
             if (c.Type != CharType.Unknown)
                 return c.Type;
 
             if (c.Owner != null)
             {
-                c = Add(c.Owner);
+                c = GetOrAdd(c.Owner);
                 return c.Type;
             }
 
@@ -338,7 +347,6 @@ namespace EQLogParser
 
         /// <summary>
         /// Get existing player or NPC from the list of tracked entities. 
-        /// This can return a null unlike the Add() function.
         /// </summary>
         public CharInfo Get(string name)
         {
@@ -347,9 +355,9 @@ namespace EQLogParser
         }
 
         /// <summary>
-        /// Add a player or NPC to the list of tracked entities. Will perform a dupe check.
+        /// Get or add a player or NPC to the list of tracked entities.
         /// </summary>
-        public CharInfo Add(string name)
+        public CharInfo GetOrAdd(string name)
         {
             if (name.EndsWith("'corpse"))
             {
@@ -368,6 +376,9 @@ namespace EQLogParser
 
                 if (name.EndsWith("`s pet") || name.EndsWith("'s pet"))
                     c.Owner = name.Substring(0, name.Length - 6);
+
+                if (name.StartsWith("Eye of "))
+                    c.Owner = name.Substring(7);
             }
 
             //if (type != CharType.Unknown)
@@ -383,8 +394,8 @@ namespace EQLogParser
         /// </summary>
         public string GetFoe(string name1, string name2)
         {
-            var n1 = Add(name1);
-            var n2 = Add(name2);
+            var n1 = GetOrAdd(name1);
+            var n2 = GetOrAdd(name2);
 
             if (name1 == name2)
             {
@@ -459,7 +470,7 @@ namespace EQLogParser
         /// </summary>
         public string GetOwner(string name)
         {
-            var c = Add(name);
+            var c = GetOrAdd(name);
             return c.Owner;
         }
 

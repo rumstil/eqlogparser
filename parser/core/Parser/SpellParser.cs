@@ -27,8 +27,7 @@ namespace EQLogParser
         public string LandOthers;
         public string LandPet;
         public string WearsOff;
-        public bool IsBeneficial;
-        public bool IsCombatSkill;
+        //public bool IsCombatSkill;
 
         public string ClassesNames => ((ClassesMaskShort)ClassesMask).ToString().Replace('_', ' ');
 
@@ -36,7 +35,7 @@ namespace EQLogParser
 
         public override string ToString()
         {
-            return String.Format("{0} {1}", Id, Name);
+            return String.Format("[{0}] {1}", Id, Name);
         }
     }
 
@@ -48,7 +47,7 @@ namespace EQLogParser
     }
 
     /// <summary>
-    /// A minimalist spell data parser that loads just enough information to help with log parsing.
+    /// A minimalist spell_us.txt parser that loads just enough information to help with log parsing.
     /// </summary>
     public class SpellParser : ISpellLookup
     {
@@ -99,38 +98,24 @@ namespace EQLogParser
                     //spell.Duration = Convert.ToInt32(fields[11]);
 
                     // 30 BENEFICIAL
-                    spell.IsBeneficial = fields[30] == "1";
+                    //spell.IsBeneficial = fields[30] != "0";
 
                     // 32 TYPENUMBER
                     spell.Target = Convert.ToInt32(fields[32]);
 
                     // 100 IS_SKILL
-                    spell.IsCombatSkill = fields[100] == "1";
+                    //spell.IsCombatSkill = fields[100] != "0";
 
                     // 38 WARRIORMIN .. BERSERKERMIN
                     // determine which classes can use this spell
                     for (int i = 0; i < 16; i++)
                     {
                         var level = Int32.Parse(fields[38 + i]);
-                        if (level == 255)
-                            continue;
-
-                        // 254 = AA
-                        // e.g. [36832] Savage Spirit XV
-                        // but some can misflag people when used on procs so we also add a duration check
-                        // e.g. [35199] Arcane Hymn Strike III
-                        if (level == 254 && (spell.DurationTicks == 0 || !Regex.IsMatch(spell.Name, @"\s[XVI]{1,4}$", RegexOptions.RightToLeft)))
-                            continue;
-
-                        // item procs/clicks can misflag people as another class
-                        // as of 2021-1-12 there are 321 player spells that are also item clicks/procs, however none of these are rank 2/3 spells 
-                        // so we can safely use rank 2/3 spells to identify the caster class
-                        // combat skills are probably also safe to use
-                        if (level < 254 && !(spell.IsCombatSkill || Regex.IsMatch(spell.Name, @"Rk\.\s?I?II$", RegexOptions.RightToLeft)))
-                            continue;
-
-                        spell.ClassesMask |= 1 << i;
-                        spell.ClassesCount += 1;
+                        if (level < 255)
+                        {
+                            spell.ClassesMask |= 1 << i;
+                            spell.ClassesCount += 1;
+                        }
                     }
 
                     // handle spell name collisions. 

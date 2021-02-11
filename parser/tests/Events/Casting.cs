@@ -19,7 +19,7 @@ namespace EQLogParserTests.Event
             Assert.NotNull(cast);
             Assert.Equal(PLAYER, cast.Source);
             Assert.Equal("Group Perfected Invisibility", cast.Spell);
-            Assert.False(cast.CombatSkill);
+            Assert.Equal(CastingType.Spell, cast.Type);
         }
 
         [Fact]
@@ -29,7 +29,7 @@ namespace EQLogParserTests.Event
             Assert.NotNull(cast);
             Assert.Equal("Saity", cast.Source);
             Assert.Equal("Promised Remedy Rk. II", cast.Spell);
-            Assert.False(cast.CombatSkill);
+            Assert.Equal(CastingType.Spell, cast.Type);
         }
 
         [Fact]
@@ -39,6 +39,7 @@ namespace EQLogParserTests.Event
             Assert.NotNull(cast);
             Assert.Equal("A woundhealer goblin", cast.Source);
             Assert.Equal("Inner Fire", cast.Spell);
+            Assert.Equal(CastingType.Spell, cast.Type);
         }
 
         [Fact]
@@ -48,6 +49,7 @@ namespace EQLogParserTests.Event
             Assert.NotNull(cast);
             Assert.Equal(PLAYER, cast.Source);
             Assert.Equal("Requiem of Time", cast.Spell);
+            Assert.Equal(CastingType.Song, cast.Type);
         }
 
         [Fact]
@@ -57,6 +59,7 @@ namespace EQLogParserTests.Event
             Assert.NotNull(cast);
             Assert.Equal("Celine", cast.Source);
             Assert.Equal("Requiem of Time", cast.Spell);
+            Assert.Equal(CastingType.Song, cast.Type);
         }
 
         [Fact]
@@ -66,6 +69,7 @@ namespace EQLogParserTests.Event
             Assert.NotNull(cast);
             Assert.Equal("Celine", cast.Source);
             Assert.Equal("Requiem of Time", cast.Spell);
+            Assert.Equal(CastingType.Song, cast.Type);
         }
 
         [Fact]
@@ -75,7 +79,7 @@ namespace EQLogParserTests.Event
             Assert.NotNull(cast);
             Assert.Equal(PLAYER, cast.Source);
             Assert.Equal("Weapon Shield Discipline", cast.Spell);
-            Assert.True(cast.CombatSkill);
+            Assert.Equal(CastingType.Disc, cast.Type);
         }
 
         [Fact]
@@ -85,7 +89,7 @@ namespace EQLogParserTests.Event
             Assert.NotNull(cast);
             Assert.Equal("Rumstil", cast.Source);
             Assert.Equal("Weapon Shield Discipline", cast.Spell);
-            Assert.True(cast.CombatSkill);
+            Assert.Equal(CastingType.Disc, cast.Type);
         }
 
     }

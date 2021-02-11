@@ -67,7 +67,7 @@ namespace EQLogParserTests.Tracker
         public void Friend_Outbound_Hit_Make_Foe()
         {
             var chars = new CharTracker();
-            chars.Add("Rumstil").Type = CharType.Friend;
+            chars.GetOrAdd("Rumstil").Type = CharType.Friend;
             chars.HandleEvent(new LogHitEvent() { Source = "Rumstil", Target = "froglok jin shaman", Amount = 1 });
 
             // target should become a foe
@@ -78,7 +78,7 @@ namespace EQLogParserTests.Tracker
         public void Friend_Inbound_Hit_Make_Foe()
         {
             var chars = new CharTracker();
-            chars.Add("Rumstil").Type = CharType.Friend;
+            chars.GetOrAdd("Rumstil").Type = CharType.Friend;
             chars.HandleEvent(new LogHitEvent() { Source = "froglok jin shaman", Target = "Rumstil", Amount = 1 });
 
             // source should become a foe
@@ -89,7 +89,7 @@ namespace EQLogParserTests.Tracker
         public void Foe_Outbound_Hit_Make_Friend()
         {
             var chars = new CharTracker();
-            chars.Add("froglok jin shaman").Type = CharType.Foe;
+            chars.GetOrAdd("froglok jin shaman").Type = CharType.Foe;
             chars.HandleEvent(new LogHitEvent() { Source = "froglok jin shaman", Target = "Rumstil", Amount = 1 });
 
             // target should become a friend
@@ -100,7 +100,7 @@ namespace EQLogParserTests.Tracker
         public void Foe_Inbound_Hit_Make_Friend()
         {
             var chars = new CharTracker();
-            chars.Add("froglok jin shaman").Type = CharType.Foe;
+            chars.GetOrAdd("froglok jin shaman").Type = CharType.Foe;
             chars.HandleEvent(new LogHitEvent() { Source = "Rumstil", Target = "froglok jin shaman", Amount = 1 });
 
             // source should become a friend
@@ -125,15 +125,51 @@ namespace EQLogParserTests.Tracker
         }
 
         [Fact]
-        public void Spell_Should_Match()
+        public void Spell_Disc_Should_Assign_Class()
         {
             var spells = new FakeSpellParser();
             spells.Spells.Add(new SpellInfo() { Name = "Super Fire Arrow", ClassesMask = (int)ClassesMaskShort.RNG, ClassesCount = 1 });
 
             var chars = new CharTracker(spells);
-            chars.HandleEvent(new LogCastingEvent() { Source = "Rumstil", Spell = "Super Fire Arrow" });
+            chars.HandleEvent(new LogCastingEvent() { Source = "Rumstil", Spell = "Super Fire Arrow", Type = CastingType.Disc });
             Assert.Equal("RNG", chars.GetClass("Rumstil"));
         }
+
+        [Fact]
+        public void Spell_Ambiguous_Class_Shouldnt_Assign_Class()
+        {
+            var spells = new FakeSpellParser();
+            spells.Spells.Add(new SpellInfo() { Name = "Invis", ClassesMask = (int)(ClassesMaskShort.RNG | ClassesMaskShort.ENC), ClassesCount = 2 });
+
+            var chars = new CharTracker(spells);
+            chars.HandleEvent(new LogCastingEvent() { Source = "Rumstil", Spell = "Invis", Type = CastingType.Spell });
+            Assert.Null(chars.GetClass("Rumstil"));
+        }
+
+        [Fact]
+        public void Spell_Click_Shouldnt_Assign_Class()
+        {
+            var spells = new FakeSpellParser();
+            spells.Spells.Add(new SpellInfo() { Name = "Super Fire Arrow", ClassesMask = (int)ClassesMaskShort.RNG, ClassesCount = 1 });
+
+            var chars = new CharTracker(spells);
+            chars.HandleEvent(new LogCastingEvent() { Source = "Rumstil", Spell = "Super Fire Arrow", Type = CastingType.Spell });
+            // click/procs (which are never rank 2/3) can misidentify a class
+            Assert.Null(chars.GetClass("Rumstil"));
+        }
+
+        [Fact]
+        public void Spell_Rank_2_Should_Assign_Class()
+        {
+            var spells = new FakeSpellParser();
+            spells.Spells.Add(new SpellInfo() { Name = "Super Fire Arrow Rk. II", ClassesMask = (int)ClassesMaskShort.RNG, ClassesCount = 1 });
+
+            var chars = new CharTracker(spells);
+            chars.HandleEvent(new LogCastingEvent() { Source = "Rumstil", Spell = "Super Fire Arrow Rk. II", Type = CastingType.Spell });
+            Assert.Equal("RNG", chars.GetClass("Rumstil"));
+        }
+
+
 
         /*
         // this test will only work if we use an hardcoded spell exclusion list

@@ -17,6 +17,13 @@ the existing discipline filter so you can turn off your own activate messages.
 
 namespace EQLogParser
 {
+    public enum CastingType
+    {
+        Spell, // this includes clicks and procs
+        Song,
+        Disc
+    }
+
     /// <summary>
     /// Generated when a player or NPC starts to cast a spell.
     /// </summary>
@@ -24,8 +31,7 @@ namespace EQLogParser
     {
         public string Source;
         public string Spell;
-        public bool CombatSkill;
-        //public string Cancelled;
+        public CastingType Type;
 
         public override string ToString()
         {
@@ -33,7 +39,7 @@ namespace EQLogParser
         }
 
         // [Sun May 01 08:44:59 2016] You begin casting Group Perfected Invisibility.
-        private static readonly Regex CastRegex = new Regex(@"^(.+?) begins? (?:casting|singing) (.+)\.$", RegexOptions.Compiled);
+        private static readonly Regex CastRegex = new Regex(@"^(.+?) begins? (casting|singing) (.+)\.$", RegexOptions.Compiled);
 
         // [Sun Jul 05 21:33:07 2020] Rumstil activates Enraging Axe Kicks.
         private static readonly Regex DiscRegex = new Regex(@"^(.+?) activates? (.+)\.$", RegexOptions.Compiled);
@@ -41,7 +47,7 @@ namespace EQLogParser
         // obsolete with 2019-04-10 test server patch
         // [Sun May 01 08:44:56 2016] a woundhealer goblin begins to cast a spell. <Inner Fire>
         //private static readonly DateTime ObsoleteOtherCastMaxDate = new DateTime(2019, 4, 17);
-        private static readonly Regex ObsoleteOtherCastRegex = new Regex(@"^(.+?) begins to (?:cast a spell|sing a song)\. <(.+)>$", RegexOptions.Compiled | RegexOptions.RightToLeft);
+        private static readonly Regex ObsoleteOtherCastRegex = new Regex(@"^(.+?) begins to (cast a spell|sing a song)\. <(.+)>$", RegexOptions.Compiled | RegexOptions.RightToLeft);
 
         public static LogCastingEvent Parse(LogRawEvent e)
         {
@@ -52,7 +58,8 @@ namespace EQLogParser
                 {
                     Timestamp = e.Timestamp,
                     Source = e.FixName(m.Groups[1].Value),
-                    Spell = m.Groups[2].Value
+                    Spell = m.Groups[3].Value,
+                    Type = m.Groups[2].Value == "singing" ?  CastingType.Song : CastingType.Spell
                 };
             }
 
@@ -64,7 +71,7 @@ namespace EQLogParser
                     Timestamp = e.Timestamp,
                     Source = e.FixName(m.Groups[1].Value),
                     Spell = m.Groups[2].Value,
-                    CombatSkill = true
+                    Type = CastingType.Disc
                 };
             }
 
@@ -75,7 +82,8 @@ namespace EQLogParser
                 {
                     Timestamp = e.Timestamp,
                     Source = e.FixName(m.Groups[1].Value),
-                    Spell = m.Groups[2].Value
+                    Spell = m.Groups[3].Value,
+                    Type = m.Groups[2].Value == "sing a song" ? CastingType.Song : CastingType.Spell
                 };
             }
 

@@ -12,7 +12,9 @@ namespace EQLogParser
         GroupLeft,
         RaidXP,
         RaidJoined,
-        RaidLeft
+        RaidLeft,
+        ChannelJoined,
+        ChannelLeft,
     }
 
     /// <summary>
@@ -38,6 +40,10 @@ namespace EQLogParser
         private static readonly Regex PartyJoinedInviteeRegex = new Regex(@"^You notify (\w+) that you agree to join the (group|raid)\.$", RegexOptions.Compiled);
         private static readonly Regex PartyLeftRegex = new Regex(@"^(.+?) (?:have been|has been|has|were) (?:left|removed from) the (group|raid)\.$", RegexOptions.Compiled | RegexOptions.RightToLeft);
         private static readonly Regex PartyKickRegex = new Regex(@"^You remove (.+?) from the (group|party|raid)\.$", RegexOptions.Compiled);
+
+        // [Tue Jan 12 13:12:52 2021] * Rumstil has left channel openraids:1
+        // [Tue Jan 12 14:06:52 2021] * Rumstil has entered channel openraids:1
+        private static readonly Regex ChannelRegex = new Regex(@"^* (.+?) has (left|entered) channel (\w+):\d+$", RegexOptions.Compiled);
 
         // can we log shared task add/removal?
         // [Thu Mar 25 00:35:54 2010] You have been assigned the task 'Showdown at the Crystal Core - The Hard Way'.
@@ -70,36 +76,44 @@ namespace EQLogParser
             m = PartyJoinedRegex.Match(e.Text);
             if (m.Success)
             {
-                var status = m.Groups[2].Value == "raid" ? PartyStatus.RaidJoined : PartyStatus.GroupJoined;
                 return new LogPartyEvent
                 {
                     Timestamp = e.Timestamp,
                     Name = e.FixName(m.Groups[1].Value),
-                    Status = status
+                    Status = m.Groups[2].Value == "raid" ? PartyStatus.RaidJoined : PartyStatus.GroupJoined
                 };
             }
 
             m = PartyLeftRegex.Match(e.Text);
             if (m.Success)
             {
-                var status = m.Groups[2].Value == "raid" ? PartyStatus.RaidLeft : PartyStatus.GroupLeft;
                 return new LogPartyEvent
                 {
                     Timestamp = e.Timestamp,
                     Name = e.FixName(m.Groups[1].Value),
-                    Status = status
+                    Status = m.Groups[2].Value == "raid" ? PartyStatus.RaidLeft : PartyStatus.GroupLeft
                 };
             }
 
             m = PartyKickRegex.Match(e.Text);
             if (m.Success)
             {
-                var status = m.Groups[2].Value == "raid" ? PartyStatus.RaidLeft : PartyStatus.GroupLeft;
                 return new LogPartyEvent
                 {
                     Timestamp = e.Timestamp,
                     Name = e.FixName(m.Groups[1].Value),
-                    Status = status
+                    Status = m.Groups[2].Value == "raid" ? PartyStatus.RaidLeft : PartyStatus.GroupLeft
+                };
+            }
+
+            m = ChannelRegex.Match(e.Text);
+            if (m.Success)
+            {
+                return new LogPartyEvent
+                {
+                    Timestamp = e.Timestamp,
+                    Name = e.FixName(m.Groups[1].Value),
+                    Status = m.Groups[2].Value == "left" ? PartyStatus.ChannelLeft : PartyStatus.ChannelJoined
                 };
             }
 

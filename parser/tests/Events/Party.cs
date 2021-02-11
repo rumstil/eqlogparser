@@ -84,5 +84,21 @@ namespace EQLogParserTests.Event
             Assert.Equal(PartyStatus.RaidXP, party.Status);
         }
 
+        [Fact]
+        public void Parse_Channel()
+        {
+            var party = Parse("* Rumstil has entered channel openraids:1");
+            Assert.NotNull(party);
+            Assert.Equal("Rumstil", party.Name);
+            Assert.Equal(PartyStatus.ChannelJoined, party.Status);
+
+            party = Parse("* Rumstil has left channel openraids:1");
+            Assert.NotNull(party);
+            Assert.Equal("Rumstil", party.Name);
+            Assert.Equal(PartyStatus.ChannelLeft, party.Status);
+        }
+
+
+
     }
 }

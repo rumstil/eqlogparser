@@ -40,7 +40,7 @@ namespace EQLogParser
         /// <summary>
         /// A list of global or common drops that can be ignored.
         /// </summary>
-        public readonly HashSet<string> Ignore = new HashSet<string>
+        public readonly HashSet<string> Ignore = new HashSet<string>(StringComparer.Ordinal)
         {
             "Aderirse Bur",
             "Alkalai Loam",
@@ -195,16 +195,15 @@ namespace EQLogParser
 
             if (e is LogLootEvent loot)
             {
-                if (!Ignore.Contains(loot.Item, StringComparer.Ordinal) && zone != null)
+                if (!Ignore.Contains(loot.Item) && zone != null && loot.Source != null)
                     OnLoot?.Invoke(new LootInfo { Item = loot.Item, Mob = loot.Source ?? "Unknown", Zone = zone, Date = e.Timestamp });
             }
 
-            // i'm tempted to ignore rot gear, but it may be worth tracking for tradeskill items?
-            //if (e is LogRotEvent rot)
-            //{
-            //    if (!IgnoredItems.Contains(rot.Item))
-            //        OnLoot?.Invoke(new LootInfo { Item = rot.Item, Mob = "Unknown", Zone = currentZone, Date = e.Timestamp });
-            //}
+            if (e is LogRotEvent rot)
+            {
+                if (!Ignore.Contains(rot.Item) && zone != null && rot.Source != null)
+                    OnLoot?.Invoke(new LootInfo { Item = rot.Item, Mob = rot.Source ?? "Unknown", Zone = zone, Date = e.Timestamp });
+            }
 
             //if (e is LogCraftEvent craft)
             //{

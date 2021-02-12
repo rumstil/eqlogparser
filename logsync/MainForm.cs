@@ -226,7 +226,7 @@ namespace LogSync
             e.Item.SubItems.Add(f.StartedOn.ToLocalTime().ToString());
             e.Item.SubItems.Add(Utils.FormatNum(f.HP));
             e.Item.SubItems.Add(f.Duration.ToString() + "s");
-            e.Item.SubItems.Add(f.Participants.Count + " - " + f.Party);
+            e.Item.SubItems.Add(f.Party + ": " + f.Participants.Count);
             fightStatus.TryGetValue(f.ID, out string status);
             e.Item.SubItems.Add(status ?? "-");
         }
@@ -564,9 +564,10 @@ namespace LogSync
                 item.SubItems.Add(p.Class);
                 item.SubItems.Add(FightInfo.FormatNum(p.OutboundHitSum));
                 item.SubItems.Add(((double)p.OutboundHitSum / top).ToString("P0"));
+                item.SubItems.Add(p.Duration.ToString() + 's');
                 item.SubItems.Add(FightInfo.FormatNum(p.OutboundHitSum / f.Duration));
-                //var damage = String.Join(", ", p.AttackTypes.Take(3).Select(x => $"{(double)x.HitSum / p.OutboundHitSum:P0} {x.Type}"));
-                var notes = String.Join(", ", p.AttackTypes.Take(3).Select(x => $"{FightInfo.FormatNum(x.HitSum / f.Duration)} {x.Type}"));
+                //var damage = String.Join(", ", p.AttackTypes.Take(4).Select(x => $"{(double)x.HitSum / p.OutboundHitSum:P0} {x.Type}"));
+                var notes = String.Join(", ", p.AttackTypes.Take(4).Select(x => $"{FightInfo.FormatNum(x.HitSum / f.Duration)} {x.Type}"));
                 if (p.Buffs.Any(x => x.Name == BuffTracker.DEATH))
                     notes = "DIED - " + notes;
                 item.SubItems.Add(notes);

@@ -60,6 +60,7 @@
             this.columnHeader9 = new System.Windows.Forms.ColumnHeader();
             this.columnHeader10 = new System.Windows.Forms.ColumnHeader();
             this.columnHeader11 = new System.Windows.Forms.ColumnHeader();
+            this.columnHeader14 = new System.Windows.Forms.ColumnHeader();
             this.columnHeader12 = new System.Windows.Forms.ColumnHeader();
             this.columnHeader13 = new System.Windows.Forms.ColumnHeader();
             this.statusStrip1.SuspendLayout();
@@ -79,7 +80,7 @@
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripStatusLabel1,
             this.toolStripStatusLabel2});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 681);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 636);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.RenderMode = System.Windows.Forms.ToolStripRenderMode.Professional;
             this.statusStrip1.Size = new System.Drawing.Size(834, 22);
@@ -118,7 +119,7 @@
             this.lvFights.Location = new System.Drawing.Point(11, 55);
             this.lvFights.Margin = new System.Windows.Forms.Padding(3, 240, 3, 3);
             this.lvFights.Name = "lvFights";
-            this.lvFights.Size = new System.Drawing.Size(811, 275);
+            this.lvFights.Size = new System.Drawing.Size(811, 230);
             this.lvFights.TabIndex = 0;
             this.lvFights.UseCompatibleStateImageBehavior = false;
             this.lvFights.View = System.Windows.Forms.View.Details;
@@ -143,28 +144,30 @@
             // 
             // columnHeader3
             // 
-            this.columnHeader3.Text = "Date/Time";
+            this.columnHeader3.Text = "Date";
             this.columnHeader3.Width = 150;
             // 
             // columnHeader6
             // 
             this.columnHeader6.Text = "HP";
             this.columnHeader6.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.columnHeader6.Width = 70;
             // 
             // columnHeader4
             // 
-            this.columnHeader4.Text = "Duration";
+            this.columnHeader4.Text = "Time";
             this.columnHeader4.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.columnHeader4.Width = 70;
             // 
             // columnHeader5
             // 
             this.columnHeader5.Text = "Party";
-            this.columnHeader5.Width = 80;
+            this.columnHeader5.Width = 90;
             // 
             // columnHeader7
             // 
             this.columnHeader7.Text = "Status";
-            this.columnHeader7.Width = 80;
+            this.columnHeader7.Width = 90;
             // 
             // panel1
             // 
@@ -211,7 +214,7 @@
             this.panel2.Controls.Add(this.btnChannel);
             this.panel2.Controls.Add(this.textLog);
             this.panel2.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panel2.Location = new System.Drawing.Point(0, 491);
+            this.panel2.Location = new System.Drawing.Point(0, 446);
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(834, 190);
             this.panel2.TabIndex = 2;
@@ -338,13 +341,14 @@
             this.columnHeader9,
             this.columnHeader10,
             this.columnHeader11,
+            this.columnHeader14,
             this.columnHeader12,
             this.columnHeader13});
             this.lvPlayers.FullRowSelect = true;
             this.lvPlayers.GridLines = true;
             this.lvPlayers.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
             this.lvPlayers.HideSelection = false;
-            this.lvPlayers.Location = new System.Drawing.Point(11, 340);
+            this.lvPlayers.Location = new System.Drawing.Point(11, 296);
             this.lvPlayers.Margin = new System.Windows.Forms.Padding(3, 240, 3, 3);
             this.lvPlayers.Name = "lvPlayers";
             this.lvPlayers.Size = new System.Drawing.Size(811, 145);
@@ -374,6 +378,12 @@
             this.columnHeader11.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.columnHeader11.Width = 70;
             // 
+            // columnHeader14
+            // 
+            this.columnHeader14.Text = "Time";
+            this.columnHeader14.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.columnHeader14.Width = 70;
+            // 
             // columnHeader12
             // 
             this.columnHeader12.Text = "DPS";
@@ -382,14 +392,14 @@
             // 
             // columnHeader13
             // 
-            this.columnHeader13.Text = "Notes";
+            this.columnHeader13.Text = "DPS Notes";
             this.columnHeader13.Width = 300;
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(834, 703);
+            this.ClientSize = new System.Drawing.Size(834, 658);
             this.Controls.Add(this.lvPlayers);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.panel1);
@@ -397,7 +407,7 @@
             this.Controls.Add(this.statusStrip1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.KeyPreview = true;
-            this.MinimumSize = new System.Drawing.Size(800, 500);
+            this.MinimumSize = new System.Drawing.Size(800, 498);
             this.Name = "MainForm";
             this.Text = "Form1";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
@@ -448,6 +458,7 @@
         private System.Windows.Forms.ColumnHeader columnHeader11;
         private System.Windows.Forms.ColumnHeader columnHeader12;
         private System.Windows.Forms.ColumnHeader columnHeader13;
+        private System.Windows.Forms.ColumnHeader columnHeader14;
     }
 }
 

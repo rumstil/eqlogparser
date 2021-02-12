@@ -17,19 +17,20 @@ namespace EQLogParser
     {
         private readonly CharTracker Chars;
         private readonly BuffTracker Buffs;
-        private string Server = null;
-        private string Player = null;
-        private string Zone = null;
-        private string Party = null;
         private readonly List<LogHitEvent> PendingHits = new List<LogHitEvent>();
         private DateTime Timestamp;
         private DateTime LastTimeoutCheck;
         //private LogHitEvent LastHit;
         private FightInfo LastFight; // the fight that the previous event was assigned to
 
-        public readonly List<RaidTemplate> Templates = new List<RaidTemplate>();
-        public readonly List<FightInfo> ActiveFights = new List<FightInfo>();
-        public readonly List<RaidFightInfo> ActiveRaids = new List<RaidFightInfo>();
+        public string Server { get; private set; }
+        public string Player { get; private set; }
+        public string Zone { get; private set; }
+        public string Party { get; private set; }
+
+        public List<RaidTemplate> Templates { get; } = new List<RaidTemplate>();
+        public List<FightInfo> ActiveFights { get; } = new List<FightInfo>();
+        public List<RaidFightInfo> ActiveRaids { get; } = new List<RaidFightInfo>();
 
 
 
@@ -323,13 +324,13 @@ namespace EQLogParser
                 Party = "Group";
 
             // may be group or solo -- lets just use group until an XP message says otherwise
-            if (party.Status == PartyStatus.RaidLeft)
+            if (party.Status == PartyStatus.RaidLeft && party.Name == Player)
                 Party = "Group";
 
             if (party.Status == PartyStatus.SoloXP)
                 Party = "Solo";
 
-            if (party.Status == PartyStatus.GroupLeft && Party == "Group")
+            if (party.Status == PartyStatus.GroupLeft && Party == "Group" && party.Name == Player)
                 Party = "Solo";
         }
 

@@ -11,6 +11,9 @@ namespace EQLogParserTests.Tracker
 {
     public class FightTrackerTests
     {
+        const string PLAYER1 = "Fred";
+        const string PLAYER2 = "Barney";
+
         /// <summary>
         /// Most of the tests here use a LogWhoEvent tag a player. This tests what
         /// happens when that isn't done.
@@ -293,6 +296,38 @@ namespace EQLogParserTests.Tracker
 
 
         }
+
+        [Fact]
+        public void Raid_Joined()
+        {
+            var tracker = new FightTracker(new SpellParser());
+            tracker.HandleEvent(new LogOpenEvent { Player = PLAYER1 });
+            tracker.HandleEvent(new LogPartyEvent { Status = PartyStatus.RaidJoined, Name = PLAYER2 });
+            Assert.Equal("Raid", tracker.Party);
+        }
+
+        [Fact]
+        public void Raid_Left_Other()
+        {
+            var tracker = new FightTracker(new SpellParser());
+            tracker.HandleEvent(new LogOpenEvent { Player = PLAYER1 });
+            tracker.HandleEvent(new LogPartyEvent { Status = PartyStatus.RaidJoined, Name = PLAYER2 });
+            tracker.HandleEvent(new LogPartyEvent { Status = PartyStatus.RaidLeft, Name = PLAYER2 });
+            // since player2 is not the log owner, we should still be in the raid
+            Assert.Equal("Raid", tracker.Party);
+        }
+
+        [Fact]
+        public void Raid_Left_Self()
+        {
+            var tracker = new FightTracker(new SpellParser());
+            tracker.HandleEvent(new LogOpenEvent { Player = PLAYER1 });
+            tracker.HandleEvent(new LogPartyEvent { Status = PartyStatus.RaidJoined, Name = PLAYER2 });
+            tracker.HandleEvent(new LogPartyEvent { Status = PartyStatus.RaidLeft, Name = PLAYER1 });
+            // since player1 is the log owner, we must now drop the raid
+            Assert.Equal("Group", tracker.Party);
+        }
+
 
     }
 

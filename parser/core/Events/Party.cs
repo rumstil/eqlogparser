@@ -43,7 +43,7 @@ namespace EQLogParser
 
         // [Tue Jan 12 13:12:52 2021] * Rumstil has left channel openraids:1
         // [Tue Jan 12 14:06:52 2021] * Rumstil has entered channel openraids:1
-        private static readonly Regex ChannelRegex = new Regex(@"^* (.+?) has (left|entered) channel (\w+):\d+$", RegexOptions.Compiled);
+        private static readonly Regex ChannelRegex = new Regex(@"^\* (.+?) has (left|entered) channel (\w+):\d+$", RegexOptions.Compiled);
 
         // can we log shared task add/removal?
         // [Thu Mar 25 00:35:54 2010] You have been assigned the task 'Showdown at the Crystal Core - The Hard Way'.

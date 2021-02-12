@@ -43,16 +43,16 @@ namespace EQLogParser
 
             // obsolete parsers (these should check the date)
             //Parsers.Add(LogCritEvent.Parse);
+            //Parsers.Add(LogTwinEvent.Parse);
 
             // parsers can be placed in any sequence as long as there is no overlap in matching 
             // the order below has been chosen to place the most frequent event types first which should speed up overall parsing
-            Parsers.Add(LogHitEvent.Parse);
             Parsers.Add(LogMissEvent.Parse);
+            Parsers.Add(LogHitEvent.Parse);
             Parsers.Add(LogHealEvent.Parse);
+            Parsers.Add(LogCastingEvent.Parse);
             Parsers.Add(LogDeathEvent.Parse);
             Parsers.Add(LogChatEvent.Parse);
-            Parsers.Add(LogCastingEvent.Parse);
-            //Parsers.Add(LogTwinEvent.Parse);
             Parsers.Add(LogZoneEvent.Parse);
             Parsers.Add(LogPartyEvent.Parse);
             Parsers.Add(LogWhoEvent.Parse);

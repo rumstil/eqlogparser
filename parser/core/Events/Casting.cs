@@ -51,6 +51,10 @@ namespace EQLogParser
 
         public static LogCastingEvent Parse(LogRawEvent e)
         {
+            // this short-circuit exit is here strictly as a speed optmization 
+            if (e.Text.IndexOf("begin", StringComparison.Ordinal) < 0 && e.Text.IndexOf("activate", StringComparison.Ordinal) < 0)
+                return null;
+
             var m = CastRegex.Match(e.Text);
             if (m.Success)
             {

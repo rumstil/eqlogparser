@@ -47,6 +47,8 @@ namespace EQLogParser
                 };
             }
 
+            /*
+            // removing this for now since it doesn't include a source which limits its usefulness
             m = ItemUnclaimedRegex.Match(e.Text);
             if (m.Success)
             {
@@ -56,6 +58,7 @@ namespace EQLogParser
                     Item = m.Groups[1].Value.Trim(),                    
                 };
             }
+            */
 
             return null;
         }

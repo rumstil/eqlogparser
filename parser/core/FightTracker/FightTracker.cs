@@ -17,11 +17,11 @@ namespace EQLogParser
     {
         private readonly CharTracker Chars;
         private readonly BuffTracker Buffs;
-        private readonly List<LogEvent> Events = new List<LogEvent>(1000);
         private string Server = null;
         private string Player = null;
         private string Zone = null;
         private string Party = null;
+        private readonly List<LogHitEvent> PendingHits = new List<LogHitEvent>();
         private DateTime Timestamp;
         private DateTime LastTimeoutCheck;
         //private LogHitEvent LastHit;
@@ -111,11 +111,6 @@ namespace EQLogParser
                 LastTimeoutCheck = DateTime.MinValue;
             }
 
-            // keep enough events to backtrack on player death
-            Events.Add(e);
-            if (Events.Count >= 1000)
-                Events.RemoveRange(0, 500);
-
             // no need to check for timeouts more often than every few seconds
             // however timestamp may jump back if we are handling external events like LogWhoEvent from a roster
             if (LastTimeoutCheck + TimeSpan.FromSeconds(5) <= Timestamp || LastTimeoutCheck > Timestamp)
@@ -182,6 +177,7 @@ namespace EQLogParser
             if (foe == null)
             {
                 //Console.WriteLine("*** " + hit);
+                PendingHits.Add(hit);
                 return;
             }
 
@@ -452,6 +448,7 @@ namespace EQLogParser
             }
 
             // after a fight is passed to this delegate it should never be modified (e.g. via the LastFight variable)
+            LastFight = null;
             OnFightFinished?.Invoke(f);
 
             // see if the fight is part of a raid
@@ -492,9 +489,10 @@ namespace EQLogParser
         private FightInfo GetFight(string name)
         {
             // the fight list can get pretty long so we limit our check to the tail
-            for (var i = ActiveFights.Count - 1; i >= 0 && i > ActiveFights.Count - 20; i--)
+            //for (var i = ActiveFights.Count - 1; i >= 0 && i > ActiveFights.Count - 20; i--)
+            for (var i = ActiveFights.Count - 1; i >= 0; i--)
             {
-                if (ActiveFights[i].Target.Name == name)
+                if (ActiveFights[i].Name == name)
                 {
                     ActiveFights[i].UpdatedOn = Timestamp;
                     return ActiveFights[i];
@@ -527,6 +525,18 @@ namespace EQLogParser
             f.Target = new FightParticipant() { Name = name };
             // todo: always start fights at multiple of 6s for better alignment of data when merging fights?
             f.StartedOn = f.UpdatedOn = Timestamp;
+
+            // are there any pending hits that couldn't be assigned to a fight?
+            // since this doesn't rollback the StartedOn time, all pending hits will be placed in the first interval
+            if (PendingHits.Count > 0)
+            {
+                PendingHits.RemoveAll(x => x.Timestamp < Timestamp.AddMinutes(-1));
+                foreach (var hit in PendingHits.Where(x => x.Source == name || x.Target == name))
+                {
+                    f.AddHit(hit);
+                }
+                PendingHits.RemoveAll(x => x.Source == name || x.Target == name);
+            }
 
             ActiveFights.Add(f);
             if (OnFightStarted != null)

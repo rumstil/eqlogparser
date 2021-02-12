@@ -162,16 +162,13 @@ namespace EQLogParser
 
                 if (heal.Source != null)
                 {
+                    // seems a DD can result in a heal... what is this? some kind of reverse spell DS?
+                    // e.g. "You healed Zlandicar for 2 hit points by Summer's Sleet Rk. III."
+                    // which means it isn't safe to use heals to determine friend/foe status
                     var source = GetOrAdd(heal.Source);
-                    if (target.Type == CharType.Friend || target.IsPlayer)
+                    if (target.IsPlayer)
                         source.Type = CharType.Friend;
-                    else if (target.Type == CharType.Foe)
-                        source.Type = CharType.Foe;
 
-                    if (source.Type == CharType.Friend || source.IsPlayer)
-                        target.Type = CharType.Friend;
-
-                    // more class detection in case casting messages aren't being logged
                     // not sure this is safe since some heals may misflag
                     // e.g. [18286/4217] Mark of the Unsullied Rk. II
                     //if (source.Class == null && heal.Spell != null)
@@ -193,6 +190,12 @@ namespace EQLogParser
             if (e is LogCastingEvent cast)
             {
                 var c = GetOrAdd(cast.Source);
+
+                if (cast.Type == CastingType.Disc)
+                {
+                    c.IsPlayer = true;
+                    c.Type = CharType.Friend;
+                }
 
                 var spell = Spells?.GetSpell(cast.Spell);
 

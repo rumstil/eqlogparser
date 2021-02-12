@@ -117,11 +117,25 @@ namespace EQLogParserTests.Tracker
         [Fact]
         public void Healer_May_Be_Foe()
         {
-            // mobs can be healers too, a heal shouldn't flag the source as a friend (unless the target is a player)
             var chars = new CharTracker();
             chars.HandleEvent(new LogHealEvent() { Source = "froglok jin shaman", Target = "froglok dar knight", Amount = 3, Spell = "Doomscale Focusing" });
+
+            // mobs can be healers too, a heal shouldn't flag the source as a friend (unless the target is a player)
             Assert.Equal(CharType.Unknown, chars.GetType("froglok jin shaman"));
             Assert.Equal(CharType.Unknown, chars.GetType("froglok dar knight"));
+        }
+
+        [Fact]
+        public void Heal_May_Be_Reverse_DS()
+        {
+            var chars = new CharTracker();
+            chars.GetOrAdd("Rumstil").Type = CharType.Friend;
+            chars.GetOrAdd("Zlandicar").Type = CharType.Foe;
+            chars.HandleEvent(new LogHealEvent() { Source = "Rumstil", Target = "Zlandicar", Amount = 3, Spell = "Summer's Sleet Rk. III" });
+
+            // reverse DS can make players heal mobs
+            Assert.Equal(CharType.Friend, chars.GetType("Rumstil"));
+            Assert.Equal(CharType.Foe, chars.GetType("Zlandicar"));
         }
 
         [Fact]

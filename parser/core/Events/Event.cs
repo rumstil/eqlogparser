@@ -16,7 +16,9 @@ namespace EQLogParser
         public static LogEventMod ParseMod(string text)
         {
             LogEventMod mod = 0;
-            var parts = text.ToLower().Split(' ');
+            text = text.ToLower();
+            text = text.Replace("double bow shot", "doublebow"); // multi word mod won't split properly
+            var parts = text.Split(' ');
             for (int i = 0; i < parts.Length; i++)
             {
                 switch (parts[i])
@@ -43,6 +45,9 @@ namespace EQLogParser
                         break;
                     case "finishing":
                         mod |= LogEventMod.Finishing_Blow;
+                        break;
+                    case "doublebow":
+                        mod |= LogEventMod.Double_Bow_Shot;
                         break;
                     //case "headshot":
                     //case "assassinate":

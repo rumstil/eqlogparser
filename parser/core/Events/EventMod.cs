@@ -15,14 +15,14 @@ namespace EQLogParser
         Riposte = 16,
         Strikethrough = 32,
         Finishing_Blow = 64,
-        //Double_Bow_Shot = 128,
+        Double_Bow_Shot = 128,
         Rampage = 256,
         Wild_Rampage = 512, // will also identify as Rampage
         //Special = 1024
         Headshot = 1024,
         Assassinate = 2048,
         Decapitate = 4096,
-        Slay_Undead = 8192
+        Slay_Undead = 8192,
     }
 
 }

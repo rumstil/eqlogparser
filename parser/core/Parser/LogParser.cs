@@ -62,6 +62,7 @@ namespace EQLogParser
             Parsers.Add(LogCraftEvent.Parse);
             Parsers.Add(LogAAXPEvent.Parse);
             Parsers.Add(LogSkillEvent.Parse);
+            Parsers.Add(LogShieldEvent.Parse);
         }
 
         /// <summary>

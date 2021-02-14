@@ -261,6 +261,10 @@ namespace EQLogParser
                 if (hit.Type == "frenzy")
                     source.Class = ClassesMaskShort.BER.ToString();
 
+                // double bow show detection for low level rangers
+                if (hit.Type == "shoot" && (hit.Mod & LogEventMod.Double_Bow_Shot) != 0)
+                    source.Class = ClassesMaskShort.RNG.ToString();
+
                 if (hit.Spell != null)
                 {
                     var spell = Spells?.GetSpell(hit.Spell);

@@ -22,7 +22,7 @@ namespace EQLogParserTests.Tracker
         public void Fight_Ignored_If_Foe_Unknown()
         {
             var tracker = new FightTracker(new SpellParser());
-            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Type = "slash", Amount = 200 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = PLAYER1, Target = "Mob1", Type = "slash", Amount = 200 });
 
             // since the tracker doesn't know if Player1 or Mob1 is the foe it 
             // can't track the fight yet
@@ -33,12 +33,12 @@ namespace EQLogParserTests.Tracker
         public void Fight_Has_Correct_Timestamps()
         {
             var tracker = new FightTracker(new SpellParser());
-            tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
+            tracker.HandleEvent(new LogWhoEvent { Name = PLAYER1 });
 
             var t1 = DateTime.Now;
-            tracker.HandleEvent(new LogHitEvent { Timestamp = t1, Source = "Player1", Target = "Mob1", Type = "slash", Amount = 100 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = t1, Source = PLAYER1, Target = "Mob1", Type = "slash", Amount = 100 });
             var t2 = t1.AddSeconds(3);
-            tracker.HandleEvent(new LogMissEvent { Timestamp = t2, Source = "Player1", Target = "Mob1", Type = "dodge" });
+            tracker.HandleEvent(new LogMissEvent { Timestamp = t2, Source = PLAYER1, Target = "Mob1", Type = "dodge" });
 
             var f = tracker.ActiveFights[0];
             Assert.Equal(t1, f.StartedOn);
@@ -54,29 +54,29 @@ namespace EQLogParserTests.Tracker
         public void One_Fight()
         {
             var tracker = new FightTracker(new SpellParser());
-            tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
-            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Type = "slash", Amount = 200 });
+            tracker.HandleEvent(new LogWhoEvent { Name = PLAYER1 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = PLAYER1, Target = "Mob1", Type = "slash", Amount = 200 });
 
             var f = tracker.ActiveFights[0];
             Assert.Equal("Mob1", f.Name);
             Assert.Equal("Mob1", f.Target.Name);
-            Assert.Equal("Player1", f.Participants[0].Name);
+            Assert.Equal(PLAYER1, f.Participants[0].Name);
         }
 
         [Fact]
         public void Two_Fights_Concurrent()
         {
             var tracker = new FightTracker(new SpellParser());
-            tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
+            tracker.HandleEvent(new LogWhoEvent { Name = PLAYER1 });
             Assert.Empty(tracker.ActiveFights);
 
-            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Type = "slash", Amount = 100 });
-            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player2", Target = "Mob1", Type = "slash", Amount = 100 });
-            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Mob1", Target = "Player1", Type = "slash", Amount = 100 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = PLAYER1, Target = "Mob1", Type = "slash", Amount = 100 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = PLAYER2, Target = "Mob1", Type = "slash", Amount = 100 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Mob1", Target = PLAYER1, Type = "slash", Amount = 100 });
             Assert.Equal("Mob1", tracker.ActiveFights[0].Target.Name);
             Assert.Single(tracker.ActiveFights);
 
-            tracker.HandleEvent(new LogMissEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob2", Type = "dodge" });
+            tracker.HandleEvent(new LogMissEvent { Timestamp = DateTime.Now, Source = PLAYER1, Target = "Mob2", Type = "dodge" });
             Assert.Equal("Mob2", tracker.ActiveFights[1].Target.Name);
             Assert.Equal(2, tracker.ActiveFights.Count);
         }
@@ -85,16 +85,16 @@ namespace EQLogParserTests.Tracker
         public void Two_Fights_Back_to_Back_With_Same_Mob_Name()
         {
             var tracker = new FightTracker(new SpellParser());
-            tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
+            tracker.HandleEvent(new LogWhoEvent { Name = PLAYER1 });
 
-            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Type = "slash", Amount = 100 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = PLAYER1, Target = "Mob1", Type = "slash", Amount = 100 });
             Assert.Single(tracker.ActiveFights);
 
             tracker.HandleEvent(new LogDeathEvent { Timestamp = DateTime.Now, Name = "Mob1" });
             Assert.Empty(tracker.ActiveFights);
 
             // same mob name, but it should be treated as a new fight since it died
-            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Type = "slash", Amount = 101 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = PLAYER1, Target = "Mob1", Type = "slash", Amount = 101 });
             Assert.Single(tracker.ActiveFights);
         }
 
@@ -105,8 +105,8 @@ namespace EQLogParserTests.Tracker
             var tracker = new FightTracker(new SpellParser());
             tracker.OnFightFinished += (args) => f = args;
 
-            tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
-            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Type = "slash", Amount = 100 });
+            tracker.HandleEvent(new LogWhoEvent { Name = PLAYER1 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = PLAYER1, Target = "Mob1", Type = "slash", Amount = 100 });
             tracker.HandleEvent(new LogDeathEvent { Timestamp = DateTime.Now.AddSeconds(1), Name = "Mob1" });
 
             Assert.NotNull(f);
@@ -119,9 +119,9 @@ namespace EQLogParserTests.Tracker
         {
             var tracker = new FightTracker(new SpellParser());
 
-            tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
-            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Amount = 100 });
-            tracker.HandleEvent(new LogDeathEvent { Timestamp = DateTime.Now, Name = "Player1" });
+            tracker.HandleEvent(new LogWhoEvent { Name = PLAYER1 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = PLAYER1, Target = "Mob1", Amount = 100 });
+            tracker.HandleEvent(new LogDeathEvent { Timestamp = DateTime.Now, Name = PLAYER1 });
 
             Assert.Single(tracker.ActiveFights);
         }
@@ -133,8 +133,8 @@ namespace EQLogParserTests.Tracker
             var tracker = new FightTracker(new SpellParser());
             tracker.OnFightFinished += (args) => f = args;
 
-            tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
-            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Type = "slash", Amount = 100 });
+            tracker.HandleEvent(new LogWhoEvent { Name = PLAYER1 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = PLAYER1, Target = "Mob1", Type = "slash", Amount = 100 });
             Assert.Null(f);
 
             tracker.HandleEvent(new LogRawEvent { Timestamp = DateTime.Now + tracker.GroupFightTimeout, Text = "..." });
@@ -148,12 +148,12 @@ namespace EQLogParserTests.Tracker
         {
             var tracker = new FightTracker(new SpellParser());
 
-            tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
-            tracker.HandleEvent(new LogWhoEvent { Name = "Player2" });
+            tracker.HandleEvent(new LogWhoEvent { Name = PLAYER1 });
+            tracker.HandleEvent(new LogWhoEvent { Name = PLAYER2 });
 
-            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Amount = 100 });
-            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Amount = 200 });
-            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player2", Target = "Mob1", Amount = 350 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = PLAYER1, Target = "Mob1", Amount = 100 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = PLAYER1, Target = "Mob1", Amount = 200 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = PLAYER2, Target = "Mob1", Amount = 350 });
             //tracker.HandleEvent(new LogDeathEvent { Timestamp = DateTime.Now.AddSeconds(1), Name = "Mob1" });
 
             var f = tracker.ActiveFights[0];
@@ -163,11 +163,11 @@ namespace EQLogParserTests.Tracker
             Assert.Equal(3, f.Target.InboundHitCount);
             Assert.Equal(650, f.Target.InboundHitSum);
 
-            Assert.Equal("Player1", f.Participants[0].Name);
+            Assert.Equal(PLAYER1, f.Participants[0].Name);
             Assert.Equal(2, f.Participants[0].OutboundHitCount);
             Assert.Equal(300, f.Participants[0].OutboundHitSum);
 
-            Assert.Equal("Player2", f.Participants[1].Name);
+            Assert.Equal(PLAYER2, f.Participants[1].Name);
             Assert.Equal(1, f.Participants[1].OutboundHitCount);
             Assert.Equal(350, f.Participants[1].OutboundHitSum);
         }
@@ -177,9 +177,9 @@ namespace EQLogParserTests.Tracker
         {
             var tracker = new FightTracker(new SpellParser());
 
-            tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
-            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Mob1", Amount = 100 });
-            tracker.HandleEvent(new LogHealEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Player1", Amount = 201 });
+            tracker.HandleEvent(new LogWhoEvent { Name = PLAYER1 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = PLAYER1, Target = "Mob1", Amount = 100 });
+            tracker.HandleEvent(new LogHealEvent { Timestamp = DateTime.Now, Source = PLAYER1, Target = PLAYER1, Amount = 201 });
 
             var f = tracker.ActiveFights[0];
 
@@ -192,7 +192,7 @@ namespace EQLogParserTests.Tracker
         {
             var tracker = new FightTracker(new SpellParser());
 
-            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = "Player1", Target = "Player1", Amount = 100 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = DateTime.Now, Source = PLAYER1, Target = PLAYER1, Amount = 100 });
             Assert.Empty(tracker.ActiveFights);
         }
 
@@ -201,21 +201,21 @@ namespace EQLogParserTests.Tracker
         public void Check_DPS_Intervals()
         {
             var tracker = new FightTracker(new SpellParser());
-            tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
+            tracker.HandleEvent(new LogWhoEvent { Name = PLAYER1 });
 
 
             var start = DateTime.Today.AddHours(3).AddSeconds(34);
             var time = start;
-            tracker.HandleEvent(new LogHitEvent { Timestamp = time, Source = "Player1", Target = "Mob", Amount = 100 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = time, Source = PLAYER1, Target = "Mob", Amount = 100 });
 
             time = start.AddSeconds(1);
-            tracker.HandleEvent(new LogHitEvent { Timestamp = time, Source = "Player1", Target = "Mob", Amount = 50 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = time, Source = PLAYER1, Target = "Mob", Amount = 50 });
 
             time = start.AddSeconds(3);
-            tracker.HandleEvent(new LogHitEvent { Timestamp = time, Source = "Player1", Target = "Mob", Amount = 21 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = time, Source = PLAYER1, Target = "Mob", Amount = 21 });
 
             time = start.AddSeconds(4);
-            tracker.HandleEvent(new LogHitEvent { Timestamp = time, Source = "Player2", Target = "Mob", Amount = 35 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = time, Source = PLAYER2, Target = "Mob", Amount = 35 });
 
             var f = tracker.ActiveFights[0];
             f.Finish();
@@ -232,7 +232,6 @@ namespace EQLogParserTests.Tracker
             Assert.Equal(35, f.Participants[1].DPS[1]);
         }
 
-
         [Fact]
         public void Raid_Matched()
         {
@@ -245,8 +244,9 @@ namespace EQLogParserTests.Tracker
             };
 
             var tracker = new FightTracker(new SpellParser());
-            tracker.HandleEvent(new LogWhoEvent { Name = "Player1" });
-            tracker.HandleEvent(new LogWhoEvent { Name = "Player2" });
+            tracker.HandleEvent(new LogPartyEvent { Status = PartyStatus.RaidJoined, Name = PLAYER1 });
+            tracker.HandleEvent(new LogWhoEvent { Name = PLAYER1 });
+            tracker.HandleEvent(new LogWhoEvent { Name = PLAYER2 });
             tracker.AddTemplate(temp);
             var results = new List<FightInfo>();
             tracker.OnFightFinished += e => results.Add(e);
@@ -254,9 +254,9 @@ namespace EQLogParserTests.Tracker
             // act
             var time = DateTime.Now;
             tracker.HandleEvent(new LogZoneEvent { Timestamp = time, Name = temp.Zone });
-            tracker.HandleEvent(new LogHitEvent { Timestamp = time, Source = "Player1", Target = temp.Mobs[0], Amount = 100 });
-            tracker.HandleEvent(new LogHitEvent { Timestamp = time, Source = "Player2", Target = temp.Mobs[1], Amount = 20 });
-            tracker.HandleEvent(new LogHitEvent { Timestamp = time, Source = "Player2", Target = "Unrelated Mob", Amount = 30 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = time, Source = PLAYER1, Target = temp.Mobs[0], Amount = 100 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = time, Source = PLAYER2, Target = temp.Mobs[1], Amount = 20 });
+            tracker.HandleEvent(new LogHitEvent { Timestamp = time, Source = PLAYER2, Target = "Unrelated Mob", Amount = 30 });
             tracker.HandleEvent(new LogDeathEvent { Timestamp = time, Name = temp.EndsOnDeath[0] });
 
             // assert

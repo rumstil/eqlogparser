@@ -12,6 +12,7 @@ namespace EQLogParserTests.Tracker
         const string PLAYER1 = "Fred";
         const string PLAYER2 = "Derf";
         const string PET1 = "Xibaber";
+        const string PET2 = "Rex";
 
         [Fact]
         public void Flags_Riposte()
@@ -49,7 +50,7 @@ namespace EQLogParserTests.Tracker
         }
 
         [Fact]
-        public void MergePets()
+        public void MergePets_Single()
         {
             var fs = new FightInfo(MOB1);
 
@@ -68,6 +69,35 @@ namespace EQLogParserTests.Tracker
             Assert.Equal(110, ap2.OutboundHitSum);
             var apet1 = fs.Participants.Find(x => x.Name == PET1);
             Assert.Equal(0, apet1.OutboundHitSum);
+        }
+
+        [Fact]
+        public void MergePets_Multiple()
+        {
+            var fs = new FightInfo(MOB1);
+
+            var p1 = new FightParticipant() { Name = PLAYER1, OutboundHitSum = 100 };
+            fs.Participants.Add(p1);
+            var pet1 = new FightParticipant() { Name = PET1, OutboundHitSum = 50, AttackTypes = new List<FightHit> { new FightHit() { Type = "kick", HitCount = 1, HitSum = 50 } }, PetOwner = PLAYER1 };
+            fs.Participants.Add(pet1);
+            var pet2 = new FightParticipant() { Name = PET2, OutboundHitSum = 60, AttackTypes = new List<FightHit> { new FightHit() { Type = "kick", HitCount = 1, HitSum = 60 } }, PetOwner = PLAYER1 };
+            fs.Participants.Add(pet2);
+
+            fs.MergePets();
+
+            var ap1 = fs.Participants.Find(x => x.Name == PLAYER1);
+            Assert.Equal(210, ap1.OutboundHitSum);
+
+            var ap1kick = ap1.AttackTypes.Find(x => x.Type == "pet:kick");
+            Assert.NotNull(ap1kick);
+            Assert.Equal(2, ap1kick.HitCount);
+            Assert.Equal(110, ap1kick.HitSum);
+
+            var apet1 = fs.Participants.Find(x => x.Name == PET1);
+            Assert.Equal(0, apet1.OutboundHitSum);
+
+            var apet2 = fs.Participants.Find(x => x.Name == PET2);
+            Assert.Equal(0, apet2.OutboundHitSum);
         }
 
         [Fact]

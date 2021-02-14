@@ -36,6 +36,18 @@ namespace EQLogParserTests.Event
         }
 
         [Fact]
+        public void Parse_Melee_Crippling()
+        {
+            var hit = Parse("Scooby hits Queen Velazul Di`Zok for 85993 points of damage. (Crippling Blow)");
+            Assert.NotNull(hit);
+            Assert.Equal("Scooby", hit.Source);
+            Assert.Equal("Queen Velazul Di`Zok", hit.Target);
+            Assert.Equal(85993, hit.Amount);
+            Assert.Equal("hit", hit.Type);
+            Assert.Equal(LogEventMod.Critical, hit.Mod);
+        }
+
+        [Fact]
         public void Parse_Melee_Multiple_Mods()
         {
             var hit = Parse("You slash a clockwork chef for 24703 points of damage. (Riposte Strikethrough Critical)");

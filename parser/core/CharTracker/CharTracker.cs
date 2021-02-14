@@ -309,6 +309,13 @@ namespace EQLogParser
                     c.Type = CharType.Unknown;
             }
 
+            if (e is LogShieldEvent shield)
+            {
+                // NPCs also use this ability
+                var c = GetOrAdd(shield.Source);
+                c.Class = ClassesMaskShort.WAR.ToString();
+            }
+
         }
 
         /// <summary>

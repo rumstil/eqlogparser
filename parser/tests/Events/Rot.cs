@@ -34,7 +34,7 @@ namespace EQLogParserTests.Event
             //Assert.Equal(2, loot.Qty);
         }
 
-        [Fact]
+        [Fact(Skip = "Disabled because i'm not sure it's useful.")]
         public void Parse_Unclaimed()
         {
             var loot = Parse("No one was interested in the 1 item(s): Glowing Sebilisian Boots. These items can be randomed again or will be available to everyone after the corpse unlocks.");

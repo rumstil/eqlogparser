@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -23,7 +24,8 @@ namespace LogSync
         private CancellationTokenSource cancellationSource;
         private SpellParser spells;
         private LogParser parser;
-        private BackgroundLogTracker tracker;
+        private ConcurrentQueue<FightInfo> fightsQueue;
+        private ConcurrentQueue<LootInfo> lootQueue;        
         private List<FightInfo> fightList;
         private List<FightInfo> fightListSearchResults;
         private Dictionary<string, string> fightStatus;
@@ -40,7 +42,8 @@ namespace LogSync
             spells = new SpellParser();
             parser = new LogParser();
             //parser.MinDate = DateTime.Parse("2020-09-27");
-            tracker = new BackgroundLogTracker(spells);
+            fightsQueue = new ConcurrentQueue<FightInfo>();
+            lootQueue = new ConcurrentQueue<LootInfo>();
             fightList = new List<FightInfo>(2000);
             fightStatus = new Dictionary<string, string>();
             lootList = new List<LootInfo>();
@@ -381,16 +384,20 @@ namespace LogSync
                 //await Task.Delay(600);
             }
 
-            // reset the tracker by creating a new one
-            tracker = new BackgroundLogTracker(spells);
+            // reset the trackers by creating new ones
+            var fightTracker = new FightTracker(spells);
+            fightTracker.OnFightFinished += x => fightsQueue.Enqueue(x);
+            fightTracker.AddTemplateFromResource();
+            var lootTracker = new LootTracker();
+            lootTracker.OnLoot += x => lootQueue.Enqueue(x);
+
+            // reset UI
             fightList.Clear();
             fightListSearchResults = null;
             lvFights.VirtualListSize = 0;
 
             // read roster files to assist player tracking
             // this would probably be more useful if it ran in the background to wait on new roster files
-            // "/output guild" saves guild rosters. e.g. Derelict Space Toilet_erollisi-20201020-210532.txt
-            // "/output raid" saves raid rosters. e.g. RaidRoster_erollisi-20200802-190436
             var server = LogParser.GetServerFromFileName(path);
             if (!String.IsNullOrEmpty(server))
             {
@@ -400,20 +407,23 @@ namespace LogSync
                     .Take(20);
                 var roster = RosterParser.Load(files);
                 foreach (var who in roster)
-                    tracker.HandleEvent(who);
+                    fightTracker.HandleEvent(who);
             }
 
             // send init event
             var open = LogParser.GetOpenEvent(path);
             parser.Player = open.Player;
-            tracker.HandleEvent(open);
+            fightTracker.HandleEvent(open);
 
             // this handler runs in a background thread and must be threadsafe
             Action<string> handler = line =>
             {
                 var e = parser.ParseLine(line);
                 if (e != null)
-                    tracker.HandleEvent(e);
+                {
+                    fightTracker.HandleEvent(e);
+                    lootTracker.HandleEvent(e);
+                }
             };
 
             // this event runs in the main app thread
@@ -481,10 +491,10 @@ namespace LogSync
         {
             while (true)
             {
-                while (tracker.Fights.TryDequeue(out FightInfo f))
+                while (fightsQueue.TryDequeue(out FightInfo f))
                     AddFight(f);
 
-                while (tracker.Loot.TryDequeue(out LootInfo l))
+                while (lootQueue.TryDequeue(out LootInfo l))
                     AddLoot(l);
 
                 await Task.Delay(200);

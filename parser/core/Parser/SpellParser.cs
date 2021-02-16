@@ -11,8 +11,10 @@ namespace EQLogParser
 {
     public enum SpellTarget
     {
+        Self = 6,
         Pet = 14,
         Pet2 = 38,
+        Pet_Owner = 47,
     }
 
     public class SpellInfo

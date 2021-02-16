@@ -8,13 +8,6 @@ using System.Text.RegularExpressions;
 
 namespace EQLogParser
 {
-    public class BuffEmote
-    {
-        public string Name;
-        public string LandSelf;
-        public string LandOthers;
-    }
-
     public class BuffInfo
     {
         public string Target;
@@ -38,13 +31,15 @@ namespace EQLogParser
         public const string DEATH = "*Died";
 
         private readonly ISpellLookup Spells;
+        private readonly ICharLookup Chars;
 
         private readonly List<BuffInfo> Buffs = new List<BuffInfo>();
-        private readonly Dictionary<string, SpellInfo> Emotes = new Dictionary<string, SpellInfo>();
+        private readonly List<SpellInfo> Tracking = new List<SpellInfo>();
 
 
-        public BuffTracker(ISpellLookup spells)
+        public BuffTracker(ISpellLookup spells, ICharLookup chars)
         {
+            Chars = chars;
             Spells = spells;
 
             // we only need to add rank 1 of most spells lines because all the other ranks 
@@ -62,18 +57,22 @@ namespace EQLogParser
             AddSpell("Spirit of Vesagran"); // epic
 
             // beastlord
-            AddSpell("Bestial Alignment I"); // same emote as group version
+            AddSpell("Group Bestial Alignment I"); // self/group emotes are the same
             AddSpell("Bloodlust I");
+            AddSpell("Merciless Ferocity"); // different names across levels
+            AddSpell("Ruaabri's Fury");
+            AddSpell("Savage Fury"); // different names across levels
 
             // berserker
             AddSpell("Cry Havoc");
+            AddSpell("Battle Cry of the Mastruq");
 
             // cleric
             AddSpell("Divine Intervention");
-            AddSpell("Divine Intervention Trigger", " has been rescued by divine intervention!");
+            AddSpell("Divine Intervention Trigger", " has been rescued by divine intervention!", null);
 
             // druid
-            AddSpell("Spirit of the Great Wolf I"); // same emote as group version
+            AddSpell("Group Spirit of the Great Wolf I"); // self/group emotes are the same
 
             // enchanter
             AddSpell("Illusions of Grandeur I");
@@ -84,8 +83,8 @@ namespace EQLogParser
             // ranger
             AddSpell("Auspice of the Hunter I");
             AddSpell("Scarlet Cheetah Fang I");
-            AddSpell("Guardian of the Forest I"); // same emote as group version
-            AddSpell("Empowered Blades I");
+            AddSpell("Group Guardian of the Forest I"); // self/group emotes are the same
+            AddSpell("Empowered Blades I"); // same emote as Acromancy and Valorous Rage
             AddSpell("Outrider's Accuracy I");
             AddSpell("Bosquestalker's Discipline");
             AddSpell("Trueshot Discipline");
@@ -93,6 +92,10 @@ namespace EQLogParser
 
             // shaman
             AddSpell("Prophet's Gift of the Ruchu"); // epic
+            AddSpell("Spire of Ancestors I");
+
+            // warrior
+            AddSpell("Heroic Rage I");
 
         }
 
@@ -106,26 +109,70 @@ namespace EQLogParser
                 Buffs.Add(new BuffInfo { Target = death.Name, SpellName = DEATH, Timestamp = death.Timestamp });
             }
 
+            if (e is LogCastingEvent cast)
+            {
+
+
+            }
+
+            if (e is LogShieldEvent shield)
+            {
+                Buffs.Add(new BuffInfo { Target = shield.Target, SpellName = "Shielding from " + shield.Source, Timestamp = shield.Timestamp });
+            }
+
             if (e is LogRawEvent raw)
             {
-                var spell = GetSpellFromEmote(raw.Text);
-                if (spell != null)
-                {
-                    var name = raw.Player;
-                    if (raw.Text != spell.LandSelf)
-                        name = raw.Text.Substring(0, raw.Text.Length - spell.LandOthers.Length);
+                // strip name from start of string to compare LandsOther version of emote
+                // todo: this doesn't handle names with spaces properly (mob/merc/pet)
+                var other = Regex.Replace(raw.Text, @"^\w+", "");
+                var target = raw.Text.Substring(0, raw.Text.Length - other.Length);
 
-                    var buff = new BuffInfo()
+                foreach (var spell in Tracking)
+                {
+                    // lands on self?
+                    if (spell.LandSelf == raw.Text)
                     {
-                        Target = name,
-                        // all spells in a set use the same emote we won't actually know which rank landed
-                        SpellName = SpellParser.StripRank(spell.Name),
-                        Timestamp = e.Timestamp,
-                        DurationTicks = spell.DurationTicks
-                    };
-                    Buffs.Add(buff);
+                        var buff = new BuffInfo()
+                        {
+                            Timestamp = e.Timestamp,
+                            Target = raw.Player,
+                            // all spells in a set use the same emote we won't actually know which rank landed
+                            SpellName = FixName(spell.Name),
+                            DurationTicks = spell.DurationTicks
+                        };
+                        Buffs.Add(buff);
+                        break;
+                    }             
+
+                    // if this is a self-only spell then we can discard comparisons with spells the class can't cast
+                    if (spell.Target == (int)SpellTarget.Self && Chars.GetClass(target) != spell.ClassesNames)
+                        continue;
+
+                    // lands on others?
+                    if (spell.LandOthers == other)
+                    {
+                        var buff = new BuffInfo()
+                        {
+                            Timestamp = e.Timestamp,
+                            Target = target,
+                            // all spells in a set use the same emote we won't actually know which rank landed
+                            SpellName = FixName(spell.Name),
+                            DurationTicks = spell.DurationTicks
+                        };
+                        Buffs.Add(buff);
+                        break;
+                    }
                 }
             }
+        }
+
+        /// <summary>
+        /// Since spells in the same spell line share emotes, the buff tracker can't be sure which one actually landed based on the emote.
+        /// Instead we just normalize the name so that they are all consistent.
+        /// </summary>
+        private string FixName(string name)
+        {
+            return SpellParser.StripRank(name.Replace("Group ", ""));
         }
 
         /// <summary>
@@ -155,40 +202,16 @@ namespace EQLogParser
         {
             var s = Spells.GetSpell(name);
             if (s != null)
-            {
-                if (!String.IsNullOrEmpty(s.LandSelf))
-                    Emotes[s.LandSelf] = s;
-                if (!String.IsNullOrEmpty(s.LandOthers))
-                    Emotes[s.LandOthers] = s;
-            }
+                Tracking.Add(s);
         }
 
         /// <summary>
-        /// Add buff tracking for a spell using a fake "landing text" emote.
+        /// Add buff tracking for a spell using custom "landing text" emote.
         /// </summary>
-        private void AddSpell(string name, string emote)
+        private void AddSpell(string name, string others, string self)
         {
-            Emotes[emote] = new SpellInfo { Name = name, LandOthers = emote };
+            Tracking.Add(new SpellInfo { Name = name, LandOthers = others, LandSelf = self });
         }
-
-        /// <summary>
-        /// Check text to see if it matches a tracked spell emote.
-        /// </summary>
-        private SpellInfo GetSpellFromEmote(string text)
-        {
-            // lands on self?
-            Emotes.TryGetValue(text, out SpellInfo s);
-            if (s != null)
-                return s;
-
-            // lands on others?
-            // strip name from start of string
-            // todo: this doesn't handle names with spaces properly (mob/merc/pet)
-            text = Regex.Replace(text, @"^\w+", "");
-            Emotes.TryGetValue(text, out s);
-            return s;
-        }
-
 
     }
 }

@@ -49,7 +49,7 @@ namespace EQLogParser
         public FightTracker(ISpellLookup spells)
         {
             Chars = new CharTracker(spells);
-            Buffs = new BuffTracker(spells);
+            Buffs = new BuffTracker(spells, Chars);
         }
 
         /// <summary>

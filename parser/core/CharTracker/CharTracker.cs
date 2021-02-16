@@ -41,12 +41,17 @@ namespace EQLogParser
         }
     }
 
+    public interface ICharLookup
+    {
+        string GetClass(string name);
+    }
+
     /// <summary>
     /// Tracks PC, NPC, merc, and pet activity to determine who is a friend/foe and what class they are.
     /// Players are always considered friends. Obviously this won't work on a PvP server.
     /// NPCs are always considered foes.
     /// </summary>
-    public class CharTracker
+    public class CharTracker : ICharLookup
     {
         private string Player = null;
 
@@ -63,6 +68,7 @@ namespace EQLogParser
 
         public CharTracker()
         {
+            Spells = new SpellParser();
         }
 
         public CharTracker(ISpellLookup spells)

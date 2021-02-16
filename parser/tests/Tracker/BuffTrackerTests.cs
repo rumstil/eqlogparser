@@ -16,9 +16,10 @@ namespace EQLogParserTests.Tracker
         public void Land_Self()
         {
             var spells = new FakeSpellParser();
+            var chars = new CharTracker();
             spells.Spells.Add(new SpellInfo { Name = "Illusions of Grandeur I", LandSelf = "Illusions of Grandeur fill your mind.", LandOthers = " is consumed by Illusions of Grandeur." });
 
-            var buffs = new BuffTracker(spells);
+            var buffs = new BuffTracker(spells, chars);
             buffs.HandleEvent(new LogRawEvent() { Text = "Illusions of Grandeur fill your mind.", Timestamp = DateTime.UtcNow, Player = PLAYER });
 
             var list = buffs.Get(PLAYER, DateTime.Today, DateTime.UtcNow.AddSeconds(1)).ToList();
@@ -30,9 +31,10 @@ namespace EQLogParserTests.Tracker
         public void Land_Other()
         {
             var spells = new FakeSpellParser();
+            var chars = new CharTracker();
             spells.Spells.Add(new SpellInfo { Name = "Illusions of Grandeur I", LandSelf = "Illusions of Grandeur fill your mind.", LandOthers = " is consumed by Illusions of Grandeur." });
 
-            var buffs = new BuffTracker(spells);
+            var buffs = new BuffTracker(spells, chars);
             buffs.HandleEvent(new LogRawEvent() { Text = "Tokiel is consumed by Illusions of Grandeur.", Timestamp = DateTime.UtcNow });
 
             var list = buffs.Get("Tokiel", DateTime.Today, DateTime.UtcNow.AddSeconds(1)).ToList();

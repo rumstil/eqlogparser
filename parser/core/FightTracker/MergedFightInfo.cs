@@ -43,6 +43,7 @@ namespace EQLogParser
                 StartedOn = f.StartedOn;
                 UpdatedOn = f.UpdatedOn;
                 Status = FightStatus.Merged;
+                Duration = 1;
             }
 
             MobCount += 1;
@@ -163,6 +164,8 @@ namespace EQLogParser
             Duration = Math.Max(Target.DPS.Count, Target.TankDPS.Count) * 6;
             if (Elapsed < Duration)
                 Duration = Elapsed;
+            if (Duration < 1)
+                Duration = 1;
 
         }
 

@@ -25,13 +25,12 @@ namespace LogSync
         private SpellParser spells;
         private LogParser parser;
         private ConcurrentQueue<FightInfo> fightsQueue;
-        private ConcurrentQueue<LootInfo> lootQueue;        
+        private ConcurrentQueue<LootInfo> lootQueue;
         private List<FightInfo> fightList;
         private List<FightInfo> fightListSearchResults;
         private Dictionary<string, string> fightStatus;
         private List<LootInfo> lootList;
         private Uploader uploader;
-        private Discord discord;
 
         public MainForm()
         {
@@ -48,8 +47,6 @@ namespace LogSync
             fightStatus = new Dictionary<string, string>();
             lootList = new List<LootInfo>();
             uploader = new Uploader(LogInfo);
-            discord = new Discord(LogInfo);
-            discord.WebhookUrl = config.Read("WebhookUrl");
             _ = ProcessEventsAsync();
         }
 
@@ -288,7 +285,7 @@ namespace LogSync
             //lnkSelectDate.Text = f.StartedOn.ToLocalTime().ToShortDateString();
             //lnkSelectZone.Text = f.Zone;
         }
-       
+
         private void lnkSelectDate_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             if (lvFights.SelectedItems.Count == 0)
@@ -443,7 +440,7 @@ namespace LogSync
             // this log message can occur after the form has been disposed
             //LogInfo("Closing " + path);
         }
-                
+
         /*
         /// <summary>
         /// Process log file using task-based async pattern. 
@@ -503,15 +500,31 @@ namespace LogSync
 
         private void AddFight(FightInfo f)
         {
-            // ignore trash mobs
+            if (f.Zone == null)
+                f.Zone = "Unknown";
+
+            // merge trash mobs
             if (IsTrashMob(f))
             {
                 //LogInfo("Ignoring trash: " + f.Name);
+                var trash = fightList.OfType<MergedFightInfo>().FirstOrDefault(x => x.Zone == f.Zone && x.Name.StartsWith("Trash") && x.UpdatedOn >= f.StartedOn.AddMinutes(-10));
+                if (trash == null)
+                {
+                    trash = new MergedFightInfo();
+                    fightList.Insert(0, trash);
+                }
+                else
+                {
+                    fightList.Remove(trash);
+                    fightList.Insert(0, trash);
+                }
+                trash.Merge(f);
+                trash.Finish();
+                trash.Name = $"Trash ({trash.MobCount} mobs)";
+
+                // return without uploading
                 return;
             }
-
-            if (f.Zone == null)
-                f.Zone = "Unknown";
 
             fightList.Insert(0, f);
 
@@ -525,7 +538,7 @@ namespace LogSync
                 lvFights.VirtualListSize = fightListSearchResults.Count;
             }
             toolStripStatusLabel2.Text = lvFights.Items.Count + " fights";
-            
+
             if (f.MobCount > 1)
             {
                 // if we just combined several fights then clear the selection
@@ -541,7 +554,7 @@ namespace LogSync
                 foreach (var i in selected)
                     lvFights.SelectedIndices.Add(i + 1);
             }
-                        
+
             if (chkAutoUpload.Checked && f.MobCount <= 1)
                 UploadFight(f);
         }
@@ -606,7 +619,7 @@ namespace LogSync
         private bool IsTrashMob(FightInfo f)
         {
             // these rules should make sense for both high and low level players fighting level appropriate mobs
-            return f.Duration < 10 || f.Target.InboundHitCount < 10;
+            return f.Duration < 10 || f.Target.InboundHitCount < 10 || f.HP < 1000;
         }
 
         private bool IsFilterMatch(FightInfo f)

@@ -30,6 +30,7 @@ namespace EQLogParser
                 if (zone == "an area where levitation effects do not function" ||
                     zone == "an Arena (PvP) area" ||
                     zone == "an area where Bind Affinity is allowed" ||
+                    zone == "an area where Bind Affinity is not allowed" ||
                     zone == "the Drunken Monkey stance adequately")
                     return null;
 

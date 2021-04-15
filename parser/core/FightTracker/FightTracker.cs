@@ -178,7 +178,8 @@ namespace EQLogParser
             if (foe == null)
             {
                 //Console.WriteLine("*** " + hit);
-                PendingHits.Add(hit);
+                if (hit.Source != hit.Target)
+                    PendingHits.Add(hit);
                 return;
             }
 

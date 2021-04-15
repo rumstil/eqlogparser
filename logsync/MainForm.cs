@@ -372,7 +372,7 @@ namespace LogSync
 
             config.Write("filename", path);
             LogInfo("Loading " + path);
-            LogInfo("Mobs killed in under 10 seconds or 10 hits will not be listed.");
+            //LogInfo("Mobs killed in under 10 seconds or 10 hits will not be listed.");
 
             // cancel previous log parsing task
             if (cancellationSource != null)
@@ -389,9 +389,11 @@ namespace LogSync
             lootTracker.OnLoot += x => lootQueue.Enqueue(x);
 
             // reset UI
+            lvFights.VirtualListSize = 0;
             fightList.Clear();
             fightListSearchResults = null;
-            lvFights.VirtualListSize = 0;
+            toolStripStatusLabel1.Text = "-";
+            toolStripStatusLabel2.Text = "-";
 
             // read roster files to assist player tracking
             // this would probably be more useful if it ran in the background to wait on new roster files
@@ -488,11 +490,19 @@ namespace LogSync
         {
             while (true)
             {
-                while (fightsQueue.TryDequeue(out FightInfo f))
-                    AddFight(f);
+                try
+                {
+                    while (fightsQueue.TryDequeue(out FightInfo f))
+                        AddFight(f);
 
-                while (lootQueue.TryDequeue(out LootInfo l))
-                    AddLoot(l);
+                    while (lootQueue.TryDequeue(out LootInfo l))
+                        AddLoot(l);
+
+                }
+                catch (Exception ex)
+                {
+                    LogInfo(ex.Message);
+                }
 
                 await Task.Delay(200);
             }
@@ -503,11 +513,24 @@ namespace LogSync
             if (f.Zone == null)
                 f.Zone = "Unknown";
 
-            // merge trash mobs
-            if (IsTrashMob(f))
+            // ignore mobs we may have hit but blurred, rooted, or otherwise ignored
+            if (IsTrashMob(f) && f.Status == FightStatus.Timeout)
             {
                 //LogInfo("Ignoring trash: " + f.Name);
-                var trash = fightList.OfType<MergedFightInfo>().FirstOrDefault(x => x.Zone == f.Zone && x.Name.StartsWith("Trash") && x.UpdatedOn >= f.StartedOn.AddMinutes(-10));
+                return;
+            }
+
+            /*
+            // consolidate with recent "trash" mobs
+            if (IsTrashMob(f))
+            {
+                // find the last synthetic "trash" fight that we can consolidate this with
+                var trash = fightList.OfType<MergedFightInfo>()
+                    .Where(x => x.Zone == f.Zone && x.Name.StartsWith("Trash"))
+                    //.Where(x => x.StartedOn <= f.StartedOn) // prevents out of order merges, but creates extra "trash" fights sometimes
+                    .Where(x => x.StartedOn >= f.StartedOn.AddMinutes(-5))
+                    .FirstOrDefault();
+
                 if (trash == null)
                 {
                     trash = new MergedFightInfo();
@@ -519,12 +542,14 @@ namespace LogSync
                     fightList.Insert(0, trash);
                 }
                 trash.Merge(f);
+                trash.Trim();
                 trash.Finish();
                 trash.Name = $"Trash ({trash.MobCount} mobs)";
 
                 // return without uploading
                 return;
             }
+            */
 
             fightList.Insert(0, f);
 
@@ -537,7 +562,7 @@ namespace LogSync
                 fightListSearchResults.Insert(0, f);
                 lvFights.VirtualListSize = fightListSearchResults.Count;
             }
-            toolStripStatusLabel2.Text = lvFights.Items.Count + " fights";
+            toolStripStatusLabel2.Text = fightList.Count + " fights";
 
             if (f.MobCount > 1)
             {
@@ -555,8 +580,10 @@ namespace LogSync
                     lvFights.SelectedIndices.Add(i + 1);
             }
 
-            if (chkAutoUpload.Checked && f.MobCount <= 1)
+            if (chkAutoUpload.Checked && f.Status == FightStatus.Killed && !IsTrashMob(f))
+            {
                 UploadFight(f);
+            }
         }
 
         private void AddLoot(LootInfo l)
@@ -618,6 +645,11 @@ namespace LogSync
 
         private bool IsTrashMob(FightInfo f)
         {
+            //var zoneAvg = fightList.Take(20).Where(x => x.Zone == f.Zone && x.Status == FightStatus.Killed).Select(x => x.HP).DefaultIfEmpty(0).Average();
+            //LogInfo("Avg: " + zoneAvg);
+            //if (zoneAvg > 0 && f.HP > zoneAvg * 0.5)
+            //    return false;
+
             // these rules should make sense for both high and low level players fighting level appropriate mobs
             return f.Duration < 10 || f.Target.InboundHitCount < 10 || f.HP < 1000;
         }

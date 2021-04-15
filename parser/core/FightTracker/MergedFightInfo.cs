@@ -20,7 +20,7 @@ namespace EQLogParser
 
         }
 
-        public MergedFightInfo(IEnumerable<FightInfo> fights) 
+        public MergedFightInfo(IEnumerable<FightInfo> fights)
         {
             foreach (var f in fights)
                 Merge(f);
@@ -31,7 +31,7 @@ namespace EQLogParser
         /// The supplied fight must have started after any previously merged fights.
         /// </summary>
         public virtual void Merge(FightInfo f)
-        { 
+        {
             if (Target == null || String.IsNullOrEmpty(Target.Name))
             {
                 Target = new FightParticipant() { Name = "X" };
@@ -54,13 +54,13 @@ namespace EQLogParser
 
             //Target.Merge(f.Target, 0);
 
-            if (StartedOn > f.StartedOn)
+            if (StartedOn > f.StartedOn && intervals.Count == 1)
+                StartedOn = f.StartedOn;
+            else if (StartedOn > f.StartedOn)
                 throw new Exception("Fights must be merged in order of start time.");
-            //if (StartedOn > f.StartedOn)
-            //    StartedOn = f.StartedOn;
+
             if (UpdatedOn < f.UpdatedOn)
                 UpdatedOn = f.UpdatedOn;
-
 
 
             /*
@@ -127,6 +127,31 @@ namespace EQLogParser
 
         }
 
+        /// <summary>
+        /// Reset interval data on all participants.
+        /// This can be used to avoid the in-order requirement for merging.
+        /// </summary>
+        public void Trim()
+        {
+            intervals = new List<int>() { 0 };
+
+            if (Target != null)
+            {
+                Target.Buffs.Clear();
+                Target.DPS.Clear();
+                Target.HPS.Clear();
+                Target.TankDPS.Clear();
+            }
+
+            foreach (var p in Participants)
+            {
+                p.Buffs.Clear();
+                p.DPS.Clear();
+                p.HPS.Clear();
+                p.TankDPS.Clear();
+            }
+        }
+
         public override void Finish()
         {
             base.Finish();
@@ -149,8 +174,8 @@ namespace EQLogParser
                 var ticks = 0;
                 for (var i = 0; i < intervals.Count; i++)
                 {
-                    if ((p.DPS != null && p.DPS.Count > i && p.DPS[i] != 0) || 
-                        (p.HPS != null && p.HPS.Count > i && p.HPS[i] != 0) || 
+                    if ((p.DPS != null && p.DPS.Count > i && p.DPS[i] != 0) ||
+                        (p.HPS != null && p.HPS.Count > i && p.HPS[i] != 0) ||
                         (p.TankDPS != null && p.TankDPS.Count > i && p.TankDPS[i] != 0))
                     {
                         ticks += 1;
@@ -166,7 +191,6 @@ namespace EQLogParser
                 Duration = Elapsed;
             if (Duration < 1)
                 Duration = 1;
-
         }
 
     }

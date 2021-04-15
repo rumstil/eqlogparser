@@ -84,6 +84,18 @@ namespace EQLogParserTests.Event
         }
 
         [Fact]
+        public void Parse_Melee_Self()
+        {
+            var hit = Parse("Curly hits himself for 2165 points of damage. (Strikethrough Lucky Crippling Blow)");
+            Assert.NotNull(hit);
+            Assert.Equal("Curly", hit.Source);
+            Assert.Equal("Curly", hit.Target);
+            Assert.Equal(2165, hit.Amount);
+            Assert.Equal("hit", hit.Type);
+            Assert.Equal(LogEventMod.Strikethrough | LogEventMod.Lucky | LogEventMod.Critical, hit.Mod);
+        }
+
+        [Fact]
         public void Parse_DD()
         {
             var hit = Parse("Fourier hit a tirun crusher for 4578 points of magic damage by Force of Magic VII.");

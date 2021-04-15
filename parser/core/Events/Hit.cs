@@ -129,7 +129,8 @@ namespace EQLogParser
                     Timestamp = e.Timestamp,
                     Source = e.FixName(m.Groups[1].Value),
                     Type = type,
-                    Target = e.FixName(m.Groups[3].Value),
+                    //Target = e.FixName(m.Groups[3].Value),
+                    Target = m.Groups[3].Value == "himself" || m.Groups[3].Value == "herself" || m.Groups[3].Value == "itself" ? e.FixName(m.Groups[1].Value) : e.FixName(m.Groups[3].Value),
                     Amount = Int32.Parse(m.Groups[4].Value),
                     Mod = mod
                 };

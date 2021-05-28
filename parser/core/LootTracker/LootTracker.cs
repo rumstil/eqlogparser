@@ -25,11 +25,18 @@ namespace EQLogParser
         public string Zone { get; set; }
 
         /// <summary>
-        /// Server this was looted on. Mostly interesting if test/beta.
+        /// Server this was looted on.
         /// </summary>
         public string Server { get; set; }
 
         public DateTime Date { get; set; }
+
+        /// <summary>
+        /// Is the loot drop safe to catalog?
+        /// Beta server may have items that don't exist or haven't been named yet.
+        /// Mischief and Thornblade servers use randomized loot.
+        /// </summary>
+        public bool IsStandardLoot => Server != null && Server != "beta" && Server != "mischief" && Server != "thornblade";
     }
 
     /// <summary>
@@ -259,20 +266,18 @@ namespace EQLogParser
             if (e is LogOpenEvent open)
             {
                 server = open.Server;
-                if (server != "test" && server != "beta")
-                    server = null;
             }
 
             if (e is LogLootEvent loot)
             {
                 if (!Ignore.Contains(loot.Item) && zone != null && loot.Source != null)
-                    OnLoot?.Invoke(new LootInfo { Item = loot.Item, Mob = loot.Source ?? "Unknown", Zone = zone, Date = e.Timestamp });
+                    OnLoot?.Invoke(new LootInfo { Item = loot.Item, Mob = loot.Source ?? "Unknown", Zone = zone, Date = e.Timestamp, Server = server });
             }
 
             if (e is LogRotEvent rot)
             {
                 if (!Ignore.Contains(rot.Item) && zone != null && rot.Source != null)
-                    OnLoot?.Invoke(new LootInfo { Item = rot.Item, Mob = rot.Source ?? "Unknown", Zone = zone, Date = e.Timestamp });
+                    OnLoot?.Invoke(new LootInfo { Item = rot.Item, Mob = rot.Source ?? "Unknown", Zone = zone, Date = e.Timestamp, Server = server });
             }
 
             //if (e is LogCraftEvent craft)
@@ -285,6 +290,5 @@ namespace EQLogParser
                 zone = z.Name;
             }
         }
-
     }
 }

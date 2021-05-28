@@ -129,9 +129,10 @@ namespace LogSync
 
             if (lootList.Count > 0)
             {
-                var posted = lootList;
+                // clone the list since we aren't awaiting the response
+                var copy = lootList.ToList();
                 lootList = new List<LootInfo>();
-                _ = uploader.UploadLoot(posted);
+                _ = uploader.UploadLoot(copy);
             }
 
 
@@ -588,7 +589,8 @@ namespace LogSync
 
         private void AddLoot(LootInfo l)
         {
-            lootList.Add(l);
+            if (l.IsStandardLoot)
+                lootList.Add(l);
             //LogInfo($"Looted {l.Item} from {l.Source} in {l.Zone}");
         }
 

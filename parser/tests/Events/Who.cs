@@ -58,5 +58,20 @@ namespace EQLogParserTests.Event
             Assert.Equal(1, who.Level);
         }
 
+        [Fact]
+        public void Parse_Target()
+        {
+            var who = Parse("Targeted (Player): Rumstil");
+            Assert.NotNull(who);
+            Assert.Equal("Rumstil", who.Name);
+        }
+
+        [Fact]
+        public void Parse_Target_NPC()
+        {
+            var who = Parse("Targeted (NPC): Rumstil");
+            Assert.Null(who);
+        }
+
     }
 }

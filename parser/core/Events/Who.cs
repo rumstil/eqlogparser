@@ -26,6 +26,8 @@ namespace EQLogParser
         // [Thu May 19 13:57:50 2016] OFFLINE MODE[1 Shadow Knight] Test (Dark Elf) ZONE: bazaar  
         private static readonly Regex WhoRegex = new Regex(@"^[A-Z\s]*\[(?:(ANONYMOUS)|(?<2>\d+) (?<3>[\w\s]+)|(?<2>\d+) .+? \((?<3>[\w\s]+)\))\] (?<1>\w+)", RegexOptions.ExplicitCapture | RegexOptions.Compiled);
 
+        private static readonly Regex TargetPlayerRegex = new Regex(@"^Targeted \(Player\): (\w+)$", RegexOptions.Compiled);
+
         public static LogWhoEvent Parse(LogRawEvent e)
         {
             var m = WhoRegex.Match(e.Text);
@@ -37,6 +39,16 @@ namespace EQLogParser
                     Name = m.Groups[1].Value,
                     Class = ParseClass(m.Groups[3].Success ? m.Groups[3].Value : null),
                     Level = m.Groups[2].Success ? Int32.Parse(m.Groups[2].Value) : 0
+                };
+            }
+
+            m = TargetPlayerRegex.Match(e.Text);
+            if (m.Success)
+            {
+                return new LogWhoEvent
+                {
+                    Timestamp = e.Timestamp,
+                    Name = m.Groups[1].Value,
                 };
             }
 

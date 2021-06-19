@@ -1,15 +1,14 @@
-# Status
+# What is this?
 
-This parser is an experiment in creating a headless event based log parser that can be used in a console app, WinForms/WPF app or even a web app.
+This is an EverQuest log file parser application that can scan an Everquest log file and generate fight summaries to help players analyze their gameplay.
 
 There are 3 projects in this repository. All require the .net core 3.1 SDK to compile:
 
-The **LogSync** project is a windows app that is used to collect and send log parses to the www.raidloot.com/logs website for sharing with group and guild members.
+The **LogSync** project is a windows app that is used to collect and send log parses to the www.raidloot.com/logs website for sharing with group and guild members. It has just enough of a user interface to let you see basic fight info, but it's meant to be used alongside the website.
 
-The **Sample** project is a console app that I use for debugging and it has a bunch of hardcoded paths from my PC since it's not really meant for end-users.
+The **Sample** project is a console app to demonstrate some minimalist usage of the parser without any UI getting in the way.
 
-The **EQLogParser** project is the main parser library.
-
+The **EQLogParser** project is a .NET library containing all the parsing code without any UI. It can be used in a console app, WinForms/WPF app or even a web app by anyone else that wants to build their own parser with a nicer UI.
 
 
 # Web Based Parser
@@ -28,7 +27,7 @@ The parser currently only handles The Burning Lands (Dec 12, 2018) and newer log
 
 # Structure
 
-At the root of the parser is the LogParser class. This class converts log lines into structured events. This class doesn't do any sort of state tracking - it is limited to handling EQ log syntax wierdness and converting it to a more useful interface.
+At the root of the parser is the LogParser class. This class converts log lines into structured events. This class doesn't do any sort of state tracking - it is limited to handling EQ log syntax wierdness and converting it to a more useful data structure.
 
 First it takes a log line like this:
 
@@ -46,7 +45,7 @@ public class LogRawEvent : LogEvent
 }
 ```
 
-LogRawEvent represents the common traits every log line has: a date and a text string. This is not very useful yet, but it keeps us from spraying date parsing and substring copying code all over the place and does a very basic check that the line is even a proper EQ log line.
+LogRawEvent represents the common traits every log line has: a date and a text string. This is not very useful yet but it serves as an input for all the other event parsers.
 
 We then pass the LogRawEvent to a bunch of parsers to see if one of them recognizes it. In this case LogHitEvent parser will and returns a new LogHitEvent event:
 
@@ -67,7 +66,7 @@ Instead, we hand this LogHitEvent off to the FightTracker class. The FightTracke
 
 There are a few additonal tracker classes available:
 
-The CharTracker class keeps track of who is a friend or foe. This functionality is mostly useful to the FightTracker, but again we don't want to mix too many concerns in a single class so it's a separate class.
+The CharTracker class keeps track of who is a friend or foe. This functionality is mostly useful to the FightTracker because EQ logs don't include context to indicate if a third party is a friend or foe.
 
 The LootTracker class keeps track of which mobs dropped what loot. This is used to collect data that can increase the accuracy of information on the raidloot.com website.
 
@@ -88,4 +87,4 @@ This project is licensed under Apache License 2.0
 
 I can be reached at raidloot@gmail.com
 
-If you encounter log parsing bugs, sending me a log file would be helpful. There isn't much that I can do with just an error message.
+

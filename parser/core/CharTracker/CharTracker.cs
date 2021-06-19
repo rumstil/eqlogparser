@@ -54,6 +54,7 @@ namespace EQLogParser
     public class CharTracker : ICharLookup
     {
         private string Player = null;
+        private string RosterPath = null;
 
         // # https://forums.daybreakgames.com/eq/index.php?threads/collecting-pet-names.249684/#post-3671490
         private static readonly Regex PetNameRegex = new Regex(@"^[GJKLVXZ]([aeio][bknrs]){0,2}(ab|er|n|tik)$", RegexOptions.Compiled);
@@ -81,9 +82,20 @@ namespace EQLogParser
             if (e is LogOpenEvent open)
             {
                 Player = open.Player;
+                RosterPath = System.IO.Path.GetDirectoryName(open.Path) + @"\..\";                
                 var c = GetOrAdd(open.Player);
                 c.IsPlayer = true;
                 c.Type = CharType.Friend;
+            }
+
+            if (e is LogOutputFileEvent output)
+            {
+                if (!String.IsNullOrEmpty(RosterPath) && output.FileName == System.IO.Path.GetFileName(output.FileName) && RosterParser.IsValidFileName(output.FileName))
+                {                    
+                    var roster = RosterParser.Load(RosterPath + output.FileName);
+                    foreach (var player in roster)
+                        HandleEvent(player);
+                }
             }
 
             if (e is LogWhoEvent who)
@@ -207,12 +219,7 @@ namespace EQLogParser
 
                 if (spell?.ClassesCount == 1)
                 {
-                    // as of 2021-1-12 there are 321 player spells that are also item clicks/procs
-                    // however, ancients and rank 2/3 spells are never procs/clicks
-                    if (cast.Type == CastingType.Disc || cast.Type == CastingType.Song
-                        || spell.Name.StartsWith("Ancient:")
-                        || Regex.IsMatch(spell.Name, @"Rk\.\s?I?II$", RegexOptions.RightToLeft)
-                        || (Regex.IsMatch(spell.Name, @"\s[XVI]{1,4}$", RegexOptions.RightToLeft) && spell.DurationTicks > 0))
+                    if (cast.Type == CastingType.Disc || cast.Type == CastingType.Song || IsProbablyNotClickOrProc(spell))
                         c.Class = spell.ClassesNames;
                 }
 
@@ -326,6 +333,18 @@ namespace EQLogParser
                 c.Class = ClassesMaskShort.WAR.ToString();
             }
 
+        }
+
+        /// <summary>
+        /// Determines if a spell is probably not a click/proc and can safely be used for class detection.
+        /// </summary>
+        private bool IsProbablyNotClickOrProc(SpellInfo spell)
+        {
+            // as of 2021-1-12 there are 321 player castable spells that are also item clicks/procs
+            // however, ancients and rank 2/3 spells are never clicks/procs
+            return spell.Name.StartsWith("Ancient:")
+            || Regex.IsMatch(spell.Name, @"Rk\.\s?I?II$", RegexOptions.RightToLeft)
+            || (Regex.IsMatch(spell.Name, @"\s[XVI]{1,4}$", RegexOptions.RightToLeft) && spell.DurationTicks > 0);
         }
 
         /// <summary>
@@ -469,18 +488,33 @@ namespace EQLogParser
                 return name1;
             }
 
-            else if (IsPetName(n1.Name))
+            // guessing... assume pet names are friends
+            else if (IsPetName(n1.Name) && !IsPetName(n2.Name))
             {
                 n1.Type = CharType.Friend;
                 n2.Type = CharType.Foe;
                 return name2;
             }
-            else if (IsPetName(n2.Name))
+            else if (IsPetName(n2.Name) && !IsPetName(n1.Name))
             {
                 n1.Type = CharType.Foe;
                 n2.Type = CharType.Friend;
                 return name1;
             }
+
+            // guessing... assume a name with spaces is an enemy (what about mercs?)
+            //else if (n2.Name.Contains(' ') && !n1.Name.Contains(' '))
+            //{
+            //    n1.Type = CharType.Friend;
+            //    n2.Type = CharType.Foe;
+            //    return name2;
+            //}
+            //else if (n1.Name.Contains(' ') && !n2.Name.Contains(' '))
+            //{
+            //    n1.Type = CharType.Foe;
+            //    n2.Type = CharType.Friend;
+            //    return name1;
+            //}
 
             return null;
         }

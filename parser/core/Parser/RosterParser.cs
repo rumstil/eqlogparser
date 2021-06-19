@@ -10,14 +10,28 @@ using System.Text.RegularExpressions;
 namespace EQLogParser
 {
     /// <summary>
-    /// Parses raid roster and guild roster files and returns synthetic LogWhoEvents that can be fed to a tracker.
+    /// Parses raid roster and guild roster files and returns LogWhoEvents that can be fed to a tracker.
+    /// "/output guild" saves guild rosters. e.g. Derelict Space Toilet_erollisi-20201020-210532.txt
+    /// "/output raid" saves raid rosters. e.g. RaidRoster_erollisi-20200802-190436.txt
     /// </summary>
     public class RosterParser
     {
+        /// <summary>
+        /// Check if the filename is a standard roster file name.
+        /// Players can customize names to be anything so this doesn't cover those cases.
+        /// </summary>
+        public static bool IsValidFileName(string path)
+        {
+            return Regex.IsMatch(path, @"-20\d{6}-\d{6}\.txt$", RegexOptions.RightToLeft);
+        }
+
         public static IEnumerable<LogWhoEvent> Load(string path)
         {
+            //if (!File.Exists(path))
+            //    throw new FileNotFoundException();
+
             if (!File.Exists(path))
-                throw new FileNotFoundException();
+                yield break;
 
             using (var f = File.OpenText(path))
             {

@@ -9,24 +9,30 @@ namespace EQLogParserTests.Parser
     public class LogParserTests
     {
         [Fact]
-        public void GetPlayerFromFileName()
+        public void ParseLine_Player_Not_Set()
         {
-            // official format
-            Assert.Equal("Rumstil", LogParser.GetPlayerFromFileName("eqlog_Rumstil_erollisi.txt"));
-
-            // gzipped
-            Assert.Equal("Rumstil", LogParser.GetPlayerFromFileName("eqlog_Rumstil_erollisi.txt.gz"));
-
-            // in case we really want to be permissive with renamed files
-            Assert.Equal("Larry", LogParser.GetPlayerFromFileName("eqlog_Larry_erollisi-2020-07-05.txt"));
-            Assert.Equal("Curly", LogParser.GetPlayerFromFileName("eqlog_Curly-stuff.txt"));
-            Assert.Equal("Moe", LogParser.GetPlayerFromFileName("eqlog_Moe.txt"));
+            var parser = new LogParser();
+            Assert.Throws<InvalidOperationException>(() => { parser.ParseLine("test"); });
         }
 
         [Fact]
-        public void GetServerFromFileName()
+        public void ParseLine_Invalid()
         {
-            Assert.Equal("erollisi", LogParser.GetServerFromFileName("eqlog_Rumstil_erollisi.txt"));
+            var parser = new LogParser();
+            parser.Player = "X";
+            var e = parser.ParseLine("test");
+            Assert.Null(e);
         }
+
+        [Fact]
+        public void ParseLine_Valid()
+        {
+            var parser = new LogParser();
+            parser.Player = "X";
+            var e = parser.ParseLine("[Sun Jul 05 20:31:58 2020] Welcome to EverQuest!");
+            Assert.NotNull(e);
+        }
+
+
     }
 }

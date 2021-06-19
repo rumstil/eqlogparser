@@ -345,7 +345,7 @@ namespace LogSync
             if (!File.Exists(path))
                 return;
 
-            if (String.IsNullOrEmpty(LogParser.GetPlayerFromFileName(path)))
+            if (String.IsNullOrEmpty(LogOpenEvent.GetPlayerFromFileName(path)))
             {
                 LogInfo($"Cannot open {path} because it doesn't use the standard naming convention.");
                 return;
@@ -396,24 +396,23 @@ namespace LogSync
             toolStripStatusLabel1.Text = "-";
             toolStripStatusLabel2.Text = "-";
 
+            // send init event
+            var open = LogOpenEvent.FromFileName(path);
+            parser.Player = open.Player;
+            fightTracker.HandleEvent(open);
+
             // read roster files to assist player tracking
             // this would probably be more useful if it ran in the background to wait on new roster files
-            var server = LogParser.GetServerFromFileName(path);
-            if (!String.IsNullOrEmpty(server))
+            if (!String.IsNullOrEmpty(open.Server))
             {
                 var files = new DirectoryInfo(Path.GetDirectoryName(path)).Parent
-                    .GetFiles("*_" + server + "-*.txt")
+                    .GetFiles("*_" + open.Server + "-*.txt")
                     .Where(x => x.CreationTime > DateTime.Today.AddDays(-14))
                     .Take(20);
                 var roster = RosterParser.Load(files);
                 foreach (var who in roster)
                     fightTracker.HandleEvent(who);
             }
-
-            // send init event
-            var open = LogParser.GetOpenEvent(path);
-            parser.Player = open.Player;
-            fightTracker.HandleEvent(open);
 
             // this handler runs in a background thread and must be threadsafe
             Action<string> handler = line =>
@@ -513,6 +512,9 @@ namespace LogSync
         {
             if (f.Zone == null)
                 f.Zone = "Unknown";
+
+            if (IsTrashMob(f))
+                fightStatus[f.ID] = "Trash";
 
             // ignore mobs we may have hit but blurred, rooted, or otherwise ignored
             if (IsTrashMob(f) && f.Status == FightStatus.Timeout)

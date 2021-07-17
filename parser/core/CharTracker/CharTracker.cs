@@ -198,6 +198,13 @@ namespace EQLogParser
                 }
             }
 
+            if (e is LogTauntEvent taunt)
+            {
+                // i'm pretty sure only players, pets and mercs can taunt
+                var source = GetOrAdd(taunt.Source);
+                source.Type = CharType.Friend;
+            }
+
             if (e is LogLootEvent loot)
             {
                 var c = GetOrAdd(loot.Char);

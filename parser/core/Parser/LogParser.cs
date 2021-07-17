@@ -40,6 +40,7 @@ namespace EQLogParser
             Ignore.Add("You cannot see your target.");
             Ignore.Add("You can't reach that, get closer.");
             Ignore.Add("You can't use that command right now...");
+            Ignore.Add("You must first click on the being you wish to attack!");
             //Ignore.Add("Try attacking someone other than yourself. It's more productive.");
 
             // obsolete parsers (these should check the date)
@@ -64,6 +65,8 @@ namespace EQLogParser
             Parsers.Add(LogAAXPEvent.Parse);
             Parsers.Add(LogSkillEvent.Parse);
             Parsers.Add(LogShieldEvent.Parse);
+            Parsers.Add(LogTauntEvent.Parse);
+            Parsers.Add(LogDiceRollEvent.Parse);
             // LogOutputFileEvent can trigger file processing and shouldn't be used in a server context
             Parsers.Add(LogOutputFileEvent.Parse);
         }

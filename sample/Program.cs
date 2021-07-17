@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using EQLogParser;
 
 /*
@@ -18,44 +19,37 @@ namespace Sample
     {
         static void Main(string[] args)
         {
-            var timer = Stopwatch.StartNew();
             Console.Error.WriteLine("Loading spells...");
             var spells = new SpellParser();
             spells.Load("d:/games/everquest/spells_us.txt");
-            Console.Error.WriteLine("Spells loaded in {0}", timer.Elapsed);
-            timer.Restart();
                 
-            var file = new LogReader("d:/games/everquest/logs/eqlog_Rumstil_erollisi.txt");
+            var open = LogOpenEvent.FromFileName("d:/games/everquest/logs/eqlog_Rumstil_erollisi.txt");
 
             var parser = new LogParser();
-            parser.Player = LogOpenEvent.GetPlayerFromFileName(file.Path);
+            parser.Player = open.Player;
             //parser.MinDate = DateTime.MinValue;
             //parser.MinDate = DateTime.Today.AddDays(-1).ToUniversalTime();
-            //parser.MaxDate = DateTime.Parse("7/13/2020 11:00 PM").ToUniversalTime();
 
             var fights = new FightTracker(spells);
-            fights.HandleEvent(LogOpenEvent.FromFileName(file.Path));
-            fights.OnFightStarted += f =>
-            {
-                ShowFight(f);
-            };
-            fights.OnFightFinished += f =>
-            {
-                ShowFight(f);
-            };
+            fights.HandleEvent(open);
+            fights.OnFightStarted += ShowFight;
+            fights.OnFightFinished += ShowFight;
 
+            var timer = Stopwatch.StartNew();
+            var reader = File.OpenText(open.Path);
             while (true)
             {
-                var s = file.ReadLine();
+                var s = reader.ReadLine();
                 if (s == null)
                     break;
 
                 // pass text to the parser and convert to an event
                 var e = parser.ParseLine(s);
+                if (e == null)
+                    continue;
 
                 // pass event to the fight tracker
-                if (e != null)
-                    fights.HandleEvent(e);
+                fights.HandleEvent(e);
 
                 //if (e is LogRawEvent) Console.WriteLine(e);
             };

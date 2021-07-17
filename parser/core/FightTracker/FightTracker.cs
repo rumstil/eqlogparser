@@ -109,7 +109,12 @@ namespace EQLogParser
             {
                 Player = open.Player;
                 Server = open.Server;
+                Zone = null;
+                Party = null;
                 LastTimeoutCheck = DateTime.MinValue;
+                ActiveFights.Clear();
+                ActiveRaids.Clear();
+                PendingHits.Clear();
             }
 
             // no need to check for timeouts more often than every few seconds

@@ -351,6 +351,13 @@ namespace LogSync
                 return;
             }
 
+            // cancel previous log parsing task
+            if (cancellationSource != null)
+            {
+                cancellationSource.Cancel();
+                //await Task.Delay(600);
+            }
+
             // always disable auto uploads when opening a file to avoid accidentally uploading a lot of data
             chkAutoUpload.Checked = chkAutoUpload.Enabled = false;
             chkAutoDiscord.Checked = chkAutoDiscord.Enabled = false;
@@ -373,21 +380,18 @@ namespace LogSync
 
             config.Write("filename", path);
             LogInfo("Loading " + path);
-            //LogInfo("Mobs killed in under 10 seconds or 10 hits will not be listed.");
-
-            // cancel previous log parsing task
-            if (cancellationSource != null)
-            {
-                cancellationSource.Cancel();
-                //await Task.Delay(600);
-            }
+            var open = LogOpenEvent.FromFileName(path);
+            parser.Player = open.Player;
 
             // reset the trackers by creating new ones
             var fightTracker = new FightTracker(spells);
             fightTracker.OnFightFinished += x => fightsQueue.Enqueue(x);
             fightTracker.AddTemplateFromResource();
+            fightTracker.HandleEvent(open);
+            
             var lootTracker = new LootTracker();
             lootTracker.OnLoot += x => lootQueue.Enqueue(x);
+            lootTracker.HandleEvent(open);
 
             // reset UI
             lvFights.VirtualListSize = 0;
@@ -395,11 +399,6 @@ namespace LogSync
             fightListSearchResults = null;
             toolStripStatusLabel1.Text = "-";
             toolStripStatusLabel2.Text = "-";
-
-            // send init event
-            var open = LogOpenEvent.FromFileName(path);
-            parser.Player = open.Player;
-            fightTracker.HandleEvent(open);
 
             // read roster files to assist player tracking
             // this would probably be more useful if it ran in the background to wait on new roster files
@@ -654,8 +653,7 @@ namespace LogSync
             //if (zoneAvg > 0 && f.HP > zoneAvg * 0.5)
             //    return false;
 
-            // these rules should make sense for both high and low level players fighting level appropriate mobs
-            return f.Duration < 10 || f.Target.InboundHitCount < 10 || f.HP < 1000;
+            return f.IsTrash;
         }
 
         private bool IsFilterMatch(FightInfo f)

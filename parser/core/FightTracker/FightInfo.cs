@@ -35,7 +35,6 @@ namespace EQLogParser
         public string Zone { get; set; }
         public string Name { get; set; }
         public string Party { get; set; }
-        //public bool IsRare { get; set; }
         public string MobNotes { get; set; }
         public int MobCount { get; set; } // if this is a consolidated fight, this will be the original number of fights
         public int CohortCount { get; set; } // number of active fights when this finished
@@ -48,23 +47,28 @@ namespace EQLogParser
         public FightParticipant Target { get; set; }
 
         /// <summary>
-        /// Friends attacking the mob or assisting them.
+        /// All characters and pets participating in the fight vs target.
         /// </summary>
         public List<FightParticipant> Participants { get; set; } = new List<FightParticipant>();
 
-        // special target counters
-        //public int StrikeCount;
-        //public FightHitEvent LastHit;
-        //public FightHitEvent LastSpell;
-
         /// <summary>
-        /// Fight duration in seconds. Always at least 1.
+        /// Fight duration in seconds (excludes gaps on merged fights). Always at least 1.
         /// </summary>
         public int Duration { get; set; }
         
+        /// <summary>
+        /// Fight duration in seconds (includes gaps on merged fights).
+        /// </summary>
         public int Elapsed => (int)(UpdatedOn - StartedOn).TotalSeconds + 1;
 
         public long HP => Target.InboundHitSum;
+
+        /// <summary>
+        /// Is this probably a tash mob?
+        /// These rules should make sense for both high and low level players fighting level appropriate mobs.
+        /// </summary>
+        public bool IsTrash => Duration < 10 || Target.InboundHitCount < 10 || HP < 1000;
+
 
         /// <summary>
         /// This constructor should only be used by serializers or unit tests.

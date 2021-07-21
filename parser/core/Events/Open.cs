@@ -30,7 +30,7 @@ namespace EQLogParser
         public static string GetPlayerFromFileName(string path)
         {
             //var m = Regex.Match(path, @"eqlog_(\w+)_(\w+)\.txt$"); // official format
-            var m = Regex.Match(path, @"eqlog_([A-Za-z]+).*\.txt(\.gz)?$"); // permissive format
+            var m = Regex.Match(path, @"eqlog_([A-Za-z]+)"); // permissive format
             if (m.Success)
             {
                 var name = m.Groups[1].Value;
@@ -41,13 +41,16 @@ namespace EQLogParser
         }
 
         /// <summary>
-        /// Get server name from filename. This may be incorrect if the log file has been renamed.
-        /// I should probably check again list of real server names -- at least test/beta since those are those 
-        /// ones where we can expect different log formats or data.
+        /// Get server name from filename. 
         /// </summary>
         public static string GetServerFromFileName(string path)
         {
-            var m = Regex.Match(path, @"eqlog_\w+_([A-Za-z]+).*\.txt(\.gz)?$"); // permissive format
+            // this may be incorrect if the log file has been renamed.
+            //var m = Regex.Match(path, @"eqlog_\w+_([A-Za-z]+)"); // permissive format
+
+            // hardcoding server names to guard against files that are renamed being misattributed
+            // some of these servers may be defunct but I'll leave them in so old files can be parsed
+            var m = Regex.Match(path, @"eqlog_\w+_(test|beta|agnarr|aradune|bertox|bristle|cazic|coirnav|drinal|erollisi|firiona|luclin|mangler|miragul|mischief|phinigel|povar|ragefire|rizlona|selo|thornblade|rathe|tunare|vox|xegony|zek)");
             if (m.Success)
             {
                 return m.Groups[1].Value;

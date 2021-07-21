@@ -21,9 +21,19 @@ namespace EQLogParserTests.Event
         }
 
         [Fact]
-        public void GetServerFromFileName()
+        public void GetServerFromFileName_Valid()
         {
+            // official format
             Assert.Equal("erollisi", LogOpenEvent.GetServerFromFileName("eqlog_Rumstil_erollisi.txt"));
+
+            // renamed files
+            Assert.Equal("erollisi", LogOpenEvent.GetServerFromFileName("eqlog_Larry_erollisi-2020-07-05.txt"));
+        }
+
+        [Fact]
+        public void GetServerFromFileName_Invalid()
+        {
+            Assert.Null(LogOpenEvent.GetServerFromFileName("eqlog_Rumstil_fake.txt"));
         }
 
     }

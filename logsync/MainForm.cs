@@ -384,7 +384,11 @@ namespace LogSync
             parser.Player = open.Player;
 
             // reset the trackers by creating new ones
-            var fightTracker = new FightTracker(spells);
+            var charTracker = new CharTracker(spells);
+            charTracker.HandleEvent(open);
+            charTracker.ImportPlayers(config.Read("chars:" + open.Server));
+
+            var fightTracker = new FightTracker(spells, charTracker);
             fightTracker.OnFightFinished += x => fightsQueue.Enqueue(x);
             fightTracker.AddTemplateFromResource();
             fightTracker.HandleEvent(open);
@@ -401,7 +405,6 @@ namespace LogSync
             toolStripStatusLabel2.Text = "-";
 
             // read roster files to assist player tracking
-            // this would probably be more useful if it ran in the background to wait on new roster files
             if (!String.IsNullOrEmpty(open.Server))
             {
                 var files = new DirectoryInfo(Path.GetDirectoryName(path)).Parent
@@ -410,7 +413,7 @@ namespace LogSync
                     .Take(20);
                 var roster = RosterParser.Load(files);
                 foreach (var who in roster)
-                    fightTracker.HandleEvent(who);
+                    charTracker.HandleEvent(who);
             }
 
             // this handler runs in a background thread and must be threadsafe
@@ -419,6 +422,7 @@ namespace LogSync
                 var e = parser.ParseLine(line);
                 if (e != null)
                 {
+                    charTracker.HandleEvent(e);
                     fightTracker.HandleEvent(e);
                     lootTracker.HandleEvent(e);
                 }
@@ -430,8 +434,15 @@ namespace LogSync
             {
                 toolStripStatusLabel1.Text = p.Percent.ToString("P0") + " " + p.Notes;
                 //toolStripStatusLabel1.Text = p.Percent.ToString("P0");
-                chkAutoUpload.Enabled = p.Percent > 0.99;
-                chkAutoDiscord.Enabled = p.Percent > 0.99;
+                var completed = p.Percent > 0.99;
+                chkAutoUpload.Enabled = completed;
+                chkAutoDiscord.Enabled = completed;
+                if (completed && open.Server != null)
+                {
+                    // save a list of players so that we have better information next time we run the parser
+                    var players = charTracker.ExportPlayers();
+                    config.Write("chars:" + open.Server, players);
+                }
             });
             cancellationSource = new CancellationTokenSource();
             var reader = new BackgroundLogReader(path, cancellationSource.Token, progress, handler);

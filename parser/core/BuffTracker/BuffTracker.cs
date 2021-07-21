@@ -69,7 +69,7 @@ namespace EQLogParser
 
             // cleric
             AddSpell("Divine Intervention");
-            AddSpell("Divine Intervention Trigger", " has been rescued by divine intervention!", null);
+            AddSpell("Rescued by DI", " has been rescued by divine intervention!", null);
 
             // druid
             AddSpell("Group Spirit of the Great Wolf I"); // self/group emotes are the same
@@ -145,7 +145,7 @@ namespace EQLogParser
                     }             
 
                     // if this is a self-only spell then we can discard comparisons with spells the class can't cast
-                    if (spell.Target == (int)SpellTarget.Self && Chars.GetClass(target) != spell.ClassesNames)
+                    if (spell.Target == (int)SpellTarget.Self && Chars.Get(target)?.Class != spell.ClassesNames)
                         continue;
 
                     // lands on others?

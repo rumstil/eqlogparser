@@ -15,7 +15,7 @@ namespace EQLogParser
     /// </summary>
     public class FightTracker
     {
-        private readonly CharTracker Chars;
+        private readonly ICharLookup Chars;
         private readonly BuffTracker Buffs;
         private readonly List<LogHitEvent> PendingHits = new List<LogHitEvent>();
         private DateTime Timestamp;
@@ -32,8 +32,6 @@ namespace EQLogParser
         public List<FightInfo> ActiveFights { get; } = new List<FightInfo>();
         public List<RaidFightInfo> ActiveRaids { get; } = new List<RaidFightInfo>();
 
-
-
         /// <summary>
         /// Finish a fight after this duration of no activity is detected.
         /// This should be as least as long as mez or root.
@@ -46,10 +44,10 @@ namespace EQLogParser
         public event FightTrackerEvent OnFightStarted;
         public event FightTrackerEvent OnFightFinished;
 
-        public FightTracker(ISpellLookup spells)
+        public FightTracker(ISpellLookup spells, ICharLookup chars)
         {
-            Chars = new CharTracker(spells);
-            Buffs = new BuffTracker(spells, Chars);
+            Chars = chars;
+            Buffs = new BuffTracker(spells, chars);
         }
 
         /// <summary>
@@ -99,7 +97,6 @@ namespace EQLogParser
 
         public void HandleEvent(LogEvent e)
         {
-            Chars.HandleEvent(e);
             Buffs.HandleEvent(e);
 
             Timestamp = e.Timestamp;
@@ -441,7 +438,7 @@ namespace EQLogParser
 
             foreach (var p in f.Participants)
             {
-                p.PetOwner = Chars.GetOwner(p.Name);
+                p.PetOwner = Chars.Get(p.Name)?.Owner;
                 // go back a few seconds to include buffs cast in preparation for the fight
                 p.Buffs = Buffs.Get(p.Name, f.StartedOn.AddSeconds(-6), f.UpdatedOn, -6).ToList();
             }
@@ -451,7 +448,7 @@ namespace EQLogParser
             // set class last in case finish() method added pet owners to participant list
             foreach (var p in f.Participants)
             {
-                p.Class = Chars.GetClass(p.Name);
+                p.Class = Chars.Get(p.Name)?.Class;
             }
 
             // after a fight is passed to this delegate it should never be modified (e.g. via the LastFight variable)

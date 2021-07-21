@@ -71,10 +71,10 @@ namespace Sample
 
             // timer trackers
             var trackers = new List<Action<LogEvent>>();
-            var fights = new FightTracker(spells);
-            trackers.Add(fights.HandleEvent);
             var chars = new CharTracker(spells);
             trackers.Add(chars.HandleEvent);
+            var fights = new FightTracker(spells, chars);
+            trackers.Add(fights.HandleEvent);
             var buffs = new BuffTracker(spells, chars);
             trackers.Add(buffs.HandleEvent);
             var loot = new LootTracker();

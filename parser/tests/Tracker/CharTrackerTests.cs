@@ -12,7 +12,7 @@ namespace EQLogParserTests.Tracker
     public class CharTrackerTests
     {
         [Fact]
-        public void Owner_Is_Friend()
+        public void Log_Owner_Is_Friend()
         {
             var chars = new CharTracker();
             chars.HandleEvent(new LogOpenEvent() { Player = "Rumstil" });
@@ -36,31 +36,35 @@ namespace EQLogParserTests.Tracker
             Assert.Equal(CharType.Unknown, chars.GetType("Rumstil`s pet"));
             Assert.Equal(CharType.Unknown, chars.GetType("Rumstil`s warder"));
 
-            chars.HandleEvent(new LogWhoEvent() { Name = "Rumstil" });
+            chars.GetOrAdd("Rumstil").Type = CharType.Friend;
             Assert.Equal(CharType.Friend, chars.GetType("Rumstil`s pet"));
             Assert.Equal(CharType.Friend, chars.GetType("Rumstil`s warder"));
             Assert.Equal(CharType.Friend, chars.GetType("Rumstil`s ward"));
 
             Assert.Equal(CharType.Unknown, chars.GetType("Xantik"));
-            chars.HandleEvent(new LogChatEvent() { Source = "Xantik", Message = "My leader is Rumstil." });
+            chars.GetOrAdd("Xantik").Owner = "Rumstil";
             Assert.Equal(CharType.Friend, chars.GetType("Xantik"));
         }
 
         [Fact]
-        public void GetOwner()
+        public void Owner_Self_Name()
         {
             var chars = new CharTracker();
-            Assert.Null(chars.GetOwner("Rumstil"));
 
             // `pet and `warder are always assigned to the obvious owner
-            Assert.Equal("Rumstil", chars.GetOwner("Rumstil`s pet"));
-            Assert.Equal("Rumstil", chars.GetOwner("Rumstil`s warder"));
-            Assert.Equal("Rumstil", chars.GetOwner("Rumstil`s ward"));
+            Assert.Equal("Rumstil", chars.GetOrAdd("Rumstil`s pet")?.Owner);
+            Assert.Equal("Rumstil", chars.GetOrAdd("Rumstil`s warder")?.Owner);
+            Assert.Equal("Rumstil", chars.GetOrAdd("Rumstil`s ward")?.Owner);
+        }
 
-            // other pets need to be announced first
-            Assert.Null(chars.GetOwner("Xantik"));
+        [Fact]
+        public void Owner_Pet_Leader()
+        {
+            var chars = new CharTracker();
+
+            // "/pet leader" command will announce owner
             chars.HandleEvent(new LogChatEvent() { Source = "Xantik", Message = "My leader is Rumstil.", Channel = "say" });
-            Assert.Equal("Rumstil", chars.GetOwner("Xantik"));
+            Assert.Equal("Rumstil", chars.Get("Xantik")?.Owner);
         }
 
         [Fact]
@@ -133,7 +137,7 @@ namespace EQLogParserTests.Tracker
             chars.GetOrAdd("Zlandicar").Type = CharType.Foe;
             chars.HandleEvent(new LogHealEvent() { Source = "Rumstil", Target = "Zlandicar", Amount = 3, Spell = "Summer's Sleet Rk. III" });
 
-            // reverse DS can make players heal mobs
+            // reverse DS can make players heal mobs and shouldn't transfer friend/foe status
             Assert.Equal(CharType.Friend, chars.GetType("Rumstil"));
             Assert.Equal(CharType.Foe, chars.GetType("Zlandicar"));
         }
@@ -146,18 +150,18 @@ namespace EQLogParserTests.Tracker
 
             var chars = new CharTracker(spells);
             chars.HandleEvent(new LogCastingEvent() { Source = "Rumstil", Spell = "Super Fire Arrow", Type = CastingType.Disc });
-            Assert.Equal("RNG", chars.GetClass("Rumstil"));
+            Assert.Equal("RNG", chars.Get("Rumstil")?.Class);
         }
 
         [Fact]
-        public void Spell_Ambiguous_Class_Shouldnt_Assign_Class()
+        public void Spell_With_Ambiguous_Class_Shouldnt_Assign_Class()
         {
             var spells = new FakeSpellParser();
             spells.Spells.Add(new SpellInfo() { Name = "Invis", ClassesMask = (int)(ClassesMaskShort.RNG | ClassesMaskShort.ENC), ClassesCount = 2 });
 
             var chars = new CharTracker(spells);
             chars.HandleEvent(new LogCastingEvent() { Source = "Rumstil", Spell = "Invis", Type = CastingType.Spell });
-            Assert.Null(chars.GetClass("Rumstil"));
+            Assert.Null(chars.Get("Rumstil")?.Class);
         }
 
         [Fact]
@@ -169,7 +173,7 @@ namespace EQLogParserTests.Tracker
             var chars = new CharTracker(spells);
             chars.HandleEvent(new LogCastingEvent() { Source = "Rumstil", Spell = "Super Fire Arrow", Type = CastingType.Spell });
             // click/procs (which are never rank 2/3) can misidentify a class
-            Assert.Null(chars.GetClass("Rumstil"));
+            Assert.Null(chars.Get("Rumstil")?.Class);
         }
 
         [Fact]
@@ -180,7 +184,7 @@ namespace EQLogParserTests.Tracker
 
             var chars = new CharTracker(spells);
             chars.HandleEvent(new LogCastingEvent() { Source = "Rumstil", Spell = "Super Fire Arrow Rk. II", Type = CastingType.Spell });
-            Assert.Equal("RNG", chars.GetClass("Rumstil"));
+            Assert.Equal("RNG", chars.Get("Rumstil")?.Class);
         }
 
 

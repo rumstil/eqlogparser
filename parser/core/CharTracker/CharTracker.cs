@@ -43,20 +43,25 @@ namespace EQLogParser
 
     public interface ICharLookup
     {
-        string GetClass(string name);
+        string GetFoe(string name1, string name2);
+        CharType GetType(string name);
+        CharInfo GetOrAdd(string name);
+        CharInfo Get(string name);
     }
 
     /// <summary>
-    /// Tracks PC, NPC, merc, and pet activity to determine who is a friend/foe and what class they are.
+    /// EQ log files don't include context for who is a friend or foe.
+    /// This tracks PC, NPC, merc, and pet activity to determine who is a friend/foe and what class they are.
     /// Players are always considered friends. Obviously this won't work on a PvP server.
     /// NPCs are always considered foes.
     /// </summary>
     public class CharTracker : ICharLookup
     {
+        private string Server = null;
         private string Player = null;
         private string RosterPath = null;
 
-        // # https://forums.daybreakgames.com/eq/index.php?threads/collecting-pet-names.249684/#post-3671490
+        // https://forums.daybreakgames.com/eq/index.php?threads/collecting-pet-names.249684/#post-3671490
         private static readonly Regex PetNameRegex = new Regex(@"^[GJKLVXZ]([aeio][bknrs]){0,2}(ab|er|n|tik)$", RegexOptions.Compiled);
         private static readonly Regex PetOwnerRegex = new Regex(@"^My leader is (\w+)\.$", RegexOptions.Compiled);
         private static readonly Regex PetTellOwnerRegex = new Regex(@"^(Attacking .+? Master|Sorry, Master\.\.\. calming down|Following you, Master|By your command, master|I live again\.\.)\.$", RegexOptions.Compiled);
@@ -67,6 +72,9 @@ namespace EQLogParser
 
         private readonly ISpellLookup Spells;
 
+        /// <summary>
+        /// The CharTracker should be created with a spell parser. This constructor is intended for testing.
+        /// </summary>
         public CharTracker()
         {
             Spells = new SpellParser();
@@ -81,6 +89,9 @@ namespace EQLogParser
         {
             if (e is LogOpenEvent open)
             {
+                if (Server != open.Server)
+                    CharsByName.Clear();
+                Server = open.Server;
                 Player = open.Player;
                 RosterPath = System.IO.Path.GetDirectoryName(open.Path) + @"\..\";                
                 var c = GetOrAdd(open.Player);
@@ -132,6 +143,11 @@ namespace EQLogParser
 
             if (e is LogChatEvent chat)
             {
+                // cross server chat will contain a period in the name
+                // e.g. "Ragefire.Bob"
+                if (chat.Source.Contains('.'))
+                    return;
+
                 var c = GetOrAdd(chat.Source);
 
                 // NPCs use say, tell and shout
@@ -218,6 +234,7 @@ namespace EQLogParser
 
                 if (cast.Type == CastingType.Disc)
                 {
+                    // mercs can cast discs but it should be okay to tag them as players
                     c.IsPlayer = true;
                     c.Type = CharType.Friend;
                 }
@@ -340,6 +357,8 @@ namespace EQLogParser
                 c.Class = ClassesMaskShort.WAR.ToString();
             }
 
+            //if (Get("A brownie hireling")?.IsPlayer == true)
+            //    Console.Write("!");
         }
 
         /// <summary>
@@ -379,16 +398,6 @@ namespace EQLogParser
             }
 
             return CharType.Unknown;
-        }
-
-        /// <summary>
-        /// Get class type for a character.
-        /// </summary>
-        public string GetClass(string name)
-        {
-            if (CharsByName.TryGetValue(name, out CharInfo c))
-                return c.Class;
-            return null;
         }
 
         /// <summary>
@@ -527,12 +536,44 @@ namespace EQLogParser
         }
 
         /// <summary>
-        /// Return the owner of a pet or null if this doesn't appear to be an owned pet.
+        /// Export players and pets as a serialized string (for saving to a db or file).
         /// </summary>
-        public string GetOwner(string name)
+        public string ExportPlayers()
         {
-            var c = GetOrAdd(name);
-            return c.Owner;
+            var data = new StringBuilder();
+            foreach (var c in CharsByName.Values)
+            {
+                if (c.IsPlayer || (c.Owner != null && Get(c.Owner).IsPlayer))
+                    data.Append($"{c.Name}:{c.Class}:{c.Owner};");
+            }
+            return data.ToString();
+        }
+
+        /// <summary>
+        /// Import players and pets from a serialized string.
+        /// </summary>
+        public void ImportPlayers(string data)
+        {
+            if (String.IsNullOrEmpty(data))
+                return;
+
+            var list = data.Split(';');
+            foreach (var item in list)
+            {
+                var fields = item.Split(':');
+                if (fields.Length != 3)
+                    continue;
+
+                var player = new CharInfo()
+                {
+                    Name = fields[0],
+                    Class = fields[1],
+                    Owner = fields[2],
+                    IsPlayer = fields[2] == null,
+                    Type = CharType.Friend,
+                };
+                CharsByName[player.Name] = player;
+            }
         }
 
         /// <summary>

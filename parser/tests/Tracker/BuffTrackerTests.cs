@@ -15,8 +15,8 @@ namespace EQLogParserTests.Tracker
         [Fact]
         public void Land_Self()
         {
-            var spells = new FakeSpellParser();
             var chars = new CharTracker();
+            var spells = new FakeSpellParser();
             spells.Spells.Add(new SpellInfo { Name = "Illusions of Grandeur I", LandSelf = "Illusions of Grandeur fill your mind.", LandOthers = " is consumed by Illusions of Grandeur." });
 
             var buffs = new BuffTracker(spells, chars);
@@ -30,8 +30,8 @@ namespace EQLogParserTests.Tracker
         [Fact]
         public void Land_Other()
         {
-            var spells = new FakeSpellParser();
             var chars = new CharTracker();
+            var spells = new FakeSpellParser();
             spells.Spells.Add(new SpellInfo { Name = "Illusions of Grandeur I", LandSelf = "Illusions of Grandeur fill your mind.", LandOthers = " is consumed by Illusions of Grandeur." });
 
             var buffs = new BuffTracker(spells, chars);

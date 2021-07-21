@@ -16,7 +16,8 @@ The first time you run the parser will you get a "Windows protected your PC" ale
 
 You may also get a Windows Firewall popup asking if the app can access the internet. You will need to allow this since part of the parser's job is to send data over the internet.
 
-# How it Works
+
+# How to enable logging in EQ
 
 By default EQ doesn't have any logging enabled. Prior to using the parser, you must enable logging in EQ:
 

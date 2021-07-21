@@ -19,36 +19,48 @@ namespace Sample
     {
         static void Main(string[] args)
         {
+            // load spells to give the trackers more context when processing log files
+            // this is optional and can be skipped
             Console.Error.WriteLine("Loading spells...");
             var spells = new SpellParser();
             spells.Load("d:/games/everquest/spells_us.txt");
                 
+            // generate an open event that stores the player name, server name, and file path
+            // all trackers should receive this as their first event to signal that a new log file is being processed
             var open = LogOpenEvent.FromFileName("d:/games/everquest/logs/eqlog_Rumstil_erollisi.txt");
 
+            // create a CharTracker to help the FightTracker determine friends/foes
+            var chars = new CharTracker(spells);
+            chars.HandleEvent(open);
+
+            // create a FightTracker to build fight summaries from various combat events
+            var fights = new FightTracker(spells, chars);
+            fights.HandleEvent(open);
+            fights.OnFightStarted += ShowFight;
+            fights.OnFightFinished += ShowFight;
+
+            // create a log parser for converting log lines into events that can be passed to the trackers
             var parser = new LogParser();
             parser.Player = open.Player;
             //parser.MinDate = DateTime.MinValue;
             //parser.MinDate = DateTime.Today.AddDays(-1).ToUniversalTime();
 
-            var fights = new FightTracker(spells);
-            fights.HandleEvent(open);
-            fights.OnFightStarted += ShowFight;
-            fights.OnFightFinished += ShowFight;
-
             var timer = Stopwatch.StartNew();
             var reader = File.OpenText(open.Path);
             while (true)
             {
-                var s = reader.ReadLine();
-                if (s == null)
+                var line = reader.ReadLine();
+                if (line == null)
                     break;
 
-                // pass text to the parser and convert to an event
-                var e = parser.ParseLine(s);
+                // pass line to the parser and convert to an event
+                // lines that cannot be parsed will be returned as nulls
+                var e = parser.ParseLine(line);
                 if (e == null)
                     continue;
 
-                // pass event to the fight tracker
+                // pass event to the trackers
+                chars.HandleEvent(e);
                 fights.HandleEvent(e);
 
                 //if (e is LogRawEvent) Console.WriteLine(e);

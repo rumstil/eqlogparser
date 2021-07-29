@@ -558,11 +558,17 @@ namespace EQLogParser
                 return;
 
             var list = data.Split(';');
+
             foreach (var item in list)
             {
                 var fields = item.Split(':');
                 if (fields.Length != 3)
                     continue;
+
+                // string.split returns empty strings rather than nulls
+                for (var i = 0; i < fields.Length; i++)
+                    if (fields[i] == "")
+                        fields[i] = null;
 
                 var player = new CharInfo()
                 {

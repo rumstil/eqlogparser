@@ -187,6 +187,43 @@ namespace EQLogParserTests.Tracker
             Assert.Equal("RNG", chars.Get("Rumstil")?.Class);
         }
 
+        [Fact]
+        public void ExportPlayers()
+        {
+            var spells = new FakeSpellParser();
+            var chars = new CharTracker(spells);
+            chars.GetOrAdd("Red").IsPlayer = true;
+            chars.GetOrAdd("Blue");
+            chars.GetOrAdd("Green").IsPlayer = true;
+            chars.GetOrAdd("Green").Class = "CLR";
+            chars.GetOrAdd("Spot").Owner = "Green";
+
+            var s = chars.ExportPlayers();
+            Assert.Equal("Red::;Green:CLR:;Spot::Green;", s);
+        }
+
+        [Fact]
+        public void ImportPlayers()
+        {
+            var spells = new FakeSpellParser();
+            var chars = new CharTracker(spells);
+            chars.ImportPlayers("Red::;Green:CLR:;Spot::Green;");
+
+            Assert.NotNull(chars.Get("Red"));
+            Assert.True(chars.Get("Red").IsPlayer);
+            Assert.Null(chars.Get("Red").Class);
+
+            Assert.Null(chars.Get("Blue"));
+
+            Assert.NotNull(chars.Get("Green"));
+            Assert.True(chars.Get("Green").IsPlayer);
+            Assert.Equal("CLR", chars.Get("Green").Class);
+
+            Assert.NotNull(chars.Get("Spot"));
+            Assert.False(chars.Get("Spot").IsPlayer);
+            Assert.Null(chars.Get("Spot").Class);
+            Assert.Equal("Green", chars.Get("Spot").Owner);
+        }
 
 
         /*

@@ -82,9 +82,14 @@ namespace EQLogParser
                     if (line == null)
                         break;
 
-                    var fields = line.Split('^');
                     if (line.StartsWith("#"))
                         continue;
+
+                    var fields = line.Split('^');
+
+                    // the file format occasionally changes and shouldn't be loaded with incorrect field indexes
+                    if (fields.Length != 165)
+                        break;
 
                     var spell = new SpellInfo();
 
@@ -99,20 +104,14 @@ namespace EQLogParser
                     spell.DurationTicks = CalcDuration(Convert.ToInt32(fields[11]), Convert.ToInt32(fields[12]));
                     //spell.Duration = Convert.ToInt32(fields[11]);
 
-                    // 30 BENEFICIAL
-                    //spell.IsBeneficial = fields[30] != "0";
+                    // 30 TYPENUMBER
+                    spell.Target = Convert.ToInt32(fields[30]);
 
-                    // 32 TYPENUMBER
-                    spell.Target = Convert.ToInt32(fields[32]);
-
-                    // 100 IS_SKILL
-                    //spell.IsCombatSkill = fields[100] != "0";
-
-                    // 38 WARRIORMIN .. BERSERKERMIN
+                    // 36 WARRIORMIN .. BERSERKERMIN
                     // determine which classes can use this spell
                     for (int i = 0; i < 16; i++)
                     {
-                        var level = Int32.Parse(fields[38 + i]);
+                        var level = Int32.Parse(fields[36 + i]);
                         if (level < 255)
                         {
                             spell.ClassesMask |= 1 << i;

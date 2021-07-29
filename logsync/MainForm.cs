@@ -362,7 +362,7 @@ namespace LogSync
             chkAutoUpload.Checked = chkAutoUpload.Enabled = false;
             chkAutoDiscord.Checked = chkAutoDiscord.Enabled = false;
 
-            // we don't know where to find the spell_us.txt file until we open a log file, we can then make a guess
+            // we don't know where to find the spell_us.txt file until we open a log file
             // spells should be one folder down from the log folder
             if (!spells.IsReady)
             {
@@ -371,6 +371,8 @@ namespace LogSync
                 {
                     LogInfo("Loading " + spellpath);
                     spells.Load(spellpath);
+                    if (!spells.IsReady)
+                        LogInfo("spells_us.txt could not be loaded. Class detection and buff tracking will not work properly.");
                 }
                 else
                 {

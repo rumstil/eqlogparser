@@ -40,11 +40,16 @@ namespace EQLogParser
         public int CohortCount { get; set; } // number of active fights when this finished
         public long TopHitSum { get; set; }
         public long TopHealSum { get; set; }
-            
+
         /// <summary>
-        /// Mob being attacked.
+        /// Mob being fought.
         /// </summary>
         public FightParticipant Target { get; set; }
+
+        /// <summary>
+        /// HP of mob being fought.
+        /// </summary>
+        public long HP => Target.InboundHitSum;
 
         /// <summary>
         /// All characters and pets participating in the fight vs target.
@@ -55,20 +60,22 @@ namespace EQLogParser
         /// Fight duration in seconds (excludes gaps on merged fights). Always at least 1.
         /// </summary>
         public int Duration { get; set; }
-        
+
         /// <summary>
-        /// Fight duration in seconds (includes gaps on merged fights).
+        /// Fight duration in seconds (includes gaps on merged fights). Always at least 1.
         /// </summary>
-        public int Elapsed => (int)(UpdatedOn - StartedOn).TotalSeconds + 1;
-
-        public long HP => Target.InboundHitSum;
+        public int TotalDuration => (int)(UpdatedOn - StartedOn).TotalSeconds + 1;
 
         /// <summary>
-        /// Is this probably a tash mob?
+        /// Is this probably a trash mob?
         /// These rules should make sense for both high and low level players fighting level appropriate mobs.
         /// </summary>
         public bool IsTrash => Duration < 10 || Target.InboundHitCount < 10 || HP < 1000;
 
+        public override string ToString()
+        {
+            return String.Format("{0} ({1}) - {2}", Target.Name, Zone, StartedOn);
+        }
 
         /// <summary>
         /// This constructor should only be used by serializers or unit tests.
@@ -186,44 +193,12 @@ namespace EQLogParser
 
         public void AddCasting(LogCastingEvent cast)
         {
-            AddParticipant(cast.Source).AddCasting(cast, Elapsed - 1);
+            AddParticipant(cast.Source).AddCasting(cast, TotalDuration - 1);
         }
-
-        //public void AddCastingFail(LogCastingFailEvent cast)
-        //{
-        //}
 
         public void AddDeath(LogDeathEvent death)
         {
             AddParticipant(death.Name).DeathCount += 1;
-
-            /*
-
-            var audit = new FightDeath();
-            //audit.Timestamp = death.Timestamp;
-            audit.Time = (int)(death.Timestamp - StartedOn).TotalSeconds;
-            audit.Name = death.Name;
-
-            foreach (var e in replay)
-            {
-                // show time as # seconds prior to death
-                var time = (e.Timestamp - death.Timestamp).TotalSeconds.ToString() + "s";
-                if (e is LogHitEvent hit && hit.Target == death.Name)
-                    audit.Replay.Add(String.Format("Hit: {0} for {1}", hit.Source, hit.Amount, time));
-                if (e is LogHealEvent heal && heal.Target == death.Name)
-                    audit.Replay.Add(String.Format("Heal: {0} for {1}", heal.Source, heal.Amount, time));
-                // healers can't be expected to respond to runes - maybe don't show these
-                //if (e is LogMissEvent miss && miss.Target == death.Name && miss.Type == "rune")
-                //    audit.Replay.Add(miss.ToString() + time);
-            }
-
-            Deaths.Add(audit);
-            */
-        }
-
-        public override string ToString()
-        {
-            return String.Format("{0} ({1}) - {2}", Target.Name, Zone, StartedOn);
         }
 
         /// <summary>
@@ -231,7 +206,7 @@ namespace EQLogParser
         /// </summary>
         public virtual void Finish()
         {
-            Duration = Elapsed;
+            Duration = TotalDuration;
             var ticks = Duration / 6;
 
             if (Participants.Count == 0)
@@ -355,68 +330,7 @@ namespace EQLogParser
 
             foreach (var pet in pets)
             {
-                var owner = AddParticipant(pet.PetOwner);
-
-                foreach (var at in pet.AttackTypes)
-                {
-                    at.Type = "pet:" + at.Type;
-                    //owner.AttackTypes.Add(hit);
-                    var match = owner.AttackTypes.FirstOrDefault(x => x.Type == at.Type);
-                    if (match != null)
-                    {
-                        match.Merge(at);
-                    }
-                    else
-                    {
-                        owner.AttackTypes.Add(at);
-                    }
-                }
-
-                foreach (var spell in pet.Spells.Where(x => x.Type == "hit"))
-                {
-                    spell.Name = "pet:" + spell.Name;
-                    var match = owner.Spells.FirstOrDefault(x => x.Type == spell.Type && x.Name == spell.Name);
-                    if (match != null)
-                    {
-                        match.Merge(spell);
-                    }
-                    else
-                    {
-                        owner.Spells.Add(spell);
-                    }
-                }
-
-                owner.OutboundHitCount += pet.OutboundHitCount;
-                owner.OutboundHitSum += pet.OutboundHitSum;
-                owner.OutboundMissCount += pet.OutboundMissCount;
-
-                // merges DPS and HPS intervals (but not TankDPS)
-                for (var i = 0; i < pet.DPS.Count; i++)
-                {
-                    while (owner.DPS.Count <= i)
-                        owner.DPS.Add(0);
-                    owner.DPS[i] += pet.DPS[i];
-                }
-
-                for (var i = 0; i < pet.HPS.Count; i++)
-                {
-                    while (owner.HPS.Count <= i)
-                        owner.HPS.Add(0);
-                    owner.HPS[i] += pet.HPS[i];
-                }
-
-                // removing the pet has the downside of hiding pet tanking
-                //Participants.Remove(pet);
-
-                // clear the damage on the pet but keep it for tanking stats
-                pet.OutboundHitCount = 0;
-                pet.OutboundHitSum = 0;
-                pet.OutboundMissCount = 0;
-                pet.AttackTypes.Clear();
-                //pet.Spells.Clear();
-                pet.Spells.RemoveAll(x => x.Type == "hit"); // leave heals on pet so it shows on the healer list
-                pet.DPS.Clear();
-                pet.HPS.Clear();
+                AddParticipant(pet.PetOwner).MergePet(pet);
 
                 // append owner name to pet name - this should probably be done client side
                 // also removing because this isn't handled well in anonymize
@@ -428,75 +342,5 @@ namespace EQLogParser
             TopHitSum = Participants.Max(x => x.OutboundHitSum);
             TopHealSum = Participants.Max(x => x.OutboundHealSum);
         }
-
-        public void WriteAll(TextWriter writer)
-        {
-            writer.WriteLine();
-            writer.WriteLine("**{0}** {1:N0} HP in {2}s at {3}", Name, Target.InboundHitSum, Duration, StartedOn.ToLocalTime(), Zone);
-            if (Participants.Count == 0)
-                return;
-
-            var top = Participants.Max(x => x.OutboundHitSum);
-            foreach (var p in Participants)
-            {
-                var pct = (float)p.OutboundHitSum / top;
-
-                writer.WriteLine(" {0} {1:P0} {2} to {3}", p, pct, p.FirstAction?.ToLocalTime().ToString("T"), p.LastAction?.ToLocalTime().ToString("T"));
-
-                writer.WriteLine("   {0,-10} {1,11:N0} / {2,6:N0} DPS", "total", p.OutboundHitSum, p.OutboundHitSum / Duration);
-                foreach (var ht in p.AttackTypes)
-                    writer.WriteLine("   {0,-10} {1,11:N0} / {2,6:N0} DPS", ht.Type, ht.HitSum, ht.HitSum / Duration);
-
-                foreach (var d in p.DefenseTypes)
-                    writer.WriteLine("   {0,-10} {1,6:N0} of {2} {3:P0}", "*" + d.Type + "*", d.Count, d.Attempts, (double)d.Count / d.Attempts);
-
-                writer.WriteLine("   {0,-10} {1,6:N0} of {2} {3:P0}", "*hit*", p.InboundHitCount, p.InboundHitCount + p.InboundMissCount, (double)p.InboundHitCount / (p.InboundHitCount + p.InboundMissCount));
-
-                foreach (var s in p.Spells)
-                {
-                    writer.WriteLine("   spell {0} {1}: {2:N0}", s.Type, s.Name, s.HitSum);
-                }
-
-                foreach (var h in p.Heals)
-                {
-                    writer.WriteLine("   healed {0}: {1:N0}", h.Target, h.HitSum);
-                }
-
-
-            }
-        }
-
-        public void WriteNotes(TextWriter writer)
-        {
-            writer.WriteLine();
-            writer.WriteLine("** {0} ** {1} HP in {2}s at {3}", Name, FormatNum(Target.InboundHitSum), Duration, StartedOn.ToLocalTime().ToShortTimeString(), Zone);
-            if (Participants.Count == 0)
-                return;
-
-            var top = Participants.Max(x => x.OutboundHitSum);
-            foreach (var p in Participants.Take(10).Where(x => x.OutboundHitSum > 0))
-            {
-                // percent = share of damage vs mob
-                //var pct = (float)p.OutboundHitSum / Target.InboundHitSum;
-                // percent = damage relative to top player
-                var pct = (float)p.OutboundHitSum / top;
-                writer.WriteLine(" {0,-20} --- {1,4:P0} {2,8} / {3,5} DPS", p, pct, FormatNum(p.OutboundHitSum), FormatNum(p.OutboundHitSum / Duration));
-            }
-        }
-
-        public static string FormatNum(long n)
-        {
-            if (n >= 1_000_000_000)
-                return (n / 1_000_000_000F).ToString("F2") + 'B';
-            if (n >= 1_000_000)
-                return (n / 1_000_000F).ToString("F2") + 'M';
-            if (n >= 10_000)
-                return (n / 1000F).ToString("F0") + 'K';
-            if (n > 1000)
-                return (n / 1000F).ToString("F1") + 'K';
-            return n.ToString();
-        }
-
-
     }
 }

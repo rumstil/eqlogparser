@@ -628,12 +628,12 @@ namespace LogSync
             {
                 var item = lvPlayers.Items.Add(p.Name);
                 item.SubItems.Add(p.Class);
-                item.SubItems.Add(FightInfo.FormatNum(p.OutboundHitSum));
+                item.SubItems.Add(FightUtils.FormatNum(p.OutboundHitSum));
                 item.SubItems.Add(((double)p.OutboundHitSum / top).ToString("P0"));
                 item.SubItems.Add(p.Duration.ToString() + 's');
-                item.SubItems.Add(FightInfo.FormatNum(p.OutboundHitSum / f.Duration));
+                item.SubItems.Add(FightUtils.FormatNum(p.OutboundHitSum / f.Duration));
                 //var damage = String.Join(", ", p.AttackTypes.Take(4).Select(x => $"{(double)x.HitSum / p.OutboundHitSum:P0} {x.Type}"));
-                var notes = String.Join(", ", p.AttackTypes.Take(4).Select(x => $"{FightInfo.FormatNum(x.HitSum / f.Duration)} {x.Type}"));
+                var notes = String.Join(", ", p.AttackTypes.Take(4).Select(x => $"{FightUtils.FormatNum(x.HitSum / f.Duration)} {x.Type}"));
                 if (p.Buffs.Any(x => x.Name == BuffTracker.DEATH))
                     notes = "DIED - " + notes;
                 item.SubItems.Add(notes);

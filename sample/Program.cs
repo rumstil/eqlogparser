@@ -81,7 +81,7 @@ namespace Sample
                 return;
             }
 
-            f.WriteAll(Console.Out);
+            Console.Out.WriteFightDetails(f);
         }
 
     }

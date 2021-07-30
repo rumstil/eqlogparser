@@ -187,8 +187,8 @@ namespace EQLogParser
 
             // this rounds the duration up to 6 second intervals for each fight that was merged
             Duration = Math.Max(Target.DPS.Count, Target.TankDPS.Count) * 6;
-            if (Elapsed < Duration)
-                Duration = Elapsed;
+            if (TotalDuration < Duration)
+                Duration = TotalDuration;
             if (Duration < 1)
                 Duration = 1;
         }

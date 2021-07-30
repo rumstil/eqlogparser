@@ -6,7 +6,7 @@ using System.Linq;
 namespace EQLogParser
 {
     /// <summary>
-    /// A summary of activity for one player or mob in a single fight.
+    /// A summary of activity for one player or mob.
     /// </summary>
     public class FightParticipant
     {
@@ -73,7 +73,7 @@ namespace EQLogParser
         {
         }
 
-        public void AddHit(LogHitEvent hit, int interval)
+        public void AddHit(LogHitEvent hit, int interval = -1)
         {
             if (FirstAction == null)
                 FirstAction = hit.Timestamp;
@@ -164,9 +164,12 @@ namespace EQLogParser
                     OutboundStrikeCount += 1;
                 }
 
-                while (DPS.Count <= interval)
-                    DPS.Add(0);
-                DPS[interval] += hit.Amount;
+                if (interval >= 0)
+                {
+                    while (DPS.Count <= interval)
+                        DPS.Add(0);
+                    DPS[interval] += hit.Amount;
+                }
 
             }
             else if (hit.Target == Name)
@@ -183,9 +186,12 @@ namespace EQLogParser
                     InboundMeleeCount += 1;
                     InboundMeleeSum += hit.Amount;
 
-                    while (TankDPS.Count <= interval)
-                        TankDPS.Add(0);
-                    TankDPS[interval] += hit.Amount;
+                    if (interval >= 0)
+                    {
+                        while (TankDPS.Count <= interval)
+                            TankDPS.Add(0);
+                        TankDPS[interval] += hit.Amount;
+                    }
 
                     //TankHits.TryGetValue(hit.Amount, out int count);
                     //TankHits[hit.Amount] = count + 1;
@@ -199,7 +205,7 @@ namespace EQLogParser
             }
         }
 
-        public void AddMiss(LogMissEvent miss, int interval)
+        public void AddMiss(LogMissEvent miss, int interval = -1)
         {
             if (FirstAction == null)
                 FirstAction = miss.Timestamp;
@@ -241,7 +247,7 @@ namespace EQLogParser
             }
         }
 
-        public void AddHeal(LogHealEvent heal, int interval)
+        public void AddHeal(LogHealEvent heal, int interval = -1)
         {
             if (FirstAction == null)
                 FirstAction = heal.Timestamp;
@@ -289,9 +295,12 @@ namespace EQLogParser
                     }
                 }
 
-                while (HPS.Count <= interval)
-                    HPS.Add(0);
-                HPS[interval] += heal.Amount;
+                if (interval >= 0)
+                {
+                    while (HPS.Count <= interval)
+                        HPS.Add(0);
+                    HPS[interval] += heal.Amount;
+                }
             }
 
             if (heal.Target == Name)
@@ -452,6 +461,75 @@ namespace EQLogParser
 
         }
     
+        /// <summary>
+        /// Merges damage, heals and spells from a pet into this participant.
+        /// Tanking is not merged.
+        /// All data will be prefixed with "pet:" to distinguish it from the owner. e.g. "pet:slash" vs "slash"
+        /// </summary>
+        public void MergePet(FightParticipant pet)
+        {
+            foreach (var at in pet.AttackTypes)
+            {
+                at.Type = "pet:" + at.Type;
+                //owner.AttackTypes.Add(hit);
+                var match = AttackTypes.FirstOrDefault(x => x.Type == at.Type);
+                if (match != null)
+                {
+                    match.Merge(at);
+                }
+                else
+                {
+                    AttackTypes.Add(at);
+                }
+            }
+
+            foreach (var spell in pet.Spells.Where(x => x.Type == "hit"))
+            {
+                spell.Name = "pet:" + spell.Name;
+                var match = Spells.FirstOrDefault(x => x.Type == spell.Type && x.Name == spell.Name);
+                if (match != null)
+                {
+                    match.Merge(spell);
+                }
+                else
+                {
+                    Spells.Add(spell);
+                }
+            }
+
+            OutboundHitCount += pet.OutboundHitCount;
+            OutboundHitSum += pet.OutboundHitSum;
+            OutboundMissCount += pet.OutboundMissCount;
+
+            // merges DPS and HPS intervals (but not TankDPS)
+            for (var i = 0; i < pet.DPS.Count; i++)
+            {
+                while (DPS.Count <= i)
+                    DPS.Add(0);
+                DPS[i] += pet.DPS[i];
+            }
+
+            for (var i = 0; i < pet.HPS.Count; i++)
+            {
+                while (HPS.Count <= i)
+                    HPS.Add(0);
+                HPS[i] += pet.HPS[i];
+            }
+
+            // removing the pet has the downside of hiding pet tanking
+            //Participants.Remove(pet);
+
+            // clear the damage on the pet but keep it for tanking stats
+            pet.OutboundHitCount = 0;
+            pet.OutboundHitSum = 0;
+            pet.OutboundMissCount = 0;
+            pet.AttackTypes.Clear();
+            //pet.Spells.Clear();
+            pet.Spells.RemoveAll(x => x.Type == "hit"); // leave heals on pet so it shows on the healer list
+            pet.DPS.Clear();
+            pet.HPS.Clear();
+        }
+
     }
 
 

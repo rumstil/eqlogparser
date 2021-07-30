@@ -219,6 +219,8 @@ namespace EQLogParser
                 // i'm pretty sure only players, pets and mercs can taunt
                 var source = GetOrAdd(taunt.Source);
                 source.Type = CharType.Friend;
+                var target = GetOrAdd(taunt.Target);
+                target.Type = CharType.Foe;
             }
 
             if (e is LogLootEvent loot)
@@ -434,6 +436,9 @@ namespace EQLogParser
 
                 if (name.StartsWith("Eye of "))
                     c.Owner = name.Substring(7);
+
+                if (c.Owner != null)
+                    GetOrAdd(c.Owner);
             }
 
             //if (type != CharType.Unknown)
@@ -543,7 +548,7 @@ namespace EQLogParser
             var data = new StringBuilder();
             foreach (var c in CharsByName.Values)
             {
-                if (c.IsPlayer || (c.Owner != null && Get(c.Owner).IsPlayer))
+                if (c.IsPlayer || (c.Owner != null && Get(c.Owner)?.IsPlayer == true))
                     data.Append($"{c.Name}:{c.Class}:{c.Owner};");
             }
             return data.ToString();

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using EQLogParser;
-
+using EQLogParser.Helpers;
 
 namespace Sample
 {

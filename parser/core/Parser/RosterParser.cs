@@ -25,57 +25,52 @@ namespace EQLogParser
             return Regex.IsMatch(path, @"-20\d{6}-\d{6}\.txt$", RegexOptions.RightToLeft);
         }
 
-        public static IEnumerable<LogWhoEvent> Load(string path)
+        public static DateTime? GetDateFromFileName(string path)
         {
-            //if (!File.Exists(path))
-            //    throw new FileNotFoundException();
+            var m = Regex.Match(path, @"(20\d{6}-\d{6})");
+            if (m.Success && DateTime.TryParseExact(m.Groups[1].Value, "yyyyMMdd-HHmmss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out DateTime ts))
+                return ts.ToUniversalTime();
+            return null;
+        }
 
-            if (!File.Exists(path))
-                yield break;
+        public static IEnumerable<LogWhoEvent> Load(TextReader reader)
+        {
+            var ts = DateTime.UtcNow;
 
-            using (var f = File.OpenText(path))
+            while (true)
             {
-                var m = Regex.Match(path, @"(20\d{6}-\d{6})");
-                if (m.Success && DateTime.TryParseExact(m.Groups[1].Value, "yyyyMMdd-HHmmss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out DateTime ts))
-                    ts = ts.ToUniversalTime();
-                else
-                    ts = DateTime.UtcNow;
+                var line = reader.ReadLine();
+                if (line == null)
+                    break;
 
-                while (true)
+                var parts = line.Split('\t');
+
+                // guild format:
+                // Rumstil	115	Ranger	Member		08/02/20	The Overthere	Inactive		off	off	1954229	03/21/20	Inactive	
+                if (parts.Length >= 3 && Regex.IsMatch(line, @"^\w+\t\d+\w+\t"))
                 {
-                    var line = f.ReadLine();
-                    if (line == null)
-                        break;
-
-                    var parts = line.Split('\t');
-
-                    // guild format:
-                    // Rumstil	115	Ranger	Member		08/02/20	The Overthere	Inactive		off	off	1954229	03/21/20	Inactive	
-                    if (parts.Length >= 3 && Regex.IsMatch(line, @"^\w+\t\d+\w+\t"))
+                    var who = new LogWhoEvent()
                     {
-                        var who = new LogWhoEvent()
-                        {
-                            Timestamp = ts,
-                            Name = parts[0],
-                            Level = Int32.Parse(parts[1]),
-                            Class = LogWhoEvent.ParseClass(parts[2])
-                        };
-                        yield return who;
-                    }
+                        Timestamp = ts,
+                        Name = parts[0],
+                        Level = Int32.Parse(parts[1]),
+                        Class = LogWhoEvent.ParseClass(parts[2])
+                    };
+                    yield return who;
+                }
 
-                    // raid format:
-                    // 0   Rumstil 115 Ranger Raid Leader
-                    if (parts.Length >= 4 && Regex.IsMatch(line, @"^\d+\t\w+\t\d+\t\w+\t"))
+                // raid format:
+                // 0   Rumstil 115 Ranger Raid Leader
+                if (parts.Length >= 4 && Regex.IsMatch(line, @"^\d+\t\w+\t\d+\t\w+\t"))
+                {
+                    var who = new LogWhoEvent()
                     {
-                        var who = new LogWhoEvent()
-                        {
-                            Timestamp = ts,
-                            Name = parts[1],
-                            Level = Int32.Parse(parts[2]),
-                            Class = LogWhoEvent.ParseClass(parts[3])
-                        };
-                        yield return who;
-                    }
+                        Timestamp = ts,
+                        Name = parts[1],
+                        Level = Int32.Parse(parts[2]),
+                        Class = LogWhoEvent.ParseClass(parts[3])
+                    };
+                    yield return who;
                 }
             }
 
@@ -84,8 +79,13 @@ namespace EQLogParser
         public static IEnumerable<LogWhoEvent> Load(IEnumerable<FileInfo> files)
         {
             foreach (var f in files)
-                foreach (var who in Load(f.FullName))
-                    yield return who;
+            {
+                using (var reader = f.OpenText())
+                {
+                    foreach (var who in Load(reader))
+                        yield return who;
+                }
+            }
         }
 
     }

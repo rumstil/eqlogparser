@@ -13,7 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using EQLogParser;
-
+using EQLogParser.Helpers;
 
 namespace LogSync
 {
@@ -387,6 +387,7 @@ namespace LogSync
 
             // reset the trackers by creating new ones
             var charTracker = new CharTracker(spells);
+            charTracker.Files = new FileService(Path.GetDirectoryName(path) + @"\..\");
             charTracker.HandleEvent(open);
             charTracker.ImportPlayers(config.Read("chars:" + open.Server));
 

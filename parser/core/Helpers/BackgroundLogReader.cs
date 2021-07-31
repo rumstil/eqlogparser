@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 
-namespace EQLogParser
+namespace EQLogParser.Helpers
 {
     public class LogReaderStatus
     {

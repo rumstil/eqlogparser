@@ -31,6 +31,7 @@ namespace Sample
 
             // create a CharTracker to help the FightTracker determine friends/foes
             var chars = new CharTracker(spells);
+            chars.Files = new FileService(Path.GetDirectoryName(open.Path) + @"\..\");
             chars.HandleEvent(open);
 
             // create a FightTracker to build fight summaries from various combat events

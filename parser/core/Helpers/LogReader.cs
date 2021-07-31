@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 
-namespace EQLogParser
+namespace EQLogParser.Helpers
 {
     public class LogReader : IDisposable    
     {

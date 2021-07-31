@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EQLogParser.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -59,7 +60,6 @@ namespace EQLogParser
     {
         private string Server = null;
         private string Player = null;
-        private string RosterPath = null;
 
         // https://forums.daybreakgames.com/eq/index.php?threads/collecting-pet-names.249684/#post-3671490
         private static readonly Regex PetNameRegex = new Regex(@"^[GJKLVXZ]([aeio][bknrs]){0,2}(ab|er|n|tik)$", RegexOptions.Compiled);
@@ -71,6 +71,11 @@ namespace EQLogParser
         private readonly List<PetBuffEmote> PetBuffs = new List<PetBuffEmote>();
 
         private readonly ISpellLookup Spells;
+
+        /// <summary>
+        /// Optional file system dependency for loading roster files.
+        /// </summary>
+        public IFileService Files;
 
         /// <summary>
         /// The CharTracker should be created with a spell parser. This constructor is intended for testing.
@@ -93,7 +98,6 @@ namespace EQLogParser
                     CharsByName.Clear();
                 Server = open.Server;
                 Player = open.Player;
-                RosterPath = System.IO.Path.GetDirectoryName(open.Path) + @"\..\";                
                 var c = GetOrAdd(open.Player);
                 c.IsPlayer = true;
                 c.Type = CharType.Friend;
@@ -101,11 +105,15 @@ namespace EQLogParser
 
             if (e is LogOutputFileEvent output)
             {
-                if (!String.IsNullOrEmpty(RosterPath) && output.FileName == System.IO.Path.GetFileName(output.FileName) && RosterParser.IsValidFileName(output.FileName))
+                if (RosterParser.IsValidFileName(output.FileName) && Files != null && Files.Exists(output.FileName))
                 {                    
-                    var roster = RosterParser.Load(RosterPath + output.FileName);
-                    foreach (var player in roster)
-                        HandleEvent(player);
+                    using (var reader = Files.OpenText(output.FileName))
+                    {
+                        var ts = RosterParser.GetDateFromFileName(output.FileName) ?? DateTime.UtcNow;
+                        var roster = RosterParser.Load(reader);
+                        foreach (var player in roster)
+                            HandleEvent(player);
+                    }
                 }
             }
 
@@ -219,8 +227,12 @@ namespace EQLogParser
                 // i'm pretty sure only players, pets and mercs can taunt
                 var source = GetOrAdd(taunt.Source);
                 source.Type = CharType.Friend;
-                var target = GetOrAdd(taunt.Target);
-                target.Type = CharType.Foe;
+                // target will be null for AE taunt
+                if (taunt.Target != null)
+                {
+                    var target = GetOrAdd(taunt.Target);
+                    target.Type = CharType.Foe;
+                }
             }
 
             if (e is LogLootEvent loot)

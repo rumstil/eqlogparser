@@ -355,7 +355,7 @@ namespace LogSync
             if (cancellationSource != null)
             {
                 cancellationSource.Cancel();
-                //await Task.Delay(600);
+                await Task.Delay(600);
             }
 
             // always disable auto uploads when opening a file to avoid accidentally uploading a lot of data
@@ -440,16 +440,18 @@ namespace LogSync
                 var completed = p.Percent > 0.99;
                 chkAutoUpload.Enabled = completed;
                 chkAutoDiscord.Enabled = completed;
-                if (completed && open.Server != null)
-                {
-                    // save a list of players so that we have better information next time we run the parser
-                    var players = charTracker.ExportPlayers();
-                    config.Write("chars:" + open.Server, players);
-                }
             });
             cancellationSource = new CancellationTokenSource();
             var reader = new BackgroundLogReader(path, cancellationSource.Token, progress, handler);
             await reader.Start();
+            LogInfo("Closing " + path);
+            if (open.Server != null)
+            {
+                // save a list of players so that we have better information next time we run the parser
+                var players = charTracker.ExportPlayers();
+                config.Write("chars:" + open.Server, players);
+            }
+
             //await ProcessLogFileAsync(path);
 
             // this log message can occur after the form has been disposed

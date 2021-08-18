@@ -29,23 +29,12 @@ namespace EQLogParser
         }
     }
 
-    internal class PetBuffEmote
-    {
-        public DateTime Timestamp;
-        public string Name;
-        public string Source;
-        public string Emote;
-
-        public override string ToString()
-        {
-            return String.Format("{0} {1} ({2})", Name, Emote, Source);
-        }
-    }
-
     public interface ICharLookup
     {
         string GetFoe(string name1, string name2);
         CharType GetType(string name);
+        string GetClass(string name);
+        string GetOwner(string name);
         CharInfo GetOrAdd(string name);
         CharInfo Get(string name);
     }
@@ -68,7 +57,8 @@ namespace EQLogParser
 
         private readonly Dictionary<string, CharInfo> CharsByName = new Dictionary<string, CharInfo>(); // StringComparer.InvariantCultureIgnoreCase);
 
-        private readonly List<PetBuffEmote> PetBuffs = new List<PetBuffEmote>();
+        private readonly List<SpellCastPetOwnerHint> PetCasts = new List<SpellCastPetOwnerHint>();
+        private readonly List<SpellCastClassHint> Casts = new List<SpellCastClassHint>();
 
         private readonly ISpellLookup Spells;
 
@@ -96,6 +86,8 @@ namespace EQLogParser
             {
                 if (Server != open.Server)
                     CharsByName.Clear();
+                PetCasts.Clear();
+                Casts.Clear();
                 Server = open.Server;
                 Player = open.Player;
                 var c = GetOrAdd(open.Player);
@@ -253,31 +245,39 @@ namespace EQLogParser
                     c.Type = CharType.Friend;
                 }
 
+                if (cast.Type == CastingType.Song)
+                {
+                    c.Class = ClassesMaskShort.BRD.ToString();
+                }
+
                 var spell = Spells?.GetSpell(cast.Spell);
 
                 if (spell?.ClassesCount == 1)
                 {
                     if (cast.Type == CastingType.Disc || cast.Type == CastingType.Song || IsProbablyNotClickOrProc(spell))
                         c.Class = spell.ClassesNames;
+                     
+                    if (c.Class == null)
+                        Casts.Add(new SpellCastClassHint() { Timestamp = e.Timestamp, Source = cast.Source, ClassesMask = spell.ClassesMask });
                 }
 
                 if (spell?.LandPet != null)
                 {
-                    PetBuffs.Add(new PetBuffEmote() { Timestamp = e.Timestamp, Source = cast.Source, Name = spell.Name, Emote = spell.LandPet });
+                    PetCasts.Add(new SpellCastPetOwnerHint() { Timestamp = e.Timestamp, Source = cast.Source, Emote = spell.LandPet });
                 }
             }
 
             if (e is LogRawEvent raw)
             {
                 // we only need to keep track of buffs for a few seconds between casting time and landing time
-                if (PetBuffs.Count > 0)
-                    PetBuffs.RemoveAll(x => x.Timestamp < e.Timestamp.AddSeconds(-5));
+                if (PetCasts.Count > 0)
+                    PetCasts.RemoveAll(x => x.Timestamp < e.Timestamp.AddSeconds(-5));
 
                 // search recently cast pet buffs to see if a spell emote matches and use it to tag a pet owner
                 // this could possibly misattribute the pet owner if two people cast the same buff at nearly the same time
-                for (var i = 0; i < PetBuffs.Count; i++)
+                for (var i = 0; i < PetCasts.Count; i++)
                 {
-                    var pb = PetBuffs[i];
+                    var pb = PetCasts[i];
                     if (raw.Text.EndsWith(pb.Emote))
                     {
                         var name = raw.Text.Substring(0, raw.Text.Length - pb.Emote.Length);
@@ -289,7 +289,7 @@ namespace EQLogParser
                             //Console.WriteLine("owner: {0} => {1}", name, pb.Source);
                             c.Owner = pb.Source;
                         }
-                        PetBuffs.RemoveAt(i);
+                        PetCasts.RemoveAt(i);
                         break;
                     }
                 }
@@ -321,8 +321,7 @@ namespace EQLogParser
                     var spell = Spells?.GetSpell(hit.Spell);
 
                     // procs/clicks could misidentify the class
-                    // however, rank 2/3 spells are never procs/clicks
-                    if (spell?.ClassesCount == 1 && Regex.IsMatch(spell.Name, @"Rk\.\s?I?II$", RegexOptions.RightToLeft))
+                    if (spell?.ClassesCount == 1 && IsProbablyNotClickOrProc(spell))
                     {
                         source.Class = spell.ClassesNames;
                     }
@@ -340,6 +339,7 @@ namespace EQLogParser
                 //    target.Owner = source.Name;
                 //}
 
+                // only calling GetFoe to tag opponent with a type
                 GetFoe(hit.Source, hit.Target);
             }
 
@@ -353,6 +353,7 @@ namespace EQLogParser
                     c.PlayerAggro = miss.Timestamp;
                 }
 
+                // only calling GetFoe to tag opponent with a type
                 GetFoe(miss.Source, miss.Target);
             }
 
@@ -388,15 +389,6 @@ namespace EQLogParser
         }
 
         /// <summary>
-        /// Get info for a character.
-        /// </summary>
-        //public CharInfo Get(string name)
-        //{
-        //    CharsByName.TryGetValue(name, out CharInfo c);
-        //    return c;
-        //}
-
-        /// <summary>
         /// Get friend/foe type for a character.
         /// </summary>
         public CharType GetType(string name)
@@ -412,6 +404,33 @@ namespace EQLogParser
             }
 
             return CharType.Unknown;
+        }
+
+        public string GetClass(string name)
+        {
+            var c = GetOrAdd(name);
+            if (c.Class != null)
+                return c.Class;
+
+            if (Casts.Count > 3000)
+                Casts.RemoveRange(0, 1000);
+
+            // make a guess at the class based on the most common type of spell cast
+            // the guess may be incorrect if the player is proc/click casting non native spells frequently
+            var top = Casts.Where(x => x.Source == name)
+                .GroupBy(x => x.ClassesMask)
+                .OrderByDescending(x => x.Count())
+                .FirstOrDefault()?.Key ?? 0;
+
+            if (top != 0)
+                return ((ClassesMaskShort)top).ToString();
+
+            return null;
+        }
+
+        public string GetOwner(string name)
+        {
+            return Get(name)?.Owner;
         }
 
         /// <summary>
@@ -605,6 +624,20 @@ namespace EQLogParser
         public static bool IsPetName(string name)
         {
             return PetNameRegex.IsMatch(name);
+        }
+
+        class SpellCastPetOwnerHint
+        {
+            public DateTime Timestamp;
+            public string Source;
+            public string Emote;
+        }
+
+        class SpellCastClassHint
+        {
+            public DateTime Timestamp;
+            public string Source;
+            public int ClassesMask;
         }
 
     }

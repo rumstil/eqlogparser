@@ -439,8 +439,8 @@ namespace EQLogParser
             // update info from trackers
             foreach (var p in f.Participants)
             {
-                p.Class = Chars.Get(p.Name)?.Class;
-                p.PetOwner = Chars.Get(p.Name)?.Owner;
+                p.Class = Chars.GetClass(p.Name);
+                p.PetOwner = Chars.GetOwner(p.Name);
                 // go back a few seconds to include buffs cast in preparation for the fight
                 p.Buffs = Buffs.Get(p.Name, f.StartedOn.AddSeconds(-6), f.UpdatedOn, -6).ToList();
             }
@@ -449,6 +449,9 @@ namespace EQLogParser
 
             // after a fight is passed to this delegate it should never be modified (e.g. via the LastFight variable)
             LastFight = null;
+            // fight may have no participants if only a miss was registered
+            if (f.Participants.Count == 0)
+                return;
             OnFightFinished?.Invoke(f);
 
             // see if the fight is part of a raid

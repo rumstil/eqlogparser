@@ -143,6 +143,16 @@ namespace EQLogParserTests.Tracker
         }
 
         [Fact]
+        public void Dead_Mob_Becomes_Unknown()
+        {
+            var chars = new CharTracker();
+            chars.GetOrAdd("Zlandicar").Type = CharType.Foe;
+            chars.HandleEvent(new LogDeathEvent() { Name = "Zlandicar" });
+
+            Assert.Equal(CharType.Unknown, chars.GetType("Zlandicar"));
+        }
+
+        [Fact]
         public void Spell_Disc_Should_Assign_Class()
         {
             var spells = new FakeSpellParser();

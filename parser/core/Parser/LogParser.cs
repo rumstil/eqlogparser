@@ -63,11 +63,12 @@ namespace EQLogParser
             Parsers.Add(LogRotEvent.Parse);
             Parsers.Add(LogCraftEvent.Parse);
             Parsers.Add(LogAAXPEvent.Parse);
+            Parsers.Add(LogAAPurchaseEvent.Parse);
             Parsers.Add(LogSkillEvent.Parse);
             Parsers.Add(LogShieldEvent.Parse);
             Parsers.Add(LogTauntEvent.Parse);
             Parsers.Add(LogDiceRollEvent.Parse);
-            // LogOutputFileEvent can trigger file processing and shouldn't be used in a server context
+            Parsers.Add(LogCoinEvent.Parse);
             Parsers.Add(LogOutputFileEvent.Parse);
         }
 

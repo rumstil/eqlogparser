@@ -360,7 +360,6 @@ namespace LogSync
 
             // always disable auto uploads when opening a file to avoid accidentally uploading a lot of data
             chkAutoUpload.Checked = chkAutoUpload.Enabled = false;
-            chkAutoDiscord.Checked = chkAutoDiscord.Enabled = false;
 
             // we don't know where to find the spell_us.txt file until we open a log file
             // spells should be one folder down from the log folder
@@ -439,7 +438,6 @@ namespace LogSync
                 //toolStripStatusLabel1.Text = p.Percent.ToString("P0");
                 var completed = p.Percent > 0.99;
                 chkAutoUpload.Enabled = completed;
-                chkAutoDiscord.Enabled = completed;
             });
             cancellationSource = new CancellationTokenSource();
             var reader = new BackgroundLogReader(path, cancellationSource.Token, progress, handler);

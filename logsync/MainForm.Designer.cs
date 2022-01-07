@@ -51,7 +51,6 @@
             this.label2 = new System.Windows.Forms.Label();
             this.btnCombine = new System.Windows.Forms.Button();
             this.btnUpload = new System.Windows.Forms.Button();
-            this.chkAutoDiscord = new System.Windows.Forms.CheckBox();
             this.chkAutoUpload = new System.Windows.Forms.CheckBox();
             this.btnChannel = new System.Windows.Forms.Button();
             this.textLog = new System.Windows.Forms.TextBox();
@@ -80,10 +79,11 @@
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripStatusLabel1,
             this.toolStripStatusLabel2});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 636);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 855);
             this.statusStrip1.Name = "statusStrip1";
+            this.statusStrip1.Padding = new System.Windows.Forms.Padding(1, 0, 16, 0);
             this.statusStrip1.RenderMode = System.Windows.Forms.ToolStripRenderMode.Professional;
-            this.statusStrip1.Size = new System.Drawing.Size(834, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(953, 22);
             this.statusStrip1.TabIndex = 8;
             this.statusStrip1.Text = "statusStrip1";
             // 
@@ -91,13 +91,13 @@
             // 
             this.toolStripStatusLabel1.AutoSize = false;
             this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            this.toolStripStatusLabel1.Size = new System.Drawing.Size(80, 17);
+            this.toolStripStatusLabel1.Size = new System.Drawing.Size(80, 16);
             this.toolStripStatusLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // toolStripStatusLabel2
             // 
             this.toolStripStatusLabel2.Name = "toolStripStatusLabel2";
-            this.toolStripStatusLabel2.Size = new System.Drawing.Size(0, 17);
+            this.toolStripStatusLabel2.Size = new System.Drawing.Size(0, 16);
             // 
             // lvFights
             // 
@@ -116,10 +116,10 @@
             this.lvFights.GridLines = true;
             this.lvFights.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
             this.lvFights.HideSelection = false;
-            this.lvFights.Location = new System.Drawing.Point(11, 55);
-            this.lvFights.Margin = new System.Windows.Forms.Padding(3, 240, 3, 3);
+            this.lvFights.Location = new System.Drawing.Point(13, 73);
+            this.lvFights.Margin = new System.Windows.Forms.Padding(3, 320, 3, 4);
             this.lvFights.Name = "lvFights";
-            this.lvFights.Size = new System.Drawing.Size(811, 230);
+            this.lvFights.Size = new System.Drawing.Size(926, 305);
             this.lvFights.TabIndex = 0;
             this.lvFights.UseCompatibleStateImageBehavior = false;
             this.lvFights.View = System.Windows.Forms.View.Details;
@@ -174,16 +174,18 @@
             this.panel1.Controls.Add(this.btnOpen);
             this.panel1.Controls.Add(this.textLogPath);
             this.panel1.Location = new System.Drawing.Point(0, 0);
+            this.panel1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(834, 52);
+            this.panel1.Size = new System.Drawing.Size(953, 69);
             this.panel1.TabIndex = 0;
             // 
             // btnOpen
             // 
             this.btnOpen.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnOpen.Location = new System.Drawing.Point(703, 9);
+            this.btnOpen.Location = new System.Drawing.Point(803, 12);
+            this.btnOpen.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.btnOpen.Name = "btnOpen";
-            this.btnOpen.Size = new System.Drawing.Size(114, 33);
+            this.btnOpen.Size = new System.Drawing.Size(130, 44);
             this.btnOpen.TabIndex = 1;
             this.btnOpen.Text = "Open";
             this.btnOpen.UseVisualStyleBackColor = true;
@@ -193,11 +195,12 @@
             // 
             this.textLogPath.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.textLogPath.Location = new System.Drawing.Point(11, 15);
+            this.textLogPath.Location = new System.Drawing.Point(13, 20);
+            this.textLogPath.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.textLogPath.Name = "textLogPath";
             this.textLogPath.PlaceholderText = "Log File";
             this.textLogPath.ReadOnly = true;
-            this.textLogPath.Size = new System.Drawing.Size(686, 23);
+            this.textLogPath.Size = new System.Drawing.Size(783, 27);
             this.textLogPath.TabIndex = 0;
             this.textLogPath.TabStop = false;
             // 
@@ -209,22 +212,23 @@
             this.panel2.Controls.Add(this.label2);
             this.panel2.Controls.Add(this.btnCombine);
             this.panel2.Controls.Add(this.btnUpload);
-            this.panel2.Controls.Add(this.chkAutoDiscord);
             this.panel2.Controls.Add(this.chkAutoUpload);
             this.panel2.Controls.Add(this.btnChannel);
             this.panel2.Controls.Add(this.textLog);
             this.panel2.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panel2.Location = new System.Drawing.Point(0, 446);
+            this.panel2.Location = new System.Drawing.Point(0, 602);
+            this.panel2.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(834, 190);
+            this.panel2.Size = new System.Drawing.Size(953, 253);
             this.panel2.TabIndex = 2;
             // 
             // textSearch
             // 
-            this.textSearch.Location = new System.Drawing.Point(12, 5);
+            this.textSearch.Location = new System.Drawing.Point(14, 7);
+            this.textSearch.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.textSearch.Name = "textSearch";
             this.textSearch.PlaceholderText = "Search...";
-            this.textSearch.Size = new System.Drawing.Size(169, 23);
+            this.textSearch.Size = new System.Drawing.Size(193, 27);
             this.textSearch.TabIndex = 0;
             this.textSearch.TextChanged += new System.EventHandler(this.textSearch_TextChanged);
             this.textSearch.KeyDown += new System.Windows.Forms.KeyEventHandler(this.textSearch_KeyDown);
@@ -232,9 +236,9 @@
             // lnkSelectZone
             // 
             this.lnkSelectZone.AutoSize = true;
-            this.lnkSelectZone.Location = new System.Drawing.Point(334, 8);
+            this.lnkSelectZone.Location = new System.Drawing.Point(382, 11);
             this.lnkSelectZone.Name = "lnkSelectZone";
-            this.lnkSelectZone.Size = new System.Drawing.Size(34, 15);
+            this.lnkSelectZone.Size = new System.Drawing.Size(43, 20);
             this.lnkSelectZone.TabIndex = 1;
             this.lnkSelectZone.TabStop = true;
             this.lnkSelectZone.Text = "Zone";
@@ -244,9 +248,9 @@
             // lnkSelectDate
             // 
             this.lnkSelectDate.AutoSize = true;
-            this.lnkSelectDate.Location = new System.Drawing.Point(277, 8);
+            this.lnkSelectDate.Location = new System.Drawing.Point(317, 11);
             this.lnkSelectDate.Name = "lnkSelectDate";
-            this.lnkSelectDate.Size = new System.Drawing.Size(31, 15);
+            this.lnkSelectDate.Size = new System.Drawing.Size(41, 20);
             this.lnkSelectDate.TabIndex = 0;
             this.lnkSelectDate.TabStop = true;
             this.lnkSelectDate.Text = "Date";
@@ -256,9 +260,9 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(213, 8);
+            this.label2.Location = new System.Drawing.Point(243, 11);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(58, 15);
+            this.label2.Size = new System.Drawing.Size(74, 20);
             this.label2.TabIndex = 6;
             this.label2.Text = "Select All:";
             this.label2.Visible = false;
@@ -267,9 +271,10 @@
             // 
             this.btnCombine.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btnCombine.Enabled = false;
-            this.btnCombine.Location = new System.Drawing.Point(521, 16);
+            this.btnCombine.Location = new System.Drawing.Point(595, 21);
+            this.btnCombine.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.btnCombine.Name = "btnCombine";
-            this.btnCombine.Size = new System.Drawing.Size(56, 33);
+            this.btnCombine.Size = new System.Drawing.Size(64, 44);
             this.btnCombine.TabIndex = 4;
             this.btnCombine.Text = "...";
             this.btnCombine.UseVisualStyleBackColor = true;
@@ -278,32 +283,22 @@
             // btnUpload
             // 
             this.btnUpload.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnUpload.Location = new System.Drawing.Point(583, 16);
+            this.btnUpload.Location = new System.Drawing.Point(666, 21);
+            this.btnUpload.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.btnUpload.Name = "btnUpload";
-            this.btnUpload.Size = new System.Drawing.Size(114, 33);
+            this.btnUpload.Size = new System.Drawing.Size(130, 44);
             this.btnUpload.TabIndex = 5;
             this.btnUpload.Text = "Upload";
             this.btnUpload.UseVisualStyleBackColor = true;
             this.btnUpload.Click += new System.EventHandler(this.btnUpload_Click);
             // 
-            // chkAutoDiscord
-            // 
-            this.chkAutoDiscord.AutoSize = true;
-            this.chkAutoDiscord.Location = new System.Drawing.Point(12, 61);
-            this.chkAutoDiscord.Name = "chkAutoDiscord";
-            this.chkAutoDiscord.Size = new System.Drawing.Size(380, 19);
-            this.chkAutoDiscord.TabIndex = 3;
-            this.chkAutoDiscord.TabStop = false;
-            this.chkAutoDiscord.Text = "Auto upload fights to discord.com (that occur after this is checked)";
-            this.chkAutoDiscord.UseVisualStyleBackColor = true;
-            this.chkAutoDiscord.Visible = false;
-            // 
             // chkAutoUpload
             // 
             this.chkAutoUpload.AutoSize = true;
-            this.chkAutoUpload.Location = new System.Drawing.Point(12, 36);
+            this.chkAutoUpload.Location = new System.Drawing.Point(14, 48);
+            this.chkAutoUpload.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.chkAutoUpload.Name = "chkAutoUpload";
-            this.chkAutoUpload.Size = new System.Drawing.Size(382, 19);
+            this.chkAutoUpload.Size = new System.Drawing.Size(476, 24);
             this.chkAutoUpload.TabIndex = 2;
             this.chkAutoUpload.TabStop = false;
             this.chkAutoUpload.Text = "Auto upload fights to raidloot.com (that occur after this is checked)";
@@ -312,9 +307,10 @@
             // btnChannel
             // 
             this.btnChannel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnChannel.Location = new System.Drawing.Point(703, 16);
+            this.btnChannel.Location = new System.Drawing.Point(803, 21);
+            this.btnChannel.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.btnChannel.Name = "btnChannel";
-            this.btnChannel.Size = new System.Drawing.Size(114, 33);
+            this.btnChannel.Size = new System.Drawing.Size(130, 44);
             this.btnChannel.TabIndex = 6;
             this.btnChannel.Text = "View Channel";
             this.btnChannel.UseVisualStyleBackColor = true;
@@ -324,12 +320,13 @@
             // 
             this.textLog.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.textLog.Location = new System.Drawing.Point(11, 88);
+            this.textLog.Location = new System.Drawing.Point(13, 117);
+            this.textLog.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.textLog.Multiline = true;
             this.textLog.Name = "textLog";
             this.textLog.ReadOnly = true;
             this.textLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.textLog.Size = new System.Drawing.Size(811, 91);
+            this.textLog.Size = new System.Drawing.Size(926, 120);
             this.textLog.TabIndex = 7;
             // 
             // lvPlayers
@@ -348,10 +345,10 @@
             this.lvPlayers.GridLines = true;
             this.lvPlayers.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
             this.lvPlayers.HideSelection = false;
-            this.lvPlayers.Location = new System.Drawing.Point(11, 296);
-            this.lvPlayers.Margin = new System.Windows.Forms.Padding(3, 240, 3, 3);
+            this.lvPlayers.Location = new System.Drawing.Point(13, 395);
+            this.lvPlayers.Margin = new System.Windows.Forms.Padding(3, 320, 3, 4);
             this.lvPlayers.Name = "lvPlayers";
-            this.lvPlayers.Size = new System.Drawing.Size(811, 145);
+            this.lvPlayers.Size = new System.Drawing.Size(926, 192);
             this.lvPlayers.TabIndex = 1;
             this.lvPlayers.UseCompatibleStateImageBehavior = false;
             this.lvPlayers.View = System.Windows.Forms.View.Details;
@@ -397,9 +394,9 @@
             // 
             // MainForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(834, 658);
+            this.ClientSize = new System.Drawing.Size(953, 877);
             this.Controls.Add(this.lvPlayers);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.panel1);
@@ -407,7 +404,8 @@
             this.Controls.Add(this.statusStrip1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.KeyPreview = true;
-            this.MinimumSize = new System.Drawing.Size(800, 498);
+            this.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.MinimumSize = new System.Drawing.Size(912, 648);
             this.Name = "MainForm";
             this.Text = "Form1";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
@@ -443,7 +441,6 @@
         private System.Windows.Forms.Panel panel2;
         private System.Windows.Forms.Button btnChannel;
         private System.Windows.Forms.TextBox textLog;
-        private System.Windows.Forms.CheckBox chkAutoDiscord;
         private System.Windows.Forms.CheckBox chkAutoUpload;
         private System.Windows.Forms.Button btnUpload;
         private System.Windows.Forms.Button btnCombine;

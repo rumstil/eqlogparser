@@ -137,5 +137,29 @@ namespace EQLogParser
             return null;
         }
 
+        private static LogEventMod ParseMod(string text)
+        {
+            LogEventMod mod = 0;
+            var parts = text.ToLower().Split(' ');
+            for (int i = 0; i < parts.Length; i++)
+            {
+                switch (parts[i])
+                {
+                    case "critical":
+                        mod |= LogEventMod.Critical;
+                        break;
+                    case "twincast":
+                        mod |= LogEventMod.Twincast;
+                        break;
+                    case "lucky":
+                        mod |= LogEventMod.Lucky;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            return mod;
+        }
+
     }
 }

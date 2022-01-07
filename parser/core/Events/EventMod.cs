@@ -8,21 +8,21 @@ namespace EQLogParser
     public enum LogEventMod
     {
         None = 0,
-        Critical = 1,
-        Twincast = 2,
-        Lucky = 4,
-        Flurry = 8,
-        Riposte = 16,
-        Strikethrough = 32,
-        Finishing_Blow = 64,
-        Double_Bow_Shot = 128,
-        Rampage = 256,
-        Wild_Rampage = 512, // will also identify as Rampage
-        //Special = 1024
-        Headshot = 1024,
-        Assassinate = 2048,
-        Decapitate = 4096,
-        Slay_Undead = 8192,
+        Critical        = 1,
+        Twincast        = 1 << 1,
+        Lucky           = 1 << 2,
+        Flurry          = 1 << 3,
+        Riposte         = 1 << 4,
+        Strikethrough   = 1 << 5,
+        Finishing_Blow  = 1 << 6,
+        Double_Bow_Shot = 1 << 7,
+        Rampage         = 1 << 8,
+        Wild_Rampage    = 1 << 9, // will also identify as Rampage
+        Headshot        = 1 << 10,
+        Assassinate     = 1 << 11,
+        Decapitate      = 1 << 12,
+        Slay_Undead     = 1 << 13,
+        Locked          = 1 << 14,
     }
 
 }

@@ -114,6 +114,31 @@ namespace EQLogParser
             return null;
         }
 
+        private static LogEventMod ParseMod(string text)
+        {
+            LogEventMod mod = 0;
+            var parts = text.ToLower().Split(' ');
+            for (int i = 0; i < parts.Length; i++)
+            {
+                switch (parts[i])
+                {
+                    case "lucky":
+                        mod |= LogEventMod.Lucky;
+                        break;
+                    case "riposte":
+                        mod |= LogEventMod.Riposte;
+                        break;
+                    case "strikethrough":
+                        mod |= LogEventMod.Strikethrough;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            return mod;
+        }
+
+
 
 
     }

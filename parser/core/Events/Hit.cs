@@ -36,6 +36,16 @@ reassociate with their caster if they zone or die.
 - Riposte messages are now reported before their resulting hit damage.
 - Dealing direct-damage with spells now reports the caster as 'You' rather than your name.
 
+2022-01-04
+https://forums.daybreakgames.com/eq/index.php?threads/testing-request-locked-hp.280167/#post-4095231
+NPCs with locked HP will now report damage they are taking more accurately. Damage will include 
+the (Locked) tag if it was a partial hit on an NPC with locked HP. If no damage occurred, it will not be reported.
+
+There are a couple issues with it that will hopefully be fixed tomorrow:
+- Hits should no longer display other tags if the (Locked) tag is displayed (no Locked Lucky Critical Twincast).
+- Direct damage spells should no longer be reported twice if their damage was reduced due to an NPC having locked HP.
+- Twincasts should no longer incorrectly report as also being (Locked)
+
 */
 
 namespace EQLogParser
@@ -88,7 +98,7 @@ namespace EQLogParser
 
         public static LogHitEvent Parse(LogRawEvent e)
         {
-            // this short-circuit exit is here strictly as an optmization 
+            // this short-circuit exit is here strictly as a speed optimization 
             // this is the slowest parser of all and wasting time here slows down parsing quite a bit
             // "Bob has taken 1 damage" -- minimum possible occurance is at character 15?
             //if (e.Text.Length < 30 || e.Text.IndexOf("damage", 15) < 0)
@@ -209,9 +219,73 @@ namespace EQLogParser
                 };
             }
 
-
-
             return null;
         }
+
+        private static LogEventMod ParseMod(string text)
+        {
+            LogEventMod mod = 0;
+            text = text.ToLower();
+            text = text.Replace("double bow shot", "doublebow"); // multi word mod won't split properly
+            var parts = text.Split(' ');
+            for (int i = 0; i < parts.Length; i++)
+            {
+                switch (parts[i])
+                {
+                    case "critical":
+                    case "crippling":
+                        mod |= LogEventMod.Critical;
+                        break;
+                    case "twincast":
+                    case "twinstrike": 
+                        mod |= LogEventMod.Twincast;
+                        break;
+                    case "lucky":
+                        mod |= LogEventMod.Lucky;
+                        break;
+                    case "riposte":
+                        mod |= LogEventMod.Riposte;
+                        break;
+                    case "strikethrough":
+                        mod |= LogEventMod.Strikethrough;
+                        break;
+                    case "flurry":
+                        mod |= LogEventMod.Flurry;
+                        break;
+                    case "finishing":
+                        mod |= LogEventMod.Finishing_Blow;
+                        break;
+                    case "doublebow":
+                        mod |= LogEventMod.Double_Bow_Shot;
+                        break;
+                    case "headshot":
+                        mod |= LogEventMod.Headshot;
+                        break;
+                    case "assassinate":
+                        mod |= LogEventMod.Assassinate;
+                        break;
+                    case "decapitate":
+                        mod |= LogEventMod.Decapitate;
+                        break;
+                    case "slay":
+                        mod |= LogEventMod.Slay_Undead;
+                        mod |= LogEventMod.Critical;
+                        break;
+                    case "rampage":
+                        mod |= LogEventMod.Rampage;
+                        break;
+                    case "wild":
+                        mod |= LogEventMod.Wild_Rampage;
+                        break;
+                    case "locked":
+                        mod |= LogEventMod.Locked;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            return mod;
+        }
+
     }
 }

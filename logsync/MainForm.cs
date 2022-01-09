@@ -227,6 +227,7 @@ namespace LogSync
             e.Item.SubItems.Add(f.StartedOn.ToLocalTime().ToString());
             e.Item.SubItems.Add(Utils.FormatNum(f.HP));
             e.Item.SubItems.Add(f.Duration.ToString() + "s");
+            e.Item.SubItems.Add(Utils.FormatNum(f.HP / f.Duration));
             e.Item.SubItems.Add(f.Party + ": " + f.Participants.Count);
             fightStatus.TryGetValue(f.ID, out string status);
             e.Item.SubItems.Add(status ?? "-");

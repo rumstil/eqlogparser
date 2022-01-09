@@ -62,6 +62,7 @@
             this.columnHeader14 = new System.Windows.Forms.ColumnHeader();
             this.columnHeader12 = new System.Windows.Forms.ColumnHeader();
             this.columnHeader13 = new System.Windows.Forms.ColumnHeader();
+            this.columnHeader15 = new System.Windows.Forms.ColumnHeader();
             this.statusStrip1.SuspendLayout();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
@@ -110,6 +111,7 @@
             this.columnHeader3,
             this.columnHeader6,
             this.columnHeader4,
+            this.columnHeader15,
             this.columnHeader5,
             this.columnHeader7});
             this.lvFights.FullRowSelect = true;
@@ -392,6 +394,11 @@
             this.columnHeader13.Text = "DPS Notes";
             this.columnHeader13.Width = 300;
             // 
+            // columnHeader15
+            // 
+            this.columnHeader15.Text = "DPS";
+            this.columnHeader15.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
@@ -456,6 +463,7 @@
         private System.Windows.Forms.ColumnHeader columnHeader12;
         private System.Windows.Forms.ColumnHeader columnHeader13;
         private System.Windows.Forms.ColumnHeader columnHeader14;
+        private System.Windows.Forms.ColumnHeader columnHeader15;
     }
 }
 

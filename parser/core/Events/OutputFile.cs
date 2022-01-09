@@ -9,7 +9,7 @@ namespace EQLogParser
     /// <summary>
     /// Generated when /ouputfile command is used to save a file.
     /// usage: /outputfile [guild | raid | spellbook | inventory | guildbank | realestate | guildhall | missingspells | recipes [argument] | faction ] [optional filename]
-    /// This event should be ignored in a server context where the file won't exist and may be an exploit attempt.
+    /// This event shouldn't be trusted in a server context where the file reference may be an exploit attempt.
     /// </summary>
     public class LogOutputFileEvent : LogEvent
     {

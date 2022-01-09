@@ -60,24 +60,22 @@ namespace EQLogParser
         private readonly List<SpellCastPetOwnerHint> PetCasts = new List<SpellCastPetOwnerHint>();
         private readonly List<SpellCastClassHint> Casts = new List<SpellCastClassHint>();
 
-        private readonly ISpellLookup Spells;
+        /// <summary>
+        /// Optional spell parser dependency.
+        /// If not available then character class and pet owner information will not be as accurate.
+        /// </summary>
+        public ISpellLookup Spells;
 
         /// <summary>
         /// Optional file system dependency for loading roster files.
+        /// If not available then roster files will be not be loaded.
         /// </summary>
         public IFileService Files;
 
-        /// <summary>
-        /// The CharTracker should be created with a spell parser. This constructor is intended for testing.
-        /// </summary>
-        public CharTracker()
-        {
-            Spells = new SpellParser();
-        }
-
-        public CharTracker(ISpellLookup spells)
+        public CharTracker(ISpellLookup spells = null, IFileService files = null)
         {
             Spells = spells;
+            Files = files;
         }
 
         public void HandleEvent(LogEvent e)

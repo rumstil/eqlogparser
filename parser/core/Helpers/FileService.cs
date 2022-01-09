@@ -23,7 +23,9 @@ namespace EQLogParser.Helpers
         {
             if (!Directory.Exists(root))
                 throw new ArgumentException("Root folder not found.");
-            Root = root;            
+            Root = root;
+            if (!Path.EndsInDirectorySeparator(Root))
+                Root += Path.DirectorySeparatorChar;
         }
 
         public bool Exists(string name)

@@ -4,6 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
+/*
+2021-01-12
+- A message is now displayed when loot is left on a corpse after expiring from the Advanced Loot Window
+
+*/
+
 namespace EQLogParser
 {
     /// <summary>
@@ -25,12 +31,8 @@ namespace EQLogParser
         // [Tue Jan 12 18:53:17 2021] --You left a Medium Quality Snake Skin on a female Darkhollow redback.--
         private static readonly Regex ItemRotRegex = new Regex(@"^--(\w+) left (an?|\d+) ([^\.]+) on ([^\.]+)\s?\.--$", RegexOptions.Compiled | RegexOptions.RightToLeft);
 
-        // [Sun Jul 12 22:32:45 2020] No one was interested in the 1 item(s): Glowing Sebilisian Boots. These items can be randomed again or will be available to everyone after the corpse unlocks.
-        private static readonly Regex ItemUnclaimedRegex = new Regex(@"^No one was interested in the .+: (.+)\. These items", RegexOptions.Compiled);
-
-        // [Wed Apr 17 21:52:43 2019] 2 item(s): Energy Core given to Fourier. It has been removed from your Shared Loot List.
-        // [Sat Sep 28 16:17:01 2019] A Copper-Melded Faceplate was given to Fourier.
-        // [Sat Sep 28 18:14:57 2019] A Summoner's Trinket of Insecurity was given to you.
+        // [Wed Jan 12 19:00:33 2022] --a Sarnak Blood was left on an a sarnak consc's corpse.--
+        private static readonly Regex ItemUnclaimedRegex = new Regex(@"^--(?:an?|\d+) ([^\\]+) (?:was|were) left on ([^\.]+)\.--$", RegexOptions.Compiled | RegexOptions.RightToLeft);
 
         public static LogRotEvent Parse(LogRawEvent e)
         {
@@ -47,18 +49,16 @@ namespace EQLogParser
                 };
             }
 
-            /*
-            // removing this for now since it doesn't include a source which limits its usefulness
             m = ItemUnclaimedRegex.Match(e.Text);
             if (m.Success)
             {
                 return new LogRotEvent
                 {
                     Timestamp = e.Timestamp,
-                    Item = m.Groups[1].Value.Trim(),                    
+                    Item = m.Groups[1].Value.Trim(),
+                    Source = e.FixName(m.Groups[2].Value.Replace("'s corpse", "")),
                 };
             }
-            */
 
             return null;
         }

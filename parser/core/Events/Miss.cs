@@ -122,6 +122,9 @@ namespace EQLogParser
             {
                 switch (parts[i])
                 {
+                    case "flurry":
+                        mod |= LogEventMod.Flurry;
+                        break;
                     case "lucky":
                         mod |= LogEventMod.Lucky;
                         break;

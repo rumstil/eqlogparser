@@ -15,7 +15,7 @@ namespace EQLogParser
         public int Gold;
         public int Silver;
         public int Copper;
-        public bool Split;
+        //public bool Split;
 
         public override string ToString()
         {
@@ -46,7 +46,7 @@ namespace EQLogParser
                     Gold = Int32.Parse(amounts.FirstOrDefault(x => x.Groups[2].Value == "gold")?.Groups[1]?.Value ?? "0"),
                     Silver = Int32.Parse(amounts.FirstOrDefault(x => x.Groups[2].Value == "silver")?.Groups[1]?.Value ?? "0"),
                     Copper = Int32.Parse(amounts.FirstOrDefault(x => x.Groups[2].Value == "copper")?.Groups[1]?.Value ?? "0"),
-                    Split = e.Text.Contains("split")
+                    //Split = e.Text.Contains("split") // true even if grouped with merc
                 };
 
                 //var coin = new LogCoinEvent

@@ -38,26 +38,22 @@ namespace EQLogParser
             var m = LootRegex.Match(e.Text);
             if (m.Success)
             {
+                var coin = new LogCoinEvent { Timestamp = e.Timestamp };
                 var amounts = AmountRegex.Matches(e.Text);
-                return new LogCoinEvent
+                foreach (Match amount in amounts)
                 {
-                    Timestamp = e.Timestamp,
-                    Platinum = Int32.Parse(amounts.FirstOrDefault(x => x.Groups[2].Value == "platinum")?.Groups[1]?.Value ?? "0"),
-                    Gold = Int32.Parse(amounts.FirstOrDefault(x => x.Groups[2].Value == "gold")?.Groups[1]?.Value ?? "0"),
-                    Silver = Int32.Parse(amounts.FirstOrDefault(x => x.Groups[2].Value == "silver")?.Groups[1]?.Value ?? "0"),
-                    Copper = Int32.Parse(amounts.FirstOrDefault(x => x.Groups[2].Value == "copper")?.Groups[1]?.Value ?? "0"),
-                    //Split = e.Text.Contains("split") // true even if grouped with merc
-                };
-
-                //var coin = new LogCoinEvent
-                //{
-                //    Timestamp = e.Timestamp
-                //};
-                //foreach (Match amount in amounts)
-                //{
-                //    if (amount.Groups[2].Value == "platinum")
-                //        coin.Platinum = Int32.Parse(amount.Groups[1].Value);
-                //}
+                    var k = amount.Groups[2].Value;
+                    var v = Int32.Parse(amount.Groups[1].Value);
+                    if (k == "platinum")
+                        coin.Platinum = v;
+                    if (k == "gold")
+                        coin.Gold = v;
+                    if (k == "silver")
+                        coin.Silver = v;
+                    if (k == "copper")
+                        coin.Copper = v;
+                }
+                return coin;
             }
 
             return null;

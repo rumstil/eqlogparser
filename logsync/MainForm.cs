@@ -636,6 +636,9 @@ namespace LogSync
                 item.SubItems.Add(FightUtils.FormatNum(p.OutboundHitSum / f.Duration));
                 //var damage = String.Join(", ", p.AttackTypes.Take(4).Select(x => $"{(double)x.HitSum / p.OutboundHitSum:P0} {x.Type}"));
                 var notes = String.Join(", ", p.AttackTypes.Take(4).Select(x => $"{FightUtils.FormatNum(x.HitSum / f.Duration)} {x.Type}"));
+                var other = p.AttackTypes.Skip(4).Sum(x => x.HitSum);
+                if (other > 0)
+                    notes += $", {FightUtils.FormatNum(other / f.Duration)} other";
                 if (p.Buffs.Any(x => x.Name == BuffTracker.DEATH))
                     notes = "DIED - " + notes;
                 item.SubItems.Add(notes);

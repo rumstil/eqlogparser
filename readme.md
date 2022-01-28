@@ -2,13 +2,15 @@
 
 This is an EverQuest log file parser application that can scan an Everquest log file and generate fight summaries to help players analyze their gameplay.
 
-There are 3 projects in this repository. All require the .net core 3.1 SDK to compile:
+There are 4 projects in this repository. All require the .net core 3.1 SDK to compile:
 
 The **LogSync** project is a windows app that is used to collect and send log parses to the www.raidloot.com/logs website for sharing with group and guild members. It has just enough of a user interface to let you see basic fight info, but it's meant to be used alongside the website.
 
-The **Sample** project is a console app to demonstrate some minimalist usage of the parser without any UI getting in the way.
+The **Sample** project is a console app to demonstrate some minimalist usage of the parser.
 
-The **EQLogParser** project is a .NET library containing all the parsing code without any UI. It can be used in a console app, WinForms/WPF app or even a web app by anyone else that wants to build their own parser with a nicer UI.
+The **RetroLog** is DOS-like green screen based parser app. Probably more fun than useful. It just needs some MUD elements to go full meta.
+
+The **EQLogParser** project is a .NET library containing parsing code without any UI. All projects in this repository use this to do their parsing.
 
 
 # Web Based Parser

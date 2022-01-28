@@ -234,6 +234,13 @@ namespace EQLogParser
 
         private void TrackHeal(LogHealEvent heal)
         {
+            // rather than treating ward heals as a separte caster, attribute them to the owner
+            if (heal.Source != null && heal.Source.EndsWith("`s ward"))
+            {
+                heal.Source = heal.Source.Substring(0, heal.Source.Length - 7);
+                //heal.Spell = "ward:" + heal.Spell;
+            }
+
             // heals are complicated because they aren't easily attributable to a fight (especially if several fights are in progress)
             // the best compromise is probably to attribute to the most recent active fight (at least for player cast heals)
             // what if a cleric heals someone between fights? (ignore it for now)

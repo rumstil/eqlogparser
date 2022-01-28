@@ -94,6 +94,9 @@ namespace EQLogParser
             AddSpell("Prophet's Gift of the Ruchu"); // epic
             AddSpell("Spire of Ancestors I");
 
+            // shadowknight
+            AddSpell("Unholy Aura Discipline");
+
             // warrior
             AddSpell("Heroic Rage I");
 

@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using EQLogParser;
+using EQLogParser.Helpers;
 
 /*
 
@@ -82,7 +84,7 @@ namespace Sample
                 return;
             }
 
-            Console.Out.WriteFightDetails(f);
+            Console.Out.WriteLongSummary(f);
         }
 
     }

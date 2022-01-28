@@ -4,10 +4,16 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
+/*
+2021-07-14
+- The "/who" command's output now includes the full zone name in addition to the existing short name.
+
+*/
+
 namespace EQLogParser
 {
     /// <summary>
-    /// Generated when a /who response is shown.
+    /// Generated when /who command output is shown.
     /// </summary>
     public class LogWhoEvent : LogEvent
     {

@@ -131,7 +131,7 @@ namespace EQLogParser
         /// Reset interval data on all participants.
         /// This can be used to avoid the in-order requirement for merging.
         /// </summary>
-        public void Trim()
+        public void TrimIntervals()
         {
             intervals = new List<int>() { 0 };
 
@@ -164,7 +164,11 @@ namespace EQLogParser
 
             Name = $"* {MobCount} combined mobs";
 
-            // todo: maybe if the combined fight is really long then reduce the number of interals by using 1 minute intervals?
+            // if we're merging a long time span then the interval graphs won't be very useful anyway so
+            // we might as well reduce the memory footprint and delete the data
+            // todo: maybe if the fight is really long then reduce the number of interals by using 1 minute intervals?
+            if (Duration > 900)
+                TrimIntervals();
 
             foreach (var p in Participants)
             {

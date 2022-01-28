@@ -23,7 +23,6 @@ namespace LogSync
         //private readonly SynchronizationContext syncContext;
         private CancellationTokenSource cancellationSource;
         private SpellParser spells;
-        private LogParser parser;
         private ConcurrentQueue<FightInfo> fightsQueue;
         private ConcurrentQueue<LootInfo> lootQueue;
         private List<FightInfo> fightList;
@@ -39,7 +38,6 @@ namespace LogSync
             config = new RegConfigAdapter();
             //config = new XmlConfigAdapter();
             spells = new SpellParser();
-            parser = new LogParser();
             //parser.MinDate = DateTime.Parse("2020-09-27");
             fightsQueue = new ConcurrentQueue<FightInfo>();
             lootQueue = new ConcurrentQueue<LootInfo>();
@@ -224,10 +222,10 @@ namespace LogSync
             e.Item = new ListViewItem();
             e.Item.Text = f.Name;
             e.Item.SubItems.Add(f.Zone);
-            e.Item.SubItems.Add(f.StartedOn.ToLocalTime().ToString());
-            e.Item.SubItems.Add(Utils.FormatNum(f.HP));
+            e.Item.SubItems.Add(f.UpdatedOn.ToLocalTime().ToString());
+            e.Item.SubItems.Add(FightUtils.FormatNum(f.HP));
             e.Item.SubItems.Add(f.Duration.ToString() + "s");
-            e.Item.SubItems.Add(Utils.FormatNum(f.HP / f.Duration));
+            e.Item.SubItems.Add(FightUtils.FormatNum(f.HP / f.Duration));
             e.Item.SubItems.Add(f.Party + ": " + f.Participants.Count);
             fightStatus.TryGetValue(f.ID, out string status);
             e.Item.SubItems.Add(status ?? "-");
@@ -383,6 +381,7 @@ namespace LogSync
             config.Write("filename", path);
             LogInfo("Loading " + path);
             var open = LogOpenEvent.FromFileName(path);
+            var parser = new LogParser();
             parser.Player = open.Player;
 
             // reset the trackers by creating new ones
@@ -436,12 +435,11 @@ namespace LogSync
             var progress = new Progress<LogReaderStatus>(p =>
             {
                 toolStripStatusLabel1.Text = p.Percent.ToString("P0") + " " + p.Notes;
-                //toolStripStatusLabel1.Text = p.Percent.ToString("P0");
                 var completed = p.Percent > 0.99;
                 chkAutoUpload.Enabled = completed;
             });
             cancellationSource = new CancellationTokenSource();
-            var reader = new BackgroundLogReader(path, cancellationSource.Token, progress, handler);
+            var reader = new BackgroundLogReader(path, cancellationSource.Token, handler, progress);
             await reader.Start();
             LogInfo("Closing " + path);
             if (open.Server != null)

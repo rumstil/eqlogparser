@@ -70,7 +70,7 @@ namespace EQLogParser
         /// Is this probably a trash mob?
         /// These rules should make sense for both high and low level players fighting level appropriate mobs.
         /// </summary>
-        public bool IsTrash => Duration < 10 || Target.InboundHitCount < 10 || HP < 1000;
+        public bool IsTrash => Duration < 10 || Target.InboundHitCount < 5 || HP < 1000;
 
         public override string ToString()
         {

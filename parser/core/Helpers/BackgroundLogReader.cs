@@ -19,8 +19,9 @@ namespace EQLogParser.Helpers
 
 
     /// <summary>
-    /// A log reader that works in a background task.
+    /// A log reader that creates a background task for reading.
     /// Lines are passed to a delegate for further processing.
+    /// Reader will sleep for 100ms whenever it reaches the end of the file before resuming.
     /// </summary>
     public class BackgroundLogReader
     {
@@ -31,11 +32,16 @@ namespace EQLogParser.Helpers
         private readonly GZipStream gzip;
         private readonly FileStream stream;
         private readonly Action<string> handler;
+        private double percent;
+        private double elapsed;
+
+        public double Percent => percent;
+        public double Elapsed => elapsed;
 
         /// <summary>
         /// Create a new instance of the background log reader.
         /// </summary>
-        public BackgroundLogReader(string path, CancellationToken ct, IProgress<LogReaderStatus> progress, Action<string> handler)
+        public BackgroundLogReader(string path, CancellationToken ct, Action<string> handler, IProgress<LogReaderStatus> progress = null)
         {
             this.cancellationToken = ct;
             this.progress = progress;
@@ -79,11 +85,13 @@ namespace EQLogParser.Helpers
                     // report progress
                     if (line == null || count % 500 == 0)
                     {
-                        progress.Report(new LogReaderStatus() 
+                        percent = (float)stream.Position / stream.Length;
+                        elapsed = timer.Elapsed.TotalSeconds;
+                        progress?.Report(new LogReaderStatus() 
                         { 
-                            Percent = (float)stream.Position / stream.Length, 
+                            Percent = percent, 
                             Line = count, 
-                            Notes = timer.Elapsed.TotalSeconds.ToString("F1") + "s" 
+                            Notes = elapsed.ToString("F1") + "s" 
                         });
                     }
 

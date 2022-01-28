@@ -26,7 +26,7 @@ namespace EQLogParser
         /// <summary>
         /// Each time the spell is cast an entry is added with the # seconds from start of fight
         /// </summary>
-        public List<int> Times = new List<int>();
+        //public List<int> Times = new List<int>();
 
         public void Merge(FightSpell x)
         {

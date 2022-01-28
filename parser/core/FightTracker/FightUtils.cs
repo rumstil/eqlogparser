@@ -14,7 +14,7 @@ namespace EQLogParser
         /// <summary>
         /// Output a detailed summary of each players damage, tanking, and spells to a TextWriter.
         /// </summary>
-        public static void WriteFightDetails(this TextWriter writer, FightInfo fight)
+        public static void WriteLongSummary(this TextWriter writer, FightInfo fight)
         {
             writer.WriteLine();
             writer.WriteLine("**{0}** {1:N0} HP in {2}s at {3}", fight.Name, fight.Target.InboundHitSum, fight.Duration, fight.StartedOn.ToLocalTime(), fight.Zone);
@@ -53,7 +53,7 @@ namespace EQLogParser
         /// <summary>
         /// Output a short summary of each players damage to a TextWriter.
         /// </summary>
-        public static void WriteFightSummary(this TextWriter writer, FightInfo fight)
+        public static void WriteShortSummary(this TextWriter writer, FightInfo fight)
         {
             writer.WriteLine();
             writer.WriteLine("** {0} ** {1} HP in {2}s at {3}", fight.Name, FormatNum(fight.Target.InboundHitSum), fight.Duration, fight.StartedOn.ToLocalTime().ToShortTimeString(), fight.Zone);
@@ -82,6 +82,15 @@ namespace EQLogParser
             if (n > 1000)
                 return (n / 1000F).ToString("F1") + 'K';
             return n.ToString();
+        }
+
+        public static string FormatDate(DateTime d)
+        {
+            if (d.Kind == DateTimeKind.Utc)
+                d = d.ToLocalTime();
+            if (d.Year != DateTime.Today.Year)
+                return d.ToString("MMM dd  yyyy");
+            return d.ToString("MMM dd HH:mm");
         }
 
     }

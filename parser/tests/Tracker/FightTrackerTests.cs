@@ -335,6 +335,17 @@ namespace EQLogParserTests.Tracker
             Assert.Equal("Group", tracker.Party);
         }
 
+        [Fact]
+        public void Accepts_Nulls()
+        {
+            // some events have null references
+            // make sure these don't throw an exception
+            var tracker = new FightTracker(new SpellParser(), new CharTracker());
+
+            tracker.HandleEvent(new LogTauntEvent() { Source = PLAYER1, Target = null });
+            tracker.HandleEvent(new LogDeathEvent() { Name = PLAYER1, KillShot = null });
+        }
+
 
     }
 

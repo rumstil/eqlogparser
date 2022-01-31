@@ -66,6 +66,7 @@ namespace EQLogParser
             Parsers.Add(LogAAPurchaseEvent.Parse);
             Parsers.Add(LogSkillEvent.Parse);
             Parsers.Add(LogShieldEvent.Parse);
+            Parsers.Add(LogRescuedEvent.Parse);
             Parsers.Add(LogTauntEvent.Parse);
             Parsers.Add(LogDiceRollEvent.Parse);
             Parsers.Add(LogCoinEvent.Parse);

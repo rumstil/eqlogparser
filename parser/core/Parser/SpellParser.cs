@@ -11,9 +11,11 @@ namespace EQLogParser
 {
     public enum SpellTarget
     {
+        Caster_Group = 3,
         Self = 6,
         Pet = 14,
         Pet2 = 38,
+        Target_Group = 41,
         Pet_Owner = 47,
     }
 
@@ -181,10 +183,10 @@ namespace EQLogParser
 
                 // set LandPet emote on pet spells if the emote is only used by pet spells
                 // e.g. "shrinks" is used by both pet and non pet spells
-                var nonPet = list.Where(x => !x.IsPetTarget).Select(x => x.LandOthers).ToHashSet();
+                var exclude = list.Where(x => !x.IsPetTarget).Select(x => x.LandOthers).ToHashSet();
                 foreach (var spell in list.Where(x => x.IsPetTarget))
                 {
-                    if (!nonPet.Contains(spell.LandOthers))
+                    if (!exclude.Contains(spell.LandOthers))
                         spell.LandPet = spell.LandOthers;
                 }
             }

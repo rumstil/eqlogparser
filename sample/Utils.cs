@@ -75,7 +75,7 @@ namespace Sample
             trackers.Add(chars.HandleEvent);
             var fights = new FightTracker(spells, chars);
             trackers.Add(fights.HandleEvent);
-            var buffs = new BuffTracker(spells, chars);
+            var buffs = new BuffTracker(spells);
             trackers.Add(buffs.HandleEvent);
             var loot = new LootTracker();
             trackers.Add(loot.HandleEvent);

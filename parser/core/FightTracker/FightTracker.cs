@@ -47,7 +47,7 @@ namespace EQLogParser
         public FightTracker(ISpellLookup spells, ICharLookup chars)
         {
             Chars = chars;
-            Buffs = new BuffTracker(spells, chars);
+            Buffs = new BuffTracker(spells);
         }
 
         /// <summary>
@@ -444,38 +444,41 @@ namespace EQLogParser
             f.Server = Server;
 
             // update info from trackers
+            //Buffs.PurgeStale(f.StartedOn.AddMinutes(-5));
             foreach (var p in f.Participants)
             {
                 p.Class = Chars.GetClass(p.Name);
                 p.PetOwner = Chars.GetOwner(p.Name);
                 // go back a few seconds to include buffs cast in preparation for the fight
-                p.Buffs = Buffs.Get(p.Name, f.StartedOn.AddSeconds(-6), f.UpdatedOn, -6).ToList();
+                p.Buffs = Buffs.Get(p.Name, f.StartedOn, f.UpdatedOn, -10);
             }
 
             f.Finish();
 
-            // after a fight is passed to this delegate it should never be modified (e.g. via the LastFight variable)
-            LastFight = null;
             // fight may have no participants if only a miss was registered
             if (f.Participants.Count == 0)
                 return;
-            OnFightFinished?.Invoke(f);
 
             // see if the fight is part of a raid
             var raid = GetRaid(f);
-            if (raid == null)
-                return;
-
-            raid.Merge(f);
-
-            // end the raid on boss death 
-            // todo: what about trash that's still alive after the boss dies?
-            // finishing a raid will force timeouts on related mobs and those timeouts can recursively call 
-            // this function again -- we use the status check to prevent infinite recursion
-            if (raid.Template.EndsOnDeath.Contains(f.Name) && f.Status == FightStatus.Killed)
+            if (raid != null)
             {
-                FinishRaid(raid);
+                raid.Merge(f);
+
+                // end the raid on boss death 
+                // todo: what about trash that's still alive after the boss dies?
+                // finishing a raid will force timeouts on related mobs and those timeouts can recursively call 
+                // this function again -- we use the status check to prevent infinite recursion
+                if (raid.Template.EndsOnDeath.Contains(f.Name) && f.Status == FightStatus.Killed)
+                {
+                    FinishRaid(raid);
+                }
             }
+
+            // after a fight is passed to the OnFightFinished delegate it should never be modified
+            // and probably not even accessed in case code from another thread updates it for some reason
+            OnFightFinished?.Invoke(f);
+            LastFight = null;
         }
 
         /// <summary>

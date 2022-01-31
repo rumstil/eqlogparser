@@ -34,9 +34,11 @@ namespace EQLogParser.Helpers
         private readonly Action<string> handler;
         private double percent;
         private double elapsed;
+        private string lastLine;
 
         public double Percent => percent;
         public double Elapsed => elapsed;
+        public string LastLine => lastLine;
 
         /// <summary>
         /// Create a new instance of the background log reader.
@@ -104,6 +106,7 @@ namespace EQLogParser.Helpers
                     }
 
                     // process line
+                    lastLine = line;
                     handler(line);
                     count += 1;
                 }

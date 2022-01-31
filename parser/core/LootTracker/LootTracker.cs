@@ -30,12 +30,6 @@ namespace EQLogParser
 
         public DateTime Date { get; set; }
 
-        /// <summary>
-        /// Is the loot drop safe to catalog?
-        /// Beta server may have items that don't exist or haven't been named yet.
-        /// Mischief and Thornblade servers use randomized loot.
-        /// </summary>
-        public bool IsStandardLoot => Server != null && Server != "beta" && Server != "mischief" && Server != "thornblade";
     }
 
     /// <summary>
@@ -386,6 +380,16 @@ namespace EQLogParser
             //    OnLoot?.Invoke(new LootInfo { Item = craft.Item, Mob = "Crafted", Date = e.Timestamp });
             //}
 
+        }
+
+        /// <summary>
+        /// Does the server follow standard loot rules?
+        /// Beta server may have items that don't exist or haven't been named yet.
+        /// Mischief and Thornblade servers use randomized loot.
+        /// </summary>
+        public static bool IsStandardServer(string server)
+        {
+            return server != null && server != "beta" && server != "mischief" && server != "thornblade";
         }
     }
 }

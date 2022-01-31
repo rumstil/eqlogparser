@@ -125,14 +125,7 @@ namespace LogSync
                 return;
             }
 
-            if (lootList.Count > 0)
-            {
-                // clone the list since we aren't awaiting the response
-                var copy = lootList.ToList();
-                lootList = new List<LootInfo>();
-                _ = uploader.UploadLoot(copy);
-            }
-
+            _ = UploadLoot();
 
             var selected = GetSelectedListViewFights();
             if (selected.Count == 0)
@@ -149,7 +142,7 @@ namespace LogSync
 
             foreach (var f in selected)
             {
-                UploadFight(f);
+                _ = UploadFight(f);
                 // throttle uploads if sending a large batch
                 if (selected.Count > 10)
                     await Task.Delay(500);
@@ -440,7 +433,15 @@ namespace LogSync
             });
             cancellationSource = new CancellationTokenSource();
             var reader = new BackgroundLogReader(path, cancellationSource.Token, handler, progress);
-            await reader.Start();
+            try
+            {
+                await reader.Start();
+            }
+            catch (Exception ex)
+            {
+                LogInfo("Error: " + ex.Message);
+                LogInfo("Last Line: " + reader.LastLine);
+            }
             LogInfo("Closing " + path);
             if (open.Server != null)
             {
@@ -597,13 +598,14 @@ namespace LogSync
 
             if (chkAutoUpload.Checked && f.Status == FightStatus.Killed && !IsTrashMob(f))
             {
-                UploadFight(f);
+                _ = UploadFight(f);
+                _ = UploadLoot();
             }
         }
 
         private void AddLoot(LootInfo l)
         {
-            if (l.IsStandardLoot)
+            if (LootTracker.IsStandardServer(l.Server))
                 lootList.Add(l);
             //LogInfo($"Looted {l.Item} from {l.Source} in {l.Zone}");
         }
@@ -644,14 +646,21 @@ namespace LogSync
             lvPlayers.EndUpdate();
         }
 
-        private async void UploadFight(FightInfo f)
+        private async Task<bool> UploadLoot()
+        {
+            if (!uploader.IsReady || lootList.Count == 0)
+                return false;
+
+            // clone the list since we aren't awaiting the response
+            var copy = lootList.ToList();
+            lootList = new List<LootInfo>();
+            return await uploader.UploadLoot(copy);
+        }
+
+        private async Task<bool> UploadFight(FightInfo f)
         {
             if (!uploader.IsReady)
-                return;
-
-            //var hint = new StringWriter();
-            //f.DumpShort(hint);
-            //LogInfo(hint.ToString());
+                return false;
 
             fightStatus[f.ID] = "Uploading...";
             lvFights.Invalidate();
@@ -660,6 +669,8 @@ namespace LogSync
 
             fightStatus[f.ID] = result ? "Uploaded" : "Failed";
             lvFights.Invalidate();
+
+            return result;
         }
 
         private bool IsTrashMob(FightInfo f)

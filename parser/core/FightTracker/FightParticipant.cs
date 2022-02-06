@@ -34,12 +34,18 @@ namespace EQLogParser
         // keep separate melee stats for tanking summary
         public int InboundMeleeCount { get; set; }
         public long InboundMeleeSum { get; set; }
+        public int InboundStrikeCount { get; set; }
+        public int InboundStrikeProneCount { get; set; }
         public int InboundRiposteSum { get; set; }
         //public int InboundSpellCount { get; set; }
         //public int InboundSpellSum { get; set; }
 
         public int OutboundHealSum { get; set; }
+        public int OutboundFullHealSum { get; set; }
         public int InboundHealSum { get; set; }
+        public int InboundFullHealSum { get; set; }
+        //public int InboundHealCount { get; set; }
+        //public int InboundNullHealCount { get; set; }
 
         public int DeathCount { get; set; }
 
@@ -48,6 +54,7 @@ namespace EQLogParser
         public List<int> DPS { get; set; } = new List<int>();
         public List<int> HPS { get; set; } = new List<int>();
         public List<int> TankDPS { get; set; } = new List<int>();
+        public List<int> InboundHPS { get; set; } = new List<int>();
 
         public List<FightHit> AttackTypes { get; set; } = new List<FightHit>();
         public List<FightMiss> DefenseTypes { get; set; } = new List<FightMiss>();
@@ -92,10 +99,8 @@ namespace EQLogParser
                     var spell = AddSpell(hit.Spell, "hit");
                     spell.HitCount += 1;
                     spell.HitSum += hit.Amount;
-                    //if (hit.Amount > spell.HitMax)
-                    //    spell.HitMax = hit.Amount;
-                    //if (hit.Amount < spell.HitMin || spell.HitMin == 0)
-                    //    spell.HitMin = hit.Amount;
+                    if (hit.Amount > spell.HitMax)
+                        spell.HitMax = hit.Amount;
 
                     if (hit.Mod.HasFlag(LogEventMod.Critical))
                     {
@@ -112,6 +117,10 @@ namespace EQLogParser
                 }
                 else
                 {
+                    //if (hit.Amount > OutboundMaxHit)
+                    //{
+                    //    OutboundMaxHit = hit.Amount;
+                    //}
                     //OutboundMeleeCount += 1;
                     //OutboundMeleeSum += hit.Amount;
                 }
@@ -137,27 +146,14 @@ namespace EQLogParser
                 var at = AddAttack(type);
                 at.HitCount += 1;
                 at.HitSum += hit.Amount;
-                //if (hit.Amount > at.HitMax)
-                //    at.HitMax = hit.Amount;
-                //if (hit.Amount < at.HitMin || at.HitMin == 0)
-                //    at.HitMin = hit.Amount;
+                if (hit.Amount > at.HitMax)
+                    at.HitMax = hit.Amount;
 
                 if (hit.Mod.HasFlag(LogEventMod.Critical))
                 {
                     at.CritCount += 1;
                     at.CritSum += hit.Amount;
                 }
-
-                /*
-                if (hit.Mod.HasFlag(LogEventMod.Riposte))
-                {
-                    // riposte type is a duplicate and should not be included in the overall sum
-                    // it might make more sense to add it as an attribute (like crit damage)
-                    var rip = AddAttack("riposte");
-                    rip.HitCount += 1;
-                    rip.HitSum += hit.Amount;
-                }
-                */
 
                 if (hit.Mod.HasFlag(LogEventMod.Strikethrough))
                 {
@@ -200,6 +196,21 @@ namespace EQLogParser
                 if (hit.Mod.HasFlag(LogEventMod.Riposte))
                 {
                     InboundRiposteSum += hit.Amount;
+                }
+
+                if (hit.Mod.HasFlag(LogEventMod.Strikethrough))
+                {
+                    InboundStrikeCount += 1;
+
+                    // strikethroughs are reported on hits and riposte, but other defenses do get not reported on a strikethrough
+                    // in order to properly count these defenses we should log a mystery defense that was never reported
+                    // i.e. for riposte the log will show this:
+                    // [Wed Jan 19 20:54:58 2022] A shadowbone tries to bash YOU, but YOU riposte!(Strikethrough)
+                    // [Wed Jan 19 20:54:58 2022] A shadowbone bashes YOU for 5625 points of damage. (Riposte Strikethrough)
+                    // but for dodge/parry/etc.. it will only show this:
+                    // [Wed Jan 19 20:54:58 2022] A shadowbone bashes YOU for 5625 points of damage. (Strikethrough)
+                    if (!hit.Mod.HasFlag(LogEventMod.Riposte))
+                        AddMiss(new LogMissEvent { Timestamp = hit.Timestamp, Source = hit.Source, Target = hit.Target, Type = "unknown" });
                 }
 
             }
@@ -265,8 +276,8 @@ namespace EQLogParser
             if (heal.Source == Name)
             {
                 OutboundHealSum += heal.Amount;
+                OutboundFullHealSum += heal.FullAmount;
 
-                // todo: should we ignore heals that land for 0?
                 var h = Heals.FirstOrDefault(x => x.Target == heal.Target);
                 if (h == null)
                 {
@@ -276,23 +287,23 @@ namespace EQLogParser
                 }
                 h.HitCount += 1;
                 h.HitSum += heal.Amount;
+                h.FullHitSum += heal.FullAmount;
 
-                if (heal.Spell != null)
+                // should we label unknown heals as lifetap or unknown?
+                var spell = AddSpell(heal.Spell ?? "Lifetap", "heal");
+                spell.HitCount += 1;
+                spell.HitSum += heal.Amount;
+                spell.FullHitSum += heal.FullAmount;
+
+                if (heal.Mod.HasFlag(LogEventMod.Critical))
                 {
-                    var spell = AddSpell(heal.Spell, "heal");
-                    spell.HitCount += 1;
-                    spell.HitSum += heal.Amount;
-                    //spell.HealCount += 1;
-                    //spell.HealSum += heal.Amount;
-                    spell.HealGross += heal.GrossAmount;
-                    //if (heal.Amount > spell.HealMax)
-                    //    spell.HealMax = heal.Amount;
+                    spell.CritCount += 1;
+                    spell.CritSum += heal.Amount;
+                }
 
-                    if (heal.Mod.HasFlag(LogEventMod.Critical))
-                    {
-                        spell.CritCount += 1;
-                        spell.CritSum += heal.Amount;
-                    }
+                if (heal.Mod.HasFlag(LogEventMod.Twincast))
+                {
+                    spell.TwinCount += 1;
                 }
 
                 if (interval >= 0)
@@ -306,6 +317,14 @@ namespace EQLogParser
             if (heal.Target == Name)
             {
                 InboundHealSum += heal.Amount;
+                InboundFullHealSum += heal.FullAmount;
+
+                if (interval >= 0)
+                {
+                    while (InboundHPS.Count <= interval)
+                        InboundHPS.Add(0);
+                    InboundHPS[interval] += heal.Amount;
+                }
             }
         }
 
@@ -365,19 +384,15 @@ namespace EQLogParser
             InboundRiposteSum += p.InboundRiposteSum;
             //InboundSpellCount += p.InboundSpellCount;
             //InboundSpellSum += p.InboundSpellSum;
+            InboundStrikeCount += p.InboundStrikeCount;
 
             OutboundHealSum += p.OutboundHealSum;
             InboundHealSum += p.InboundHealSum;
+            InboundFullHealSum += p.InboundFullHealSum;
 
             DeathCount += p.DeathCount;
 
-            // combine the total of each fight into one value
-            // todo: this doesn't probably handle fights where the participant wasn't active at all (that must be handled from outside this function)
-            //DPS.Add((int)p.OutboundHitSum);
-            //TankDPS.Add((int)p.InboundHitSum);
-            //HPS.Add((int)p.OutboundHealSum);
-
-            // merge intervals starting at 'interval' base
+            // merge intervals starting at 'intervalOffset' base
             for (var i = 0; i < p.DPS.Count; i++)
             {
                 while (DPS.Count <= intervalOffset + i)
@@ -397,6 +412,13 @@ namespace EQLogParser
                 while (HPS.Count <= intervalOffset + i)
                     HPS.Add(0);
                 HPS[intervalOffset + i] += p.HPS[i];
+            }
+
+            for (var i = 0; i < p.InboundHPS.Count; i++)
+            {
+                while (InboundHPS.Count <= intervalOffset + i)
+                    InboundHPS.Add(0);
+                InboundHPS[intervalOffset + i] += p.InboundHPS[i];
             }
 
 
@@ -450,15 +472,18 @@ namespace EQLogParser
                 _s.Merge(s);
             }
 
-            // >= 0 avoids any pre fight buffs
-            foreach (var b in p.Buffs.Where(x => x.Time >= 0))
-            {
-                if (timeOffset == 0)
-                    Buffs.Add(b);
-                else
-                    Buffs.Add(new FightBuff { Name = b.Name, Time = b.Time + timeOffset });
-            }
+            // disabled - merging buffs will create duplicates if fights overlap and include the same buff
+            // it would be better to recreate buffs after merging
+            p.Buffs.Clear();
 
+            // >= 0 avoids any pre fight buffs
+            //foreach (var b in p.Buffs.Where(x => x.Time >= 0))
+            //{
+            //    if (timeOffset == 0)
+            //        Buffs.Add(b);
+            //    else
+            //        Buffs.Add(new FightBuff { Name = b.Name, Time = b.Time + timeOffset });
+            //}
         }
     
         /// <summary>
@@ -501,7 +526,7 @@ namespace EQLogParser
             OutboundHitSum += pet.OutboundHitSum;
             OutboundMissCount += pet.OutboundMissCount;
 
-            // merges DPS and HPS intervals (but not TankDPS)
+            // merges DPS and HPS intervals (but not TankDPS or InboundHPS)
             for (var i = 0; i < pet.DPS.Count; i++)
             {
                 while (DPS.Count <= i)

@@ -21,7 +21,7 @@ namespace EQLogParserTests.Event
             Assert.Equal("Uteusher", heal.Source);
             Assert.Equal("Lenantik", heal.Target);
             Assert.Equal(9875, heal.Amount);
-            Assert.Equal(9875, heal.GrossAmount);
+            Assert.Equal(9875, heal.FullAmount);
             Assert.Equal("Devout Light", heal.Spell);
         }
 
@@ -33,7 +33,7 @@ namespace EQLogParserTests.Event
             Assert.Equal("Uteusher", heal.Source);
             Assert.Equal("Lenantik", heal.Target);
             Assert.Equal(9875, heal.Amount);
-            Assert.Equal(9875, heal.GrossAmount);
+            Assert.Equal(9875, heal.FullAmount);
             Assert.Equal("Devout Light", heal.Spell);
         }
 
@@ -69,7 +69,7 @@ namespace EQLogParserTests.Event
             Assert.Equal("Blurr", heal.Source);
             Assert.Equal("Blurr", heal.Target);
             Assert.Equal(12, heal.Amount);
-            Assert.Equal(617, heal.GrossAmount);
+            Assert.Equal(617, heal.FullAmount);
             Assert.Null(heal.Spell);
         }
 
@@ -81,7 +81,7 @@ namespace EQLogParserTests.Event
             Assert.Equal("Uteusher", heal.Source);
             Assert.Equal("Lenantik", heal.Target);
             Assert.Equal(2153, heal.Amount);
-            Assert.Equal(9875, heal.GrossAmount);
+            Assert.Equal(9875, heal.FullAmount);
             Assert.Equal("Devout Light", heal.Spell);
         }
 
@@ -94,7 +94,7 @@ namespace EQLogParserTests.Event
             Assert.Equal("Uteusher", heal.Source);
             Assert.Equal("Lenantik", heal.Target);
             Assert.Equal(0, heal.Amount);
-            Assert.Equal(9875, heal.GrossAmount);
+            Assert.Equal(9875, heal.FullAmount);
             Assert.Equal("Devout Light", heal.Spell);
         }
 
@@ -107,12 +107,12 @@ namespace EQLogParserTests.Event
             Assert.Equal(PLAYER, heal.Source);
             Assert.Equal("Uteusher", heal.Target);
             Assert.Equal(361, heal.Amount);
-            Assert.Equal(361, heal.GrossAmount);
+            Assert.Equal(361, heal.FullAmount);
             Assert.Equal("HandOfHolyVengeanceVRecourse", heal.Spell);
             Assert.Equal(LogEventMod.Critical, heal.Mod);
         }
 
-        [Fact]
+        [Fact(Skip = "Obsolete")]
         public void Parse_Obsolete_Instant_Mod()
         {
             // capture critical
@@ -121,11 +121,10 @@ namespace EQLogParserTests.Event
             Assert.Equal(PLAYER, heal.Source);
             Assert.Equal("Uteusher", heal.Target);
             Assert.Equal(361, heal.Amount);
-            Assert.Equal(361, heal.GrossAmount);
+            Assert.Equal(361, heal.FullAmount);
             Assert.Equal("HandOfHolyVengeanceVRecourse", heal.Spell);
             Assert.Equal(LogEventMod.Critical, heal.Mod);
         }
-
 
         [Fact]
         public void Parse_Instant_Himself()
@@ -171,7 +170,7 @@ namespace EQLogParserTests.Event
             Assert.Equal("Uteusher", heal.Source);
             Assert.Equal(PLAYER, heal.Target);
             Assert.Equal(1797, heal.Amount);
-            Assert.Equal(1797, heal.GrossAmount);
+            Assert.Equal(1797, heal.FullAmount);
             Assert.Equal("Devout Elixir", heal.Spell);
         }
 
@@ -183,7 +182,7 @@ namespace EQLogParserTests.Event
             Assert.Equal("Uteusher", heal.Source);
             Assert.Equal(PLAYER, heal.Target);
             Assert.Equal(208, heal.Amount);
-            Assert.Equal(1797, heal.GrossAmount);
+            Assert.Equal(1797, heal.FullAmount);
             Assert.Equal("Devout Elixir", heal.Spell);
         }
 
@@ -195,7 +194,7 @@ namespace EQLogParserTests.Event
             Assert.Equal("Uteusher", heal.Source);
             Assert.Equal("Uteusher", heal.Target);
             Assert.Equal(1797, heal.Amount);
-            Assert.Equal(1797, heal.GrossAmount);
+            Assert.Equal(1797, heal.FullAmount);
             Assert.Equal("Devout Elixir", heal.Spell);
         }
 
@@ -218,7 +217,7 @@ namespace EQLogParserTests.Event
             Assert.Null(heal.Source);
             Assert.Equal("Uteusher", heal.Target);
             Assert.Equal(0, heal.Amount);
-            Assert.Equal(900, heal.GrossAmount);
+            Assert.Equal(900, heal.FullAmount);
             Assert.Equal("Celestial Regeneration XVIII", heal.Spell);
         }
 
@@ -230,7 +229,7 @@ namespace EQLogParserTests.Event
             Assert.Null(heal.Source);
             Assert.Equal(PLAYER, heal.Target);
             Assert.Equal(9525, heal.Amount);
-            Assert.Equal(9525, heal.GrossAmount);
+            Assert.Equal(9525, heal.FullAmount);
             Assert.Equal("Merciful Elixir Rk. II", heal.Spell);
         }
 

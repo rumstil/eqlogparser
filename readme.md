@@ -26,6 +26,17 @@ e.g. This is my channel: https://www.raidloot.com/channel/x
 
 The parser currently only handles The Burning Lands (Dec 12, 2018) and newer log formats.
 
+# Differences from GamParse
+
+When comparing to GamParse please keep these differences in mind:
+- The total of all melee hits should be the same as the GamParse total but they're broken down into sub categories a little differently.
+- Any melee hit that is a riposte will be listed as "riposte" rather than it's weapon skill.
+- Any melee hit that is a finishing blow will be listed as "finishing" rather than it's weapon skill. 
+- Any melee hit that is a headshot, assasinate, decapitate, or slay undead will be listed by it's special skill rather than it's weapon skill.
+- Any spell that does both DD and DoT damage is combined into a single total. GamParse will list the two parts separately on the DD/DoT tabs.
+- DPS numbers are calculated as: total damage / fight duration. I believe GamParse uses: total damage / player active duration.
+- This parser groups damage into 6 second intervals. This means any charts it displays will be averaged out compared to GamParse.
+- This parser treats a fight as starting as soon as a hit or miss occurs. I believe GamParse may delay the starting timestamp until a player hits the mob.
 
 # Structure
 

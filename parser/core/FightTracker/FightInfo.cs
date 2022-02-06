@@ -23,7 +23,8 @@ namespace EQLogParser
     /// </summary>
     public class FightInfo
     {
-        public string Version { get; set; } = "1";
+        // 2022-2-5, "2", added InboundHPS, FullHealSums on spells and heals, HitMax on spells and hits
+        public string Version { get; set; } = "2";
         public string ID { get; set; }
         public DateTime StartedOn { get; set; }
         public DateTime UpdatedOn { get; set; }
@@ -55,6 +56,17 @@ namespace EQLogParser
         /// All characters and pets participating in the fight vs target.
         /// </summary>
         public List<FightParticipant> Participants { get; set; } = new List<FightParticipant>();
+
+        protected IEnumerable<FightParticipant> ParticipantsAndTarget
+        {
+            get
+            {
+                if (Target != null)
+                    yield return Target;
+                foreach (var p in Participants)
+                    yield return p;
+            }
+        }
 
         /// <summary>
         /// Fight duration in seconds (excludes gaps on merged fights). Always at least 1.
@@ -185,10 +197,11 @@ namespace EQLogParser
             // heal source may be null if healer dies
             if (heal.Source != null)
                 AddParticipant(heal.Source).AddHeal(heal, interval);
-            // only count target if it's not a self heal (otherwise we would double count)
-            // temporarily removing this because it adds afk players that are soaking up group heals
-            //if (heal.Source != heal.Target)
-            //    AddParticipant(heal.Target).AddHeal(heal, interval);
+
+            // only count target if it's not a self heal, because AddHeal has already
+            // run both source/target legs internally and we don't want to double count
+            if (heal.Source != heal.Target)
+                AddParticipant(heal.Target).AddHeal(heal, interval);
         }
 
         public void AddCasting(LogCastingEvent cast)
@@ -199,6 +212,78 @@ namespace EQLogParser
         public void AddDeath(LogDeathEvent death)
         {
             AddParticipant(death.Name).DeathCount += 1;
+        }
+
+        /// <summary>
+        /// Trim the long tail of participants that fall under a low threshold of activity to make the data structure smaller.
+        /// These players will be consolidated into an "*Other" entry.
+        /// This should be done after all other merging -- possibly just on the server side.
+        /// </summary>
+        public void TrimParticipants()
+        {
+            var other = new FightParticipant();
+            other.FirstAction = StartedOn;
+            other.LastAction = UpdatedOn;
+            other.Name = "*Other";
+
+            // damage: anyone that does less than 5% of top damage dealer
+            var min = Participants.Max(x => x.OutboundHitSum) * 0.05;
+            foreach (var p in Participants.Where(x => x.OutboundHitSum < min))
+            {
+                // participant names will be anonymized at this point
+                //other.AttackTypes.Add(new FightHit { Type = p.Name, HitCount = p.OutboundHitCount, HitSum = (int)p.OutboundHitSum });
+                other.OutboundHitSum += p.OutboundHitSum;
+                p.OutboundHitSum = 0;
+                other.OutboundHitCount += p.OutboundHitCount;
+                p.OutboundHitCount = 0;
+                p.DPS.Clear();
+                p.AttackTypes.Clear();
+                p.Spells.RemoveAll(x => x.Type == "hit");
+            }
+
+            // tanking: anyone that does less than 10% of the top tank
+            // this just ends up being filled with swarm pets and rampage targets
+            min = Participants.Max(x => x.InboundMeleeSum) * 0.1;
+            foreach (var p in Participants.Where(x => x.InboundMeleeSum < min))
+            {
+                other.InboundMeleeSum += p.InboundMeleeSum;
+                p.InboundMeleeSum = 0;
+                other.InboundMeleeCount += p.InboundMeleeCount;
+                other.InboundMissCount += p.InboundMissCount;
+                p.InboundMeleeCount = 0;
+                p.InboundMissCount = 0;
+                p.TankDPS.Clear();
+                p.InboundHPS.Clear();
+                p.DefenseTypes.Clear();
+            }
+
+            // healing: anyone that does less than 10% of top healer
+            min = Participants.Max(x => x.OutboundHealSum) * 0.1;
+            foreach (var p in Participants.Where(x => x.OutboundHealSum < min))
+            {
+                other.OutboundHealSum += p.OutboundHealSum;
+                p.OutboundHealSum = 0;
+                p.HPS.Clear();
+                foreach (var h in p.Heals)
+                {
+                    var ot = other.Heals.Find(x => x.Target == h.Target);
+                    if (ot == null)
+                    {
+                        ot = new FightHeal() { Target = h.Target };
+                        other.Heals.Add(h);
+                    }
+                    ot.HitSum += h.HitSum;
+                    ot.HitCount += h.HitCount;
+                }
+                p.Heals.Clear();
+                p.Spells.RemoveAll(x => x.Type == "heal");
+            }
+
+
+            if (other.OutboundHitSum > 0 || other.OutboundHealSum > 0 || other.InboundMeleeSum > 0)
+                Participants.Add(other);
+
+            Participants.RemoveAll(x => x.OutboundHealSum == 0 && x.OutboundHitSum == 0 && x.InboundHitSum == 0 && !x.DPS.Any(y => y > 0));
         }
 
         /// <summary>
@@ -223,9 +308,7 @@ namespace EQLogParser
             Participants = Participants.OrderByDescending(x => x.OutboundHitSum).ThenBy(x => x.Name).ToList();
 
             // update participants (including target)
-            var everyone = Participants.ToList();
-            everyone.Add(Target);
-            foreach (var p in everyone)
+            foreach (var p in ParticipantsAndTarget)
             {
                 // calculate active duration
                 if (p.FirstAction.HasValue && p.LastAction.HasValue)
@@ -238,12 +321,13 @@ namespace EQLogParser
                 p.DefenseTypes = p.DefenseTypes.OrderBy(x => Array.IndexOf(FightMiss.MissOrder, x.Type)).ToList();
 
                 // attempts should only count the remaining hit attempts after earlier checks fail
-                var attempts = p.InboundHitCount + p.InboundMissCount;
+                var attempts = p.InboundMeleeCount + p.InboundMissCount - p.InboundStrikeCount;
                 foreach (var def in p.DefenseTypes.Where(x => FightMiss.MissOrder.Contains(x.Type)))
                 {
                     def.Attempts = attempts;
                     attempts -= def.Count;
                 }
+                p.InboundStrikeProneCount = p.InboundMissCount - p.DefenseTypes.Where(x => x.Type == "miss" || x.Type == "invul" || x.Type == "rune").Sum(x => x.Count);
 
                 // DPS buckets may be missing tail entries if no data was recorded
                 // these are important if we are going to be combining fights
@@ -267,6 +351,8 @@ namespace EQLogParser
                     p.DPS.Clear();
                 if (p.HPS.All(x => x == 0))
                     p.HPS.Clear();
+                if (p.InboundHPS.All(x => x == 0))
+                    p.InboundHPS.Clear();
                 if (p.TankDPS.All(x => x == 0))
                     p.TankDPS.Clear();
             }

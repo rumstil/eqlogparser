@@ -1,7 +1,7 @@
 ﻿namespace EQLogParser
 {
     /// <summary>
-    /// An aggregate of damage that occurs in a fight: melee hit, ranged hit, spell, proc.
+    /// An aggregate of single damage type that occurs in a fight: melee hit, ranged hit, dd, dot, etc...
     /// </summary>
     public class FightHit
     {
@@ -10,8 +10,7 @@
         public int HitSum { get; set; }
         public int CritCount { get; set; }
         public int CritSum { get; set; }
-        //public int HitMin;
-        //public int HitMax;
+        public int HitMax { get; set; }
 
         public void Merge(FightHit x)
         {
@@ -19,10 +18,8 @@
             HitCount += x.HitCount;
             CritSum += x.CritSum;
             CritCount += x.CritCount;
-            //if (HitMin > x.HitMin || HitMin == 0)
-            //    HitMin = x.HitMin;
-            //if (HitMax < x.HitMax)
-            //    HitMax = x.HitMax;
+            if (HitMax < x.HitMax)
+                HitMax = x.HitMax;
         }
     }
 }

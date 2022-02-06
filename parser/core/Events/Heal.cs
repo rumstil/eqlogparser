@@ -24,7 +24,7 @@ namespace EQLogParser
         public string Source;
         public string Target;
         public int Amount;
-        public int GrossAmount;
+        public int FullAmount;
         public string Spell;
         public LogEventMod Mod;
         
@@ -81,7 +81,7 @@ namespace EQLogParser
                     Source = e.FixName(m.Groups[1].Value),
                     Target = m.Groups[2].Value == "himself" || m.Groups[2].Value == "herself" || m.Groups[2].Value == "itself" ? e.FixName(m.Groups[1].Value) : e.FixName(m.Groups[2].Value),
                     Amount = Int32.Parse(m.Groups[3].Value),
-                    GrossAmount = m.Groups[4].Success ? Int32.Parse(m.Groups[4].Value) : Int32.Parse(m.Groups[3].Value),
+                    FullAmount = m.Groups[4].Success ? Int32.Parse(m.Groups[4].Value) : Int32.Parse(m.Groups[3].Value),
                     Spell = m.Groups[5].Success ? m.Groups[5].Value : null,
                     Mod = mod
                 };
@@ -96,7 +96,7 @@ namespace EQLogParser
                     Source = null,
                     Target = e.FixName(m.Groups[1].Value),
                     Amount = Int32.Parse(m.Groups[2].Value),
-                    GrossAmount = m.Groups[3].Success ? Int32.Parse(m.Groups[3].Value) : Int32.Parse(m.Groups[2].Value),
+                    FullAmount = m.Groups[3].Success ? Int32.Parse(m.Groups[3].Value) : Int32.Parse(m.Groups[2].Value),
                     Spell = m.Groups[4].Success ? m.Groups[4].Value : null,
                     Mod = mod
                 };
@@ -113,7 +113,7 @@ namespace EQLogParser
                     Source = e.FixName(m.Groups[1].Value),
                     Target = m.Groups[2].Value == "himself" || m.Groups[2].Value == "herself" || m.Groups[2].Value == "itself" ? e.FixName(m.Groups[1].Value) : e.FixName(m.Groups[2].Value),
                     Amount = Int32.Parse(m.Groups[3].Value),
-                    GrossAmount = m.Groups[4].Success ? Int32.Parse(m.Groups[4].Value) : Int32.Parse(m.Groups[3].Value),
+                    FullAmount = m.Groups[4].Success ? Int32.Parse(m.Groups[4].Value) : Int32.Parse(m.Groups[3].Value),
                     Spell = m.Groups[5].Success ? m.Groups[5].Value : null,
                     Mod = mod
                 };
@@ -128,7 +128,7 @@ namespace EQLogParser
                     Source = e.FixName(m.Groups[1].Value),
                     Target = m.Groups[2].Value == "himself" || m.Groups[2].Value == "herself" || m.Groups[2].Value == "itself" ? e.FixName(m.Groups[1].Value) : e.FixName(m.Groups[2].Value),
                     Amount = Int32.Parse(m.Groups[3].Value),
-                    GrossAmount = m.Groups[4].Success ? Int32.Parse(m.Groups[4].Value) : Int32.Parse(m.Groups[3].Value),
+                    FullAmount = m.Groups[4].Success ? Int32.Parse(m.Groups[4].Value) : Int32.Parse(m.Groups[3].Value),
                     Spell = m.Groups[5].Success ? m.Groups[5].Value : null,
                     Mod = mod
                 };

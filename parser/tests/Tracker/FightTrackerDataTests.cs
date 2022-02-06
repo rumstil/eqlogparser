@@ -186,7 +186,7 @@ namespace EQLogParserTests.Tracker
             Assert.Equal(new[] { 0, 10, 23 }, p.DPS);
         }
 
-        [Fact]
+        [Fact(Skip = "Buff merging disabled because it currently creates duplicates")]
         public void Merge_Buffs_With_Gap()
         {
             var a = new FightInfo();

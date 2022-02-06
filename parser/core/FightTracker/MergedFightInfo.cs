@@ -52,6 +52,9 @@ namespace EQLogParser
             if (Zone != f.Zone)
                 Zone = "Multiple Zones";
 
+            if (Party == "Group" && f.Party == "Raid")
+                Party = "Raid";
+
             //Target.Merge(f.Target, 0);
 
             if (StartedOn > f.StartedOn && intervals.Count == 1)
@@ -128,27 +131,49 @@ namespace EQLogParser
         }
 
         /// <summary>
-        /// Reset interval data on all participants.
-        /// This can be used to avoid the in-order requirement for merging.
+        /// Remove all interval data.
+        /// This can be used to avoid the in-order requirement for merging or to reduce the data structure size.
         /// </summary>
-        public void TrimIntervals()
+        private void TrimIntervals()
         {
             intervals = new List<int>() { 0 };
 
-            if (Target != null)
-            {
-                Target.Buffs.Clear();
-                Target.DPS.Clear();
-                Target.HPS.Clear();
-                Target.TankDPS.Clear();
-            }
-
-            foreach (var p in Participants)
+            foreach (var p in ParticipantsAndTarget)
             {
                 p.Buffs.Clear();
                 p.DPS.Clear();
                 p.HPS.Clear();
                 p.TankDPS.Clear();
+                p.InboundHPS.Clear();
+            }
+        }
+
+        /// <summary>
+        /// Reduce interval data by consolidating into longer duration intervals.
+        /// This can be used to reduce the data structure size and make charts more readable.
+        /// </summary>
+        private void ReduceIntervals(int count)
+        {
+            IntervalDuration = count * IntervalDuration;
+
+            Func<List<int>, List<int>> reduce = (org) => 
+            {
+                var result = new List<int>();
+                for (var i = 0; i < org.Count; i++)
+                {
+                    if (i % count == 0)
+                        result.Add(0);
+                    result[^1] += org[i];
+                }
+                return result;
+            };
+
+            foreach (var p in ParticipantsAndTarget)
+            {
+                p.DPS = reduce(p.DPS);
+                p.HPS = reduce(p.HPS);
+                p.TankDPS = reduce(p.TankDPS);
+                p.InboundHPS = reduce(p.InboundHPS);
             }
         }
 
@@ -163,12 +188,6 @@ namespace EQLogParser
                 .Select(x => String.Format("{0} x {1}", x.Count(), x.Key)));
 
             Name = $"* {MobCount} combined mobs";
-
-            // if we're merging a long time span then the interval graphs won't be very useful anyway so
-            // we might as well reduce the memory footprint and delete the data
-            // todo: maybe if the fight is really long then reduce the number of interals by using 1 minute intervals?
-            if (Duration > 900)
-                TrimIntervals();
 
             foreach (var p in Participants)
             {
@@ -189,12 +208,24 @@ namespace EQLogParser
                 p.Duration = ticks * 6;
             }
 
+            // todo: buffs are cleared after a merge, need to rebuild them
+
             // this rounds the duration up to 6 second intervals for each fight that was merged
             Duration = Math.Max(Target.DPS.Count, Target.TankDPS.Count) * 6;
             if (TotalDuration < Duration)
                 Duration = TotalDuration;
             if (Duration < 1)
                 Duration = 1;
+
+            // if we're merging a long time span then the interval graphs won't be very useful and just bloat the data structure
+            if (Duration > 3000)
+                TrimIntervals();
+            else if (Duration > 600)
+                ReduceIntervals(5); // 6 seconds => 30 seconds
+
+            // trim long tail of participants
+            if (Participants.Count > 12)
+                TrimParticipants();
         }
 
     }

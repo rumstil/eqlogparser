@@ -12,7 +12,6 @@ The **RetroLog** is DOS-like green screen based parser app. Probably more fun th
 
 The **EQLogParser** project is a .NET library containing parsing code without any UI. All projects in this repository use this to do their parsing.
 
-
 # Web Based Parser
 
 If you would prefer not to install the **LogSync** application, you can use a web based version of this parser by uploading your logs directly to www.raidloot.com/logs.
@@ -21,22 +20,30 @@ Your logs will be published to your own private channel.
 
 e.g. This is my channel: https://www.raidloot.com/channel/x
 
-
 # Limitations
 
 The parser currently only handles The Burning Lands (Dec 12, 2018) and newer log formats.
 
+Although the TBL expansion vastly improved EQ logging, additional improvements could still be made. These quirks affect logging accuracy and are difficult to correct through heuristics:
+
+-   Defenses (other than riposte) are not reported on a strikethrough.
+-   Mobs with the same name cannot be distinguished. An ID suffix would be useful.
+-   Charmed mobs are not identified. Some kind of "(Charmed)" suffix would be helpful.
+-   Buff names, duration and wearing off are not reported.
+-   Pets should either automatically "/pet leader" on spawn/unsuspend or have a suffix. Adding "/who pet" might also be helpful.
+
 # Differences from GamParse
 
 When comparing to GamParse please keep these differences in mind:
-- The total of all melee hits should be the same as the GamParse total but they're broken down into sub categories a little differently.
-- Any melee hit that is a riposte will be listed as "riposte" rather than it's weapon skill.
-- Any melee hit that is a finishing blow will be listed as "finishing" rather than it's weapon skill. 
-- Any melee hit that is a headshot, assasinate, decapitate, or slay undead will be listed by it's special skill rather than it's weapon skill.
-- Any spell that does both DD and DoT damage is combined into a single total. GamParse will list the two parts separately on the DD/DoT tabs.
-- DPS numbers are calculated as: total damage / fight duration. I believe GamParse uses: total damage / player active duration.
-- This parser groups damage into 6 second intervals. This means any charts it displays will be averaged out compared to GamParse.
-- This parser treats a fight as starting as soon as a hit or miss occurs. I believe GamParse may delay the starting timestamp until a player hits the mob.
+
+-   The total of all melee hits should be the same as the GamParse total but they're broken down into sub categories a little differently.
+-   Any melee hit that is a riposte will be listed as "riposte" rather than it's weapon skill.
+-   Any melee hit that is a finishing blow will be listed as "finishing" rather than it's weapon skill.
+-   Any melee hit that is a headshot, assasinate, decapitate, or slay undead will be listed by it's special skill rather than it's weapon skill.
+-   Any spell that does both DD and DoT damage is combined into a single total. GamParse will list the two parts separately on the DD/DoT tabs.
+-   DPS numbers are calculated as: total damage / fight duration. I believe GamParse uses: total damage / player active duration.
+-   This parser groups damage into 6 second intervals. This means any charts it displays will be averaged out compared to GamParse.
+-   This parser treats a fight as starting as soon as a hit or miss occurs. I believe GamParse may delay the starting timestamp until a player hits the mob.
 
 # Structure
 
@@ -85,19 +92,14 @@ The LootTracker class keeps track of which mobs dropped what loot. This is used 
 
 The BuffTracker class keeps track of which buffs players and pets have received.
 
-
 # Copyright
 
-Copyright 2020 Rumstil / raidloot.com
-
+Copyright 2022 Rumstil / raidloot.com
 
 # License
 
 This project is licensed under Apache License 2.0
 
-
 # Contact
 
 I can be reached at raidloot@gmail.com
-
-

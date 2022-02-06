@@ -24,13 +24,14 @@ namespace EQLogParserTests.Tracker
         */
 
         [Fact]
-        public void Group_Buff_Land_On_Caster()
+        public void Group_Buff_Lands_On_Self_From_Casters_Log()
         {
             var spells = new FakeSpellParser();
             var buffs = new BuffTracker(spells);
             buffs.AddSpell(new SpellInfo { Name = "Illusions of Grandeur I", LandSelf = "Illusions of Grandeur fill your mind.", Target = (int)SpellTarget.Caster_Group });
 
-            buffs.HandleEvent(new LogRawEvent() { Text = "Illusions of Grandeur fill your mind.", Timestamp = DateTime.UtcNow, Player = PLAYER });
+            buffs.HandleEvent(new LogCastingEvent() { Spell = "Illusions of Grandeur I", Source = PLAYER, Timestamp = DateTime.UtcNow });
+            buffs.HandleEvent(new LogRawEvent() { Text = "Illusions of Grandeur fill your mind.", Player = PLAYER, Timestamp = DateTime.UtcNow });
 
             var list = buffs.Get(PLAYER, DateTime.Today, DateTime.UtcNow.AddSeconds(1)).ToList();
             Assert.Single(list);
@@ -38,13 +39,45 @@ namespace EQLogParserTests.Tracker
         }
 
         [Fact]
-        public void Group_Buff_Land_On_Other()
+        public void Group_Buff_Lands_On_Caster_From_Bystanders_Log()
         {
             var spells = new FakeSpellParser();
             var buffs = new BuffTracker(spells);
             buffs.AddSpell(new SpellInfo { Name = "Illusions of Grandeur I", LandOthers = " is consumed by Illusions of Grandeur.", Target = (int)SpellTarget.Caster_Group });
 
-            buffs.HandleEvent(new LogRawEvent() { Text = "Tokiel is consumed by Illusions of Grandeur.", Timestamp = DateTime.UtcNow, Player = PLAYER });
+            buffs.HandleEvent(new LogCastingEvent() { Spell = "Illusions of Grandeur I", Source = "Fourier", Timestamp = DateTime.UtcNow });
+            buffs.HandleEvent(new LogRawEvent() { Text = "Fourier is consumed by Illusions of Grandeur.", Player = PLAYER, Timestamp = DateTime.UtcNow });
+
+            var list = buffs.Get("Fourier", DateTime.Today, DateTime.UtcNow.AddSeconds(1)).ToList();
+            Assert.Single(list);
+            Assert.Equal("Illusions of Grandeur", list[0].Name);
+        }
+
+        [Fact]
+        public void Group_Buff_Lands_On_Self_From_Bystanders_Log()
+        {
+            var spells = new FakeSpellParser();
+            var buffs = new BuffTracker(spells);
+            buffs.AddSpell(new SpellInfo { Name = "Illusions of Grandeur I", LandSelf = "Illusions of Grandeur fill your mind.", Target = (int)SpellTarget.Caster_Group });
+
+            buffs.HandleEvent(new LogCastingEvent() { Spell = "Illusions of Grandeur I", Source = "Fourier", Timestamp = DateTime.UtcNow });
+            buffs.HandleEvent(new LogRawEvent() { Text = "Illusions of Grandeur fill your mind.", Player = PLAYER, Timestamp = DateTime.UtcNow });
+
+
+            var list = buffs.Get(PLAYER, DateTime.Today, DateTime.UtcNow.AddSeconds(1)).ToList();
+            Assert.Single(list);
+            Assert.Equal("Illusions of Grandeur", list[0].Name);
+        }
+
+        [Fact]
+        public void Group_Buff_Lands_On_Other_From_Bystanders_Log()
+        {
+            var spells = new FakeSpellParser();
+            var buffs = new BuffTracker(spells);
+            buffs.AddSpell(new SpellInfo { Name = "Illusions of Grandeur I", LandOthers = " is consumed by Illusions of Grandeur.", Target = (int)SpellTarget.Caster_Group });
+
+            buffs.HandleEvent(new LogCastingEvent() { Spell = "Illusions of Grandeur I", Source = "Fourier", Timestamp = DateTime.UtcNow });
+            buffs.HandleEvent(new LogRawEvent() { Text = "Tokiel is consumed by Illusions of Grandeur.", Player = PLAYER, Timestamp = DateTime.UtcNow });
 
             var list = buffs.Get("Tokiel", DateTime.Today, DateTime.UtcNow.AddSeconds(1)).ToList();
             Assert.Single(list);
@@ -52,7 +85,7 @@ namespace EQLogParserTests.Tracker
         }
 
         [Fact]
-        public void Ignore_Group_Buff_Emote_Shared_With_Self_Buff_Land_On_Other()
+        public void Ignore_Group_Buff_Emote_Shared_With_Self_Buff_Lands_On_Other()
         {
             var spells = new FakeSpellParser();
             var buffs = new BuffTracker(spells);
@@ -68,7 +101,7 @@ namespace EQLogParserTests.Tracker
         }
 
         [Fact]
-        public void Ignore_Group_Buff_Emote_Shared_With_Self_Buff_Land_On_Self()
+        public void Ignore_Group_Buff_Emote_Shared_With_Self_Buff_Lands_On_Self()
         {
             var spells = new FakeSpellParser();
             var buffs = new BuffTracker(spells);
@@ -84,7 +117,7 @@ namespace EQLogParserTests.Tracker
         }
 
         [Fact]
-        public void Ignore_Self_Buff_Land_On_Caster()
+        public void Ignore_Self_Buff_Lands_On_Caster()
         {
             var spells = new FakeSpellParser();
             var buffs = new BuffTracker(spells);

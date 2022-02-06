@@ -243,7 +243,7 @@ namespace EQLogParser
                 // this is better than tracking by emote since we can determine exactly which spell was cast (unless interrupted)
                 var name = SpellParser.StripRank(cast.Spell);
                 TrackedSpellsByName.TryGetValue(name, out SpellInfo spell);
-                if (spell != null && (spell.Target == (int)SpellTarget.Self || spell.Target == (int)SpellTarget.Pet))
+                if (spell?.Target == (int)SpellTarget.Self || spell?.Target == (int)SpellTarget.Pet)
                 {
                     var buff = new BuffInfo()
                     {
@@ -283,7 +283,7 @@ namespace EQLogParser
                         // group spells may share an emote with a self spell -- which already get captured during the casting handler
                         // so make sure we aren't double counting
                         LastCast.TryGetValue(raw.Player, out SpellInfo last);
-                        if (last?.LandSelf == spell.LandSelf)
+                        if (last?.LandSelf == spell.LandSelf && last?.Target == (int)SpellTarget.Self)
                             break;
 
                         var buff = new BuffInfo()
@@ -308,7 +308,7 @@ namespace EQLogParser
                         // group spells may share an emote with a self spell -- which already get captured during the casting handler
                         // so make sure we aren't double counting
                         LastCast.TryGetValue(otherTarget, out SpellInfo last);
-                        if (last?.LandOthers == spell.LandOthers)
+                        if (last?.LandOthers == spell.LandOthers && last?.Target == (int)SpellTarget.Self)
                             break;
 
                         var buff = new BuffInfo()

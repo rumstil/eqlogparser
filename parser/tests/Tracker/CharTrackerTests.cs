@@ -202,14 +202,26 @@ namespace EQLogParserTests.Tracker
         {
             var spells = new FakeSpellParser();
             var chars = new CharTracker(spells);
-            chars.GetOrAdd("Red").IsPlayer = true;
-            chars.GetOrAdd("Blue");
-            chars.GetOrAdd("Green").IsPlayer = true;
-            chars.GetOrAdd("Green").Class = "CLR";
-            chars.GetOrAdd("Spot").Owner = "Green";
+            var today = DateTime.Today;
+            
+            var red = chars.GetOrAdd("Red");
+            red.IsPlayer = true;
+            red.UpdatedOn = today;
+            
+            var blue = chars.GetOrAdd("Blue");
+            blue.UpdatedOn = today;
+            
+            var green = chars.GetOrAdd("Green");
+            green.IsPlayer = true;
+            green.Class = "CLR";
+            green.UpdatedOn = today;
+
+            var spot = chars.GetOrAdd("Spot");
+            spot.Owner = "Green";
+            spot.UpdatedOn = today;
 
             var s = chars.ExportPlayers();
-            Assert.Equal("Red::;Green:CLR:;Spot::Green;", s);
+            Assert.Equal($"Red:::{today:yyyy-MM-dd};Green:CLR::{today:yyyy-MM-dd};Spot::Green:{today:yyyy-MM-dd};", s);
         }
 
         [Fact]
@@ -217,24 +229,39 @@ namespace EQLogParserTests.Tracker
         {
             var spells = new FakeSpellParser();
             var chars = new CharTracker(spells);
-            chars.ImportPlayers("Red::;Green:CLR:;Spot::Green;");
+            var today = DateTime.Today;
+            chars.ImportPlayers($"Red:::{today:yyyy-MM-dd};Green:CLR::{today:yyyy-MM-dd};Spot::Green:{today:yyyy-MM-dd};");
 
-            Assert.NotNull(chars.Get("Red"));
-            Assert.True(chars.Get("Red").IsPlayer);
-            Assert.Null(chars.Get("Red").Class);
+            var red = chars.Get("Red");
+            Assert.NotNull(red);
+            Assert.True(red.IsPlayer);
+            Assert.Null(red.Class);
+            Assert.Equal(today, red.UpdatedOn);
 
-            Assert.Null(chars.Get("Blue"));
+            var green = chars.Get("Green");
+            Assert.NotNull(green);
+            Assert.True(green.IsPlayer);
+            Assert.Equal("CLR", green.Class);
+            Assert.Equal(today, green.UpdatedOn);
 
-            Assert.NotNull(chars.Get("Green"));
-            Assert.True(chars.Get("Green").IsPlayer);
-            Assert.Equal("CLR", chars.Get("Green").Class);
-
-            Assert.NotNull(chars.Get("Spot"));
-            Assert.False(chars.Get("Spot").IsPlayer);
-            Assert.Null(chars.Get("Spot").Class);
-            Assert.Equal("Green", chars.Get("Spot").Owner);
+            var spot = chars.Get("Spot");
+            Assert.NotNull(spot);
+            Assert.False(spot.IsPlayer);
+            Assert.Null(spot.Class);
+            Assert.Equal("Green", spot.Owner);
+            Assert.Equal(today, spot.UpdatedOn);
         }
 
+        [Fact]
+        public void ImportPlayers_Skip_Stale()
+        {
+            var spells = new FakeSpellParser();
+            var chars = new CharTracker(spells);
+            var today = DateTime.Today;
+            chars.ImportPlayers($"Red:CLR::{today:yyyy-MM-dd};Green:CLR::{today.AddDays(-50):yyyy-MM-dd}");
+            Assert.NotNull(chars.Get("Red"));
+            Assert.Null(chars.Get("Green"));
+        }
 
         /*
         // this test will only work if we use an hardcoded spell exclusion list

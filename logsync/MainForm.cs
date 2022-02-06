@@ -442,7 +442,7 @@ namespace LogSync
                 LogInfo("Error: " + ex.Message);
                 LogInfo("Last Line: " + reader.LastLine);
             }
-            LogInfo("Closing " + path);
+            //LogInfo("Closing " + path); // this log message can occur after the form has been disposed
             if (open.Server != null)
             {
                 // save a list of players so that we have better information next time we run the parser
@@ -451,9 +451,6 @@ namespace LogSync
             }
 
             //await ProcessLogFileAsync(path);
-
-            // this log message can occur after the form has been disposed
-            //LogInfo("Closing " + path);
         }
 
         /*

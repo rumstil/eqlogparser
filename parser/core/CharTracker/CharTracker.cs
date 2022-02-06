@@ -22,6 +22,7 @@ namespace EQLogParser
         public bool IsPlayer;
         public DateTime? PlayerAggro; // last time a player hit the mob
         public CharType Type;
+        public DateTime? UpdatedOn; // last time class or owner was updated
 
         public override string ToString()
         {
@@ -49,6 +50,7 @@ namespace EQLogParser
     {
         private string Server = null;
         private string Player = null;
+        private DateTime Timestamp;
 
         // https://forums.daybreakgames.com/eq/index.php?threads/collecting-pet-names.249684/#post-3671490
         private static readonly Regex PetNameRegex = new Regex(@"^[GJKLVXZ]([aeio][bknrs]){0,2}(ab|er|n|tik)$", RegexOptions.Compiled);
@@ -80,6 +82,8 @@ namespace EQLogParser
 
         public void HandleEvent(LogEvent e)
         {
+            Timestamp = e.Timestamp;
+
             if (e is LogOpenEvent open)
             {
                 if (Server != open.Server)
@@ -117,7 +121,10 @@ namespace EQLogParser
                 if (who.Level > 0)
                     c.Level = who.Level;
                 if (who.Class != null)
+                {
                     c.Class = who.Class;
+                    c.UpdatedOn = Timestamp;
+                }
             }
 
             if (e is LogConEvent con)
@@ -165,6 +172,7 @@ namespace EQLogParser
                 if (m.Success && !c.IsPlayer)
                 {
                     c.Owner = m.Groups[1].Value;
+                    c.UpdatedOn = Timestamp;
                     c.Type = CharType.Friend; // can you /pet leader a NPC pet?
                     GetOrAdd(c.Owner);
                 }
@@ -174,6 +182,7 @@ namespace EQLogParser
                 {
                     c.Type = CharType.Friend;
                     c.Owner = Player;
+                    c.UpdatedOn = Timestamp;
                 }
             }
 
@@ -189,7 +198,10 @@ namespace EQLogParser
                 {
                     var spell = Spells?.GetSpell(heal.Spell);
                     if (spell?.IsPetTarget == true)
+                    {
                         target.Owner = heal.Source;
+                        target.UpdatedOn = Timestamp;
+                    }
                 }
 
                 if (heal.Source != null)
@@ -253,7 +265,10 @@ namespace EQLogParser
                 if (spell?.ClassesCount == 1)
                 {
                     if (cast.Type == CastingType.Disc || cast.Type == CastingType.Song || IsProbablyNotClickOrProc(spell))
+                    {
                         c.Class = spell.ClassesNames;
+                        c.UpdatedOn = Timestamp;
+                    }
                      
                     if (c.Class == null)
                         Casts.Add(new SpellCastClassHint() { Timestamp = e.Timestamp, Source = cast.Source, ClassesMask = spell.ClassesMask });
@@ -322,12 +337,14 @@ namespace EQLogParser
                     if (spell?.ClassesCount == 1 && IsProbablyNotClickOrProc(spell))
                     {
                         source.Class = spell.ClassesNames;
+                        source.UpdatedOn = Timestamp;
                     }
 
                     // some spells will damage pets to provide their owner a benefit in return
                     if (spell?.IsPetTarget == true)
                     {
                         target.Owner = source.Name;
+                        target.UpdatedOn = Timestamp;
                     }
                 }
 
@@ -472,6 +489,7 @@ namespace EQLogParser
 
             //if (type != CharType.Unknown)
             //    c.Type = type;
+                       
 
             return c;
         }
@@ -571,14 +589,18 @@ namespace EQLogParser
 
         /// <summary>
         /// Export players and pets as a serialized string (for saving to a db or file).
+        /// Format is "name:class:owner:date"
         /// </summary>
         public string ExportPlayers()
         {
             var data = new StringBuilder();
             foreach (var c in CharsByName.Values)
             {
+                if (c.UpdatedOn == null)
+                    continue;
+
                 if (c.IsPlayer || (c.Owner != null && Get(c.Owner)?.IsPlayer == true))
-                    data.Append($"{c.Name}:{c.Class}:{c.Owner};");
+                    data.Append($"{c.Name}:{c.Class}:{c.Owner}:{c.UpdatedOn:yyyy-MM-dd};");
             }
             return data.ToString();
         }
@@ -596,7 +618,7 @@ namespace EQLogParser
             foreach (var item in list)
             {
                 var fields = item.Split(':');
-                if (fields.Length != 3)
+                if (fields.Length != 4)
                     continue;
 
                 // string.split returns empty strings rather than nulls
@@ -609,9 +631,22 @@ namespace EQLogParser
                     Name = fields[0],
                     Class = fields[1],
                     Owner = fields[2],
+                    // since only pets and players are exported, if it's not a pet then it must be a player
                     IsPlayer = fields[2] == null,
+                    UpdatedOn = DateTime.Parse(fields[3]),
                     Type = CharType.Friend,
                 };
+
+                if (player.UpdatedOn == null)
+                    continue;
+
+                if (player.UpdatedOn < DateTime.Today.AddDays(-30))
+                    continue;
+
+                // limit pet imports to a few days old since the names can be reused and will be stale data
+                if (player.UpdatedOn < DateTime.Today.AddDays(-5) && IsPetName(player.Name))
+                    continue;
+
                 CharsByName[player.Name] = player;
             }
         }

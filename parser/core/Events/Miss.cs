@@ -26,7 +26,7 @@ Ex: 'Your target resisted the Fireball spell.' is now 'A large skunk resisted yo
 namespace EQLogParser
 {
     /// <summary>
-    /// Generated when a damage attempt fails and does no damage (can be a miss, defense, or spell resist).
+    /// Generated when a melee damage attempt fails and does no damage.
     /// </summary>
     public class LogMissEvent : LogEvent
     {
@@ -52,9 +52,6 @@ namespace EQLogParser
 
         // [Mon Mar 25 21:55:36 2019] YOUR magical skin absorbs the damage of a Bloodmoon boneeater's thorns.
 
-
-        private static readonly Regex ResistRegex = new Regex(@"^(.+) resisted your (.+?)!$", RegexOptions.Compiled | RegexOptions.RightToLeft);
-        private static readonly Regex SelfResistRegex = new Regex(@"^You resist (.+?)'s (.+)!$", RegexOptions.Compiled);
 
         public static LogMissEvent Parse(LogRawEvent e)
         {
@@ -82,32 +79,6 @@ namespace EQLogParser
                     Target = e.FixName(m.Groups[3].Value),
                     Type = type,
                     Mod = ParseMod(m.Groups[5].Value)
-                };
-            }
-
-            m = SelfResistRegex.Match(e.Text);
-            if (m.Success)
-            {
-                return new LogMissEvent()
-                {
-                    Timestamp = e.Timestamp,
-                    Source = e.FixName(m.Groups[1].Value),
-                    Target = e.Player,
-                    Type = "resist",
-                    Spell = m.Groups[2].Value
-                };
-            }
-
-            m = ResistRegex.Match(e.Text);
-            if (m.Success)
-            {
-                return new LogMissEvent()
-                {
-                    Timestamp = e.Timestamp,
-                    Source = e.Player,
-                    Target = e.FixName(m.Groups[1].Value),
-                    Type = "resist",
-                    Spell = m.Groups[2].Value
                 };
             }
 

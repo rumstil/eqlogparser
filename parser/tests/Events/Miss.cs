@@ -83,26 +83,5 @@ namespace EQLogParserTests.Event
             Assert.Equal(PLAYER, miss.Target);
             Assert.Equal("invul", miss.Type);
         }
-
-        [Fact]
-        public void Parse_Resist()
-        {
-            var miss = Parse("A mist wolf resisted your Undermining Helix Rk. II!");
-            Assert.NotNull(miss);
-            Assert.Equal(PLAYER, miss.Source);
-            Assert.Equal("A mist wolf", miss.Target);
-            Assert.Equal("resist", miss.Type);
-            Assert.Equal("Undermining Helix Rk. II", miss.Spell);
-
-            miss = Parse("You resist a Sebilisian bonecaster's Greater Immobilize!");
-            Assert.NotNull(miss);
-            Assert.Equal("A Sebilisian bonecaster", miss.Source);
-            Assert.Equal(PLAYER, miss.Target);
-            Assert.Equal("resist", miss.Type);
-            Assert.Equal("Greater Immobilize", miss.Spell);
-
-        }
-
-
     }
 }

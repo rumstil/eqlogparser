@@ -71,6 +71,7 @@ namespace EQLogParser
             Parsers.Add(LogDiceRollEvent.Parse);
             Parsers.Add(LogCoinEvent.Parse);
             Parsers.Add(LogOutputFileEvent.Parse);
+            Parsers.Add(LogCastingFailEvent.Parse);
         }
 
         /// <summary>

@@ -596,6 +596,10 @@ namespace LogSync
             if (chkAutoUpload.Checked && f.Status == FightStatus.Killed && !IsTrashMob(f))
             {
                 _ = UploadFight(f);
+            }
+
+            if (chkAutoUpload.Checked && lootList.Count >= 10)
+            {
                 _ = UploadLoot();
             }
         }
@@ -677,7 +681,7 @@ namespace LogSync
             //if (zoneAvg > 0 && f.HP > zoneAvg * 0.5)
             //    return false;
 
-            return f.IsTrash;
+            return FightInfo.IsTrash(f);
         }
 
         private bool IsFilterMatch(FightInfo f)

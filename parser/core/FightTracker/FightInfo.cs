@@ -78,12 +78,6 @@ namespace EQLogParser
         /// </summary>
         public int TotalDuration => (int)(UpdatedOn - StartedOn).TotalSeconds + 1;
 
-        /// <summary>
-        /// Is this probably a trash mob?
-        /// These rules should make sense for both high and low level players fighting level appropriate mobs.
-        /// </summary>
-        public bool IsTrash => Duration < 10 || Target.InboundHitCount < 5 || HP < 1000;
-
         public override string ToString()
         {
             return String.Format("{0} ({1}) - {2}", Target.Name, Zone, StartedOn);
@@ -428,5 +422,15 @@ namespace EQLogParser
             TopHitSum = Participants.Max(x => x.OutboundHitSum);
             TopHealSum = Participants.Max(x => x.OutboundHealSum);
         }
+
+        /// <summary>
+        /// Is this probably a trash mob?
+        /// These rules should make sense for both high and low level players fighting level appropriate mobs.
+        /// </summary>
+        public static bool IsTrash(FightInfo f)
+        {
+            return f.Duration < 10 || f.Target.InboundHitCount < 5 || f.HP < 1000;
+        }
+
     }
 }

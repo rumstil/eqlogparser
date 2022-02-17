@@ -134,8 +134,6 @@ namespace EQLogParser
                     type = "headshot";
                 else if (hit.Mod.HasFlag(LogEventMod.Assassinate))
                     type = "assassinate";
-                else if (hit.Mod.HasFlag(LogEventMod.Decapitate))
-                    type = "decapitate";
                 else if (hit.Mod.HasFlag(LogEventMod.Slay_Undead))
                     type = "slay";
                 //else if (hit.Mod.HasFlag(LogEventMod.Special))

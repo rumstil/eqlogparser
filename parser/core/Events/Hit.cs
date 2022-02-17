@@ -264,9 +264,6 @@ namespace EQLogParser
                     case "assassinate":
                         mod |= LogEventMod.Assassinate;
                         break;
-                    case "decapitate":
-                        mod |= LogEventMod.Decapitate;
-                        break;
                     case "slay":
                         mod |= LogEventMod.Slay_Undead;
                         mod |= LogEventMod.Critical;

@@ -20,9 +20,8 @@ namespace EQLogParser
         Wild_Rampage    = 1 << 9, // will also identify as Rampage
         Headshot        = 1 << 10,
         Assassinate     = 1 << 11,
-        Decapitate      = 1 << 12,
-        Slay_Undead     = 1 << 13,
-        Locked          = 1 << 14,
+        Slay_Undead     = 1 << 12,
+        Locked          = 1 << 13,
     }
 
 }

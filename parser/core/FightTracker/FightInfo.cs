@@ -280,6 +280,36 @@ namespace EQLogParser
             Participants.RemoveAll(x => x.OutboundHealSum == 0 && x.OutboundHitSum == 0 && x.InboundHitSum == 0 && !x.DPS.Any(y => y > 0));
         }
 
+
+        /// <summary>
+        /// Reduce interval data by consolidating into longer duration intervals.
+        /// This can be used to reduce the data structure size and make charts more readable.
+        /// </summary>
+        public void ReduceIntervals(int count)
+        {
+            IntervalDuration = count * IntervalDuration;
+
+            Func<List<int>, List<int>> reduce = (org) =>
+            {
+                var result = new List<int>();
+                for (var i = 0; i < org.Count; i++)
+                {
+                    if (i % count == 0)
+                        result.Add(0);
+                    result[^1] += org[i];
+                }
+                return result;
+            };
+
+            foreach (var p in ParticipantsAndTarget)
+            {
+                p.DPS = reduce(p.DPS);
+                p.HPS = reduce(p.HPS);
+                p.TankDPS = reduce(p.TankDPS);
+                p.InboundHPS = reduce(p.InboundHPS);
+            }
+        }
+
         /// <summary>
         /// Perform final summarization, sorting and clean-up once a fight has completed.
         /// </summary>

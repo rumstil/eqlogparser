@@ -127,7 +127,6 @@ namespace EQLogParser
             }
 
             Target.Merge(f.Target, interval, time);
-
         }
 
         /// <summary>
@@ -145,35 +144,6 @@ namespace EQLogParser
                 p.HPS.Clear();
                 p.TankDPS.Clear();
                 p.InboundHPS.Clear();
-            }
-        }
-
-        /// <summary>
-        /// Reduce interval data by consolidating into longer duration intervals.
-        /// This can be used to reduce the data structure size and make charts more readable.
-        /// </summary>
-        private void ReduceIntervals(int count)
-        {
-            IntervalDuration = count * IntervalDuration;
-
-            Func<List<int>, List<int>> reduce = (org) => 
-            {
-                var result = new List<int>();
-                for (var i = 0; i < org.Count; i++)
-                {
-                    if (i % count == 0)
-                        result.Add(0);
-                    result[^1] += org[i];
-                }
-                return result;
-            };
-
-            foreach (var p in ParticipantsAndTarget)
-            {
-                p.DPS = reduce(p.DPS);
-                p.HPS = reduce(p.HPS);
-                p.TankDPS = reduce(p.TankDPS);
-                p.InboundHPS = reduce(p.InboundHPS);
             }
         }
 
@@ -220,7 +190,7 @@ namespace EQLogParser
             // if we're merging a long time span then the interval graphs won't be very useful and just bloat the data structure
             if (Duration > 3000)
                 TrimIntervals();
-            else if (Duration > 600)
+            else if (Duration > 600 && IntervalDuration == 6)
                 ReduceIntervals(5); // 6 seconds => 30 seconds
 
             // trim long tail of participants

@@ -53,6 +53,7 @@ namespace EQLogParser
             Parsers.Add(LogHitEvent.Parse);
             Parsers.Add(LogHealEvent.Parse);
             Parsers.Add(LogCastingEvent.Parse);
+            Parsers.Add(LogCureEvent.Parse);
             Parsers.Add(LogDeathEvent.Parse);
             Parsers.Add(LogChatEvent.Parse);
             Parsers.Add(LogZoneEvent.Parse);

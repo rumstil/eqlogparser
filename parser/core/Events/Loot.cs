@@ -30,6 +30,10 @@ namespace EQLogParser
         // [Thu Jan 14 20:40:08 2021] Dude grabbed a Restless Ice Cloth Legs Ornament from an icebound chest .
         private static readonly Regex ItemGrabbedRegex = new Regex(@"^(\w+) grabbed a (.+) from ([^\.]+?)\s?\.$", RegexOptions.Compiled);
 
+        // [Sun Sep 11 18:15:51 2022] --Dude stole Star Ruby from froglok dar knight!--
+        private static readonly Regex ItemStolenRegex = new Regex(@"^--(\w+) stole (.+) from (.+)!--$", RegexOptions.Compiled | RegexOptions.RightToLeft);
+
+
 
         public static LogLootEvent Parse(LogRawEvent e)
         {
@@ -58,6 +62,20 @@ namespace EQLogParser
                     Qty = 1,
                 };
             }
+
+            m = ItemStolenRegex.Match(e.Text);
+            if (m.Success && m.Groups[2].Value != "coin")
+            {
+                return new LogLootEvent
+                {
+                    Timestamp = e.Timestamp,
+                    Char = e.FixName(m.Groups[1].Value),
+                    Item = m.Groups[2].Value,
+                    Source = e.FixName(m.Groups[3].Value),
+                    Qty = 1,
+                };
+            }
+
 
             return null;
         }

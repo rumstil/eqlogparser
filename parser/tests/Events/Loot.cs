@@ -57,5 +57,16 @@ namespace EQLogParserTests.Event
             Assert.Equal(1, loot.Qty);
         }
 
+        [Fact]
+        public void Parse_Stolen()
+        {
+            var loot = Parse("--Rumstil stole Grimy Spell Scroll from froglok krup enchanter!--");
+            Assert.NotNull(loot);
+            Assert.Equal("Rumstil", loot.Char);
+            Assert.Equal("Grimy Spell Scroll", loot.Item);
+            Assert.Equal("Froglok krup enchanter", loot.Source);
+            Assert.Equal(1, loot.Qty);
+        }
+
     }
 }

@@ -152,6 +152,11 @@ namespace EQLogParser
                 TrackZone(zone);
             }
 
+            if (e is LogXPEvent xp)
+            {
+                TrackXP(xp);
+            }
+
             if (e is LogPartyEvent party)
             {
                 TrackParty(party);
@@ -325,20 +330,26 @@ namespace EQLogParser
             }
         }
 
-        private void TrackParty(LogPartyEvent party)
+        private void TrackXP(LogXPEvent xp)
         {
-            if (party.Status == PartyStatus.RaidXP || party.Status == PartyStatus.RaidJoined)
+            if (xp.Type == XPType.RaidXP)
                 Party = "Raid";
 
-            if (party.Status == PartyStatus.GroupXP)
+            if (xp.Type == XPType.GroupXP)
                 Party = "Group";
+
+            if (xp.Type == XPType.SoloXP)
+                Party = "Solo";
+        }
+
+        private void TrackParty(LogPartyEvent party)
+        {
+            if (party.Status == PartyStatus.RaidJoined)
+                Party = "Raid";
 
             // may be group or solo -- lets just use group until an XP message says otherwise
             if (party.Status == PartyStatus.RaidLeft && party.Name == Player)
                 Party = "Group";
-
-            if (party.Status == PartyStatus.SoloXP)
-                Party = "Solo";
 
             if (party.Status == PartyStatus.GroupLeft && Party == "Group" && party.Name == Player)
                 Party = "Solo";
@@ -587,6 +598,8 @@ namespace EQLogParser
 
             return raid;
         }
+
+
 
         //private string StripCorpse(string name)
         //{

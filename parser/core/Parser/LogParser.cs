@@ -53,7 +53,6 @@ namespace EQLogParser
             Parsers.Add(LogHitEvent.Parse);
             Parsers.Add(LogHealEvent.Parse);
             Parsers.Add(LogCastingEvent.Parse);
-            Parsers.Add(LogCureEvent.Parse);
             Parsers.Add(LogDeathEvent.Parse);
             Parsers.Add(LogChatEvent.Parse);
             Parsers.Add(LogZoneEvent.Parse);
@@ -63,6 +62,7 @@ namespace EQLogParser
             Parsers.Add(LogLootEvent.Parse);
             Parsers.Add(LogRotEvent.Parse);
             Parsers.Add(LogCraftEvent.Parse);
+            Parsers.Add(LogXPEvent.Parse);
             Parsers.Add(LogAAXPEvent.Parse);
             Parsers.Add(LogAAPurchaseEvent.Parse);
             Parsers.Add(LogSkillEvent.Parse);
@@ -73,6 +73,7 @@ namespace EQLogParser
             Parsers.Add(LogCoinEvent.Parse);
             Parsers.Add(LogOutputFileEvent.Parse);
             Parsers.Add(LogCastingFailEvent.Parse);
+            Parsers.Add(LogCureEvent.Parse);
         }
 
         /// <summary>

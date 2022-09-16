@@ -6,11 +6,8 @@ namespace EQLogParser
     public enum PartyStatus
     {
         None,
-        SoloXP,
-        GroupXP,
         GroupJoined,
         GroupLeft,
-        RaidXP,
         RaidJoined,
         RaidLeft,
         ChannelJoined,
@@ -57,23 +54,7 @@ namespace EQLogParser
 
         public static LogPartyEvent Parse(LogRawEvent e)
         {
-            var m = XPRegex.Match(e.Text);
-            if (m.Success)
-            {
-                var status = PartyStatus.SoloXP;
-                if (m.Groups[1].Value == "party")
-                    status = PartyStatus.GroupXP;
-                if (m.Groups[1].Value == "raid")
-                    status = PartyStatus.RaidXP;
-                return new LogPartyEvent
-                {
-                    Timestamp = e.Timestamp,
-                    Name = e.Player,
-                    Status = status
-                };
-            }
-            
-            m = PartyJoinedRegex.Match(e.Text);
+            var m = PartyJoinedRegex.Match(e.Text);
             if (m.Success)
             {
                 return new LogPartyEvent

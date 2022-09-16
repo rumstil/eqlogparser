@@ -61,30 +61,6 @@ namespace EQLogParserTests.Event
         }
 
         [Fact]
-        public void Parse_XP()
-        {
-            var party = Parse("You gain party experience!");
-            Assert.NotNull(party);
-            Assert.Equal(PLAYER, party.Name);
-            Assert.Equal(PartyStatus.GroupXP, party.Status);
-
-            party = Parse("You gain party experience (with a bonus)!");
-            Assert.NotNull(party);
-            Assert.Equal(PLAYER, party.Name);
-            Assert.Equal(PartyStatus.GroupXP, party.Status);
-
-            party = Parse("You gained raid experience!");
-            Assert.NotNull(party);
-            Assert.Equal(PLAYER, party.Name);
-            Assert.Equal(PartyStatus.RaidXP, party.Status);
-
-            party = Parse("You gained raid experience (with a bonus)!");
-            Assert.NotNull(party);
-            Assert.Equal(PLAYER, party.Name);
-            Assert.Equal(PartyStatus.RaidXP, party.Status);
-        }
-
-        [Fact]
         public void Parse_Channel()
         {
             var party = Parse("* Rumstil has entered channel openraids:1");

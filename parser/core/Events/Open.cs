@@ -51,7 +51,7 @@ namespace EQLogParser
             // hardcoding server names to guard against files that are renamed being misattributed
             // some of these servers may be defunct but I'll leave them in so old files can be parsed
             // https://help.daybreakgames.com/hc/en-us/articles/231264868-What-is-the-EverQuest-server-merge-history-
-            var m = Regex.Match(path, @"eqlog_\w+_(test|beta|agnarr|aradune|bertox|bristle|cazic|coirnav|drinal|erollisi|firiona|luclin|mangler|miragul|mischief|phinigel|povar|ragefire|rizlona|selo|thornblade|rathe|tunare|vox|xegony|zek|vaniki|yelinak)");
+            var m = Regex.Match(path, @"eqlog_\w+_(test|beta|agnarr|aradune|bertox|bristle|cazic|coirnav|drinal|erollisi|firiona|luclin|mangler|miragul|mischief|phinigel|povar|ragefire|rizlona|selo|thornblade|rathe|tunare|vox|xegony|zek|vaniki|yelinak|oakwynd)");
             if (m.Success)
             {
                 return m.Groups[1].Value;

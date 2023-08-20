@@ -15,12 +15,12 @@ namespace EQLogParser
         public string Name { get; set; }
         public int ResistCount { get; set; }
         public int HitCount { get; set; }
-        public int HitSum { get; set; }
+        public long HitSum { get; set; }
         public int HitMax { get; set; }
         public int CritCount { get; set; }
-        public int CritSum { get; set; }
+        public long CritSum { get; set; }
         public int TwinCount { get; set; }
-        public int FullHitSum { get; set; } // currently only used for heals
+        public long FullHitSum { get; set; } // currently only used for heals
 
         /// <summary>
         /// Each time the spell is cast an entry is added with the # seconds from start of fight

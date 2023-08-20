@@ -7,8 +7,8 @@
     {
         public string Target { get; set; }
         public int HitCount { get; set; }
-        public int HitSum { get; set; }
-        public int FullHitSum { get; set; }
+        public long HitSum { get; set; }
+        public long FullHitSum { get; set; }
 
         public void Merge(FightHeal x)
         {

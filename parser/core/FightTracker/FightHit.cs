@@ -7,9 +7,9 @@
     {
         public string Type { get; set; }
         public int HitCount { get; set; }
-        public int HitSum { get; set; }
+        public long HitSum { get; set; }
         public int CritCount { get; set; }
-        public int CritSum { get; set; }
+        public long CritSum { get; set; }
         public int HitMax { get; set; }
 
         public void Merge(FightHit x)

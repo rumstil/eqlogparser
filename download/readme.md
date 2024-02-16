@@ -1,10 +1,10 @@
 # Prerequisite
 
-In order to run the parser you will need to have the Microsoft .NET 6.0 Runtime installed on your computer. (This requirement was updated from .NET 3 on to August 20, 2023)
+In order to run the parser you will need to have the Microsoft .NET 8.0 Runtime installed on your computer. (This requirement was updated on to Feb 16, 2024)
 
 You can download it from Microsoft here:
 
-https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-6.0.21-windows-x64-installer
+https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-desktop-8.0.2-windows-x64-installer
 
 # Download
 

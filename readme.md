@@ -2,7 +2,7 @@
 
 This is an EverQuest log file parser application that can scan an Everquest log file and generate fight summaries to help players analyze their gameplay.
 
-There are 4 projects in this repository. All require the .net core 3.1 SDK to compile:
+There are 4 projects in this repository. 
 
 The **LogSync** project is a windows app that is used to collect and send log parses to the www.raidloot.com/logs website for sharing with group and guild members. It has just enough of a user interface to let you see basic fight info, but it's meant to be used alongside the website.
 
@@ -65,9 +65,7 @@ public class LogRawEvent : LogEvent
 }
 ```
 
-LogRawEvent represents the common traits every log line has: a date and a text string. This is not very useful yet but it serves as an input for all the other event parsers.
-
-We then pass the LogRawEvent to a bunch of parsers to see if one of them recognizes it. In this case LogHitEvent parser will and returns a new LogHitEvent event:
+LogRawEvent represents the common traits every log line has: a date and a text string. This is not very useful yet but it serves as an input for further parsing. The parser is composed of over 30 individual message parsers that each handle exactly one category of log message and emit a result if successfull. In this case, the LogHitEvent parser will recognize the above message and return a new LogHitEvent event:
 
 ```
 public class LogHitEvent : LogEvent

@@ -24,7 +24,7 @@ namespace EQLogParser
         // [Sun May 08 20:33:17 2016] You say to your guild, 'congrats'
         // using \w+ is a lot faster than .+? but will miss messages from NPCs with spaces in their names
         private static readonly Regex PrivateChatRegex = new Regex(@"^(.+?) (?:say to your|told|tell your|tells the|tells?) (.+?),\s(?:in .+, )?\s?'(.+)'$", RegexOptions.Compiled | RegexOptions.RightToLeft);
-        private static readonly Regex PublicChatRegex = new Regex(@"^(.+?) (says? out of channel|says?|shouts?|auctions?),\s(?:in .+, )?'(.+)'$", RegexOptions.Compiled | RegexOptions.RightToLeft);
+        private static readonly Regex PublicChatRegex = new Regex(@"^(.+?) (say out of channel|says out of channel|say|says|shout|shouts|auction|auctions),\s(?:in .+, )?'(.+)'$", RegexOptions.Compiled | RegexOptions.RightToLeft);
 
         public static LogChatEvent Parse(LogRawEvent e)
         {
@@ -37,6 +37,8 @@ namespace EQLogParser
                     channel = "tell";
                 if (channel == "party")
                     channel = "group";
+
+                // strip numeric suffix from channel name
                 channel = Regex.Replace(channel, @":\d+$", "");
 
                 return new LogChatEvent

@@ -142,7 +142,7 @@ namespace EQLogParserTests.Event
         }
 
         [Fact]
-        public void Parse_Own_DoT()
+        public void Parse_DoT_Own()
         {
             var hit = Parse("A tree snake has taken 1923 damage from your Breath of Queen Malarian.");
             Assert.NotNull(hit);
@@ -154,7 +154,7 @@ namespace EQLogParserTests.Event
         }
 
         [Fact]
-        public void Parse_Own_DoT_Critical()
+        public void Parse_DoT_Own_Critical()
         {
             var hit = Parse("A tree snake has taken 6677 damage from your Breath of Queen Malarian. (Critical)");
             Assert.NotNull(hit);
@@ -167,7 +167,7 @@ namespace EQLogParserTests.Event
         }
 
         [Fact]
-        public void Parse_Other_DoT()
+        public void Parse_DoT_Other()
         {
             var hit = Parse("A Drogan berserker has taken 34993 damage from Mind Tempest by Fourier.");
             Assert.NotNull(hit);
@@ -178,8 +178,21 @@ namespace EQLogParserTests.Event
             Assert.Equal("Mind Tempest", hit.Spell);
         }
 
+        [Fact]
+        public void Parse_DoT_Incoming()
+        {
+            var hit = Parse("You have taken 52 damage from Chaos Claws by an ukun warhound's corpse.");
+            Assert.NotNull(hit);
+            Assert.Equal(PLAYER, hit.Source);
+            Assert.Equal("An ukun warhound's corpse", hit.Target);
+            Assert.Equal(52, hit.Amount);
+            Assert.Equal("dot", hit.Type);
+            Assert.Equal("Chaos Claws", hit.Spell);
+        }
+
         // is this worthwhile if we can't assign it to anyone?
-        private void Parse_Unattributed_DoT()
+        [Fact(Skip = "Unattributed hits are not useful")]
+        private void Parse_DoT_Unattributed()
         {
             var hit = Parse("Vallon Zek has taken 3343 damage by Slitheren Venom Rk. III.");
             Assert.NotNull(hit);

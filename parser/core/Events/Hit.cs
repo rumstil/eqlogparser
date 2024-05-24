@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text.RegularExpressions;
+using static System.Net.Mime.MediaTypeNames;
 
 /*
 
@@ -87,9 +88,10 @@ namespace EQLogParser
 
         // [Sun May 08 20:13:09 2016] An aggressive corpse has taken 212933 damage from your Mind Storm.
         // [Wed Feb 20 18:35:31 2019] A Drogan berserker has taken 34993 damage from Mind Tempest by Fourier.
-        // ignore dots that don't have a source (caster has died/zoned)
+        // [Wed Feb 20 18:35:31 2019] You have taken 52 damage from Chaos Claws by an ukun warhound's corpse.
+        // not handled: dots that don't have a source (caster has died/zoned)
         private static readonly Regex OwnDoTDamageRegex = new Regex(@"^(.+?) has taken (\d+) damage from your (.+?)\.(?:\s\(([^\(\)]+)\))?$", RegexOptions.Compiled);
-        private static readonly Regex OtherDoTDamageRegex = new Regex(@"^(.+?) has taken (\d+) damage from (.+?) by (.+?)\.(?:\s\(([^\(\)]+)\))?$", RegexOptions.Compiled);
+        private static readonly Regex OtherDoTDamageRegex = new Regex(@"^(.+?) ha(?:s|ve) taken (\d+) damage from (.+?) by (.+?)\.(?:\s\(([^\(\)]+)\))?$", RegexOptions.Compiled);
 
         // doom spells and accidents (i don't think there is a 3rd party version of this)
         // [Thu Jul 09 20:52:57 2020] You hit yourself for 4017 points of unresistable damage by Bone Crunch.
@@ -179,6 +181,18 @@ namespace EQLogParser
             m = OtherDoTDamageRegex.Match(e.Text);
             if (m.Success)
             {
+                if (m.Groups[1].Value == "You")
+                    return new LogHitEvent()
+                    {
+                        Timestamp = e.Timestamp,
+                        Target = e.FixName(m.Groups[4].Value),
+                        Amount = Int32.Parse(m.Groups[2].Value),
+                        Source = e.FixName(m.Groups[1].Value),
+                        Spell = m.Groups[3].Value,
+                        Type = "dot",
+                        Mod = mod
+                    };
+
                 return new LogHitEvent()
                 {
                     Timestamp = e.Timestamp,

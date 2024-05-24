@@ -226,6 +226,17 @@ namespace EQLogParserTests.Event
         }
 
         [Fact]
+        public void Parse_DS_Incoming()
+        {
+            var hit = Parse("YOU are burned by Yunta Soothsayer's flames for 11 points of non-melee damage!");
+            Assert.NotNull(hit);
+            Assert.Equal("Yunta Soothsayer", hit.Source);
+            Assert.Equal(PLAYER, hit.Target);
+            Assert.Equal(11, hit.Amount);
+            Assert.Equal("ds", hit.Type);
+        }
+
+        [Fact]
         public void Parse_Self_Hit()
         {
             var hit = Parse("You hit yourself for 390 points of fire damage by Rain of Skyfire.");

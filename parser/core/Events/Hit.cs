@@ -77,7 +77,8 @@ namespace EQLogParser
 
         // [Fri Dec 28 15:43:53 2018] A lizard is burned by YOUR flames for 380 points of non-melee damage.
         // [Wed Apr 17 21:51:16 2019] An Iron Legion admirer is pierced by Garantik's thorns for 144 points of non-melee damage.
-        private static readonly Regex DamageShieldRegex = new Regex(@"^(.+?) is \w+ by (.+?) \w+ for (\d+) points? of non-melee damage\.$", RegexOptions.Compiled | RegexOptions.RightToLeft);
+        // [Wed Jan 26 09:24:54 2022] YOU are burned by a syl ren sentinel's flames for 5158 points of non-melee damage!
+        private static readonly Regex DamageShieldRegex = new Regex(@"^(.+?) (?:is|are) \w+ by (.+?) \w+ for (\d+) points? of non-melee damage[\.!]$", RegexOptions.Compiled | RegexOptions.RightToLeft);
 
         // obsolete with 2019-02-12 test server patch
         // [Fri Dec 28 23:12:03 2018] Rumstil hit a scaled wolf for 726 points of non-melee damage.

@@ -59,9 +59,12 @@ namespace EQLogParser
         // [Sun Jan 13 23:09:15 2019] You healed Rumstil for 8 hit points by Blood of the Devoted.
         private static readonly Regex ObsoleteInstantRegex = new Regex(@"\. (.+?) healed (.+?) for (\d+)(?: \((\d+)\))? hit points(?: by (.+?))?\.(?: \((.+?)\))?$", RegexOptions.Compiled | RegexOptions.RightToLeft);
 
+        // [Sat Jan 22 09:33:42 2022] Janosh has been healed for 0 (440) hit points by Echo of Lunanyn Effect II.
+        private static readonly Regex PetAuraRegex = new Regex(@"^(.+?) has been healed for (\d+)(?: \((\d+)\))? hit points by (.+?)\.$", RegexOptions.Compiled);
+
         public static LogHealEvent Parse(LogRawEvent e)
         {
-            // this short-circuit exit is here strictly as a speed optmization 
+            // this short-circuit exit is here strictly as a speed optimization 
             if (e.Text.IndexOf("heal", StringComparison.Ordinal) < 0)
                 return null;
 
@@ -130,6 +133,21 @@ namespace EQLogParser
                     Amount = Int32.Parse(m.Groups[3].Value),
                     FullAmount = m.Groups[4].Success ? Int32.Parse(m.Groups[4].Value) : Int32.Parse(m.Groups[3].Value),
                     Spell = m.Groups[5].Success ? m.Groups[5].Value : null,
+                    Mod = mod
+                };
+            }
+
+            m = PetAuraRegex.Match(e.Text);
+            if (m.Success)
+            {
+                return new LogHealEvent()
+                {
+                    Timestamp = e.Timestamp,
+                    Source = null,
+                    Target = e.FixName(m.Groups[1].Value),
+                    Amount = Int32.Parse(m.Groups[2].Value),
+                    FullAmount = m.Groups[3].Success ? Int32.Parse(m.Groups[3].Value) : Int32.Parse(m.Groups[2].Value),
+                    Spell = m.Groups[4].Success ? m.Groups[4].Value : null,
                     Mod = mod
                 };
             }

@@ -233,6 +233,18 @@ namespace EQLogParserTests.Event
             Assert.Equal("Merciful Elixir Rk. II", heal.Spell);
         }
 
+        [Fact]
+        public void Parse_Pet_Aura()
+        {
+            var heal = Parse("Kobekn has been healed for 1720 (20000) hit points by Enhanced Theft of Essence Effect XI.");
+            Assert.NotNull(heal);
+            Assert.Null(heal.Source);
+            Assert.Equal("Kobekn", heal.Target);
+            Assert.Equal(1720, heal.Amount);
+            Assert.Equal(20000, heal.FullAmount);
+            Assert.Equal("Enhanced Theft of Essence Effect XI", heal.Spell);
+        }
+
 
     }
 }

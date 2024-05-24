@@ -23,5 +23,17 @@ namespace EQLogParserTests.Event
             Assert.Equal(775, roll.Roll);
         }
 
+        [Fact]
+        public void Parse_AutoRoll()
+        {
+            var roll = Parse("Rumstil rolled a 604 on Chunk of Hardened Lava.");
+            Assert.NotNull(roll);
+            Assert.Equal("Rumstil", roll.Source);
+            Assert.Equal(1, roll.Min);
+            Assert.Equal(1000, roll.Max);
+            Assert.Equal(604, roll.Roll);
+            Assert.Equal("Chunk of Hardened Lava", roll.Item);
+        }
+
     }
 }

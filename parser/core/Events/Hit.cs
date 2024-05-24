@@ -79,6 +79,9 @@ namespace EQLogParser
         // [Wed Apr 17 21:51:16 2019] An Iron Legion admirer is pierced by Garantik's thorns for 144 points of non-melee damage.
         // [Wed Jan 26 09:24:54 2022] YOU are burned by a syl ren sentinel's flames for 5158 points of non-melee damage!
         private static readonly Regex DamageShieldRegex = new Regex(@"^(.+?) (?:is|are) \w+ by (.+?) \w+ for (\d+) points? of non-melee damage[\.!]$", RegexOptions.Compiled | RegexOptions.RightToLeft);
+        
+        // [Fri Jan 21 22:59:44 2022] Kaldolin was chilled to the bone for 1364 points of non-melee damage.
+        private static readonly Regex ReverseDamageShieldRegex = new Regex(@"^(.+?) was chilled to the bone for (\d+) points? of non-melee damage\.$", RegexOptions.Compiled | RegexOptions.RightToLeft);
 
         // obsolete with 2019-02-12 test server patch
         // [Fri Dec 28 23:12:03 2018] Rumstil hit a scaled wolf for 726 points of non-melee damage.
@@ -90,9 +93,12 @@ namespace EQLogParser
         // [Sun May 08 20:13:09 2016] An aggressive corpse has taken 212933 damage from your Mind Storm.
         // [Wed Feb 20 18:35:31 2019] A Drogan berserker has taken 34993 damage from Mind Tempest by Fourier.
         // [Wed Feb 20 18:35:31 2019] You have taken 52 damage from Chaos Claws by an ukun warhound's corpse.
-        // not handled: dots that don't have a source (caster has died/zoned)
         private static readonly Regex OwnDoTDamageRegex = new Regex(@"^(.+?) has taken (\d+) damage from your (.+?)\.(?:\s\(([^\(\)]+)\))?$", RegexOptions.Compiled);
         private static readonly Regex OtherDoTDamageRegex = new Regex(@"^(.+?) ha(?:s|ve) taken (\d+) damage from (.+?) by (.+?)\.(?:\s\(([^\(\)]+)\))?$", RegexOptions.Compiled);
+
+        // DoTs from an dead/zoned caster 
+        // Player has taken 125 damage by Curse of Rhag`Zadune.
+        private static readonly Regex UnknownSourceDoTDamageRegex = new Regex(@"^(.+?) ha(?:s|ve) taken (\d+) damage (?:from|by) (.+?)\.(?:\s\(([^\(\)]+)\))?$", RegexOptions.Compiled);
 
         // doom spells and accidents (i don't think there is a 3rd party version of this)
         // [Thu Jul 09 20:52:57 2020] You hit yourself for 4017 points of unresistable damage by Bone Crunch.
@@ -206,6 +212,21 @@ namespace EQLogParser
                 };
             }
 
+            m = UnknownSourceDoTDamageRegex.Match(e.Text);
+            if (m.Success)
+            {
+                return new LogHitEvent()
+                {
+                    Timestamp = e.Timestamp,
+                    Target = e.FixName(m.Groups[1].Value),
+                    Amount = Int32.Parse(m.Groups[2].Value),
+                    Source = null,
+                    Spell = m.Groups[3].Value,
+                    Type = "dot",
+                    Mod = mod
+                };
+            }
+
             m = DamageShieldRegex.Match(e.Text);
             if (m.Success)
             {
@@ -215,6 +236,19 @@ namespace EQLogParser
                     Source = e.FixName(m.Groups[2].Value),
                     Target = e.FixName(m.Groups[1].Value),
                     Amount = Int32.Parse(m.Groups[3].Value),
+                    Type = "ds"
+                };
+            }
+
+            m = ReverseDamageShieldRegex.Match(e.Text);
+            if (m.Success)
+            {
+                return new LogHitEvent()
+                {
+                    Timestamp = e.Timestamp,
+                    Source = e.FixName(m.Groups[1].Value),
+                    Target = e.FixName(m.Groups[1].Value),
+                    Amount = Int32.Parse(m.Groups[2].Value),
                     Type = "ds"
                 };
             }

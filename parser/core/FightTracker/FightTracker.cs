@@ -181,6 +181,10 @@ namespace EQLogParser
 
         private void TrackHit(LogHitEvent hit)
         {
+            // DoTs from dead casters.. perhaps we could attribute the last caster to have died
+            if (String.IsNullOrEmpty(hit.Source))
+                return;
+
             var foe = Chars.GetFoe(hit.Source, hit.Target);
             if (foe == null)
             {

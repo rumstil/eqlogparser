@@ -1,5 +1,8 @@
 ﻿using EQLogParser;
+using System.Diagnostics.Metrics;
+using System;
 using Xunit;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace EQLogParserTests.Event
 {
@@ -190,10 +193,10 @@ namespace EQLogParserTests.Event
             Assert.Equal("Chaos Claws", hit.Spell);
         }
 
-        // is this worthwhile if we can't assign it to anyone?
-        [Fact(Skip = "Unattributed hits are not useful")]
+        [Fact]
         private void Parse_DoT_Unattributed()
         {
+            // caster is dead or has zoned
             var hit = Parse("Vallon Zek has taken 3343 damage by Slitheren Venom Rk. III.");
             Assert.NotNull(hit);
             Assert.Null(hit.Source);
@@ -222,6 +225,17 @@ namespace EQLogParserTests.Event
             Assert.Equal("Garantik", hit.Source);
             Assert.Equal("An Iron Legion admirer", hit.Target);
             Assert.Equal(144, hit.Amount);
+            Assert.Equal("ds", hit.Type);
+        }
+
+        [Fact]
+        public void Parse_DS_Reverse()
+        {
+            var hit = Parse("Kaldolin was chilled to the bone for 1364 points of non-melee damage.");
+            Assert.NotNull(hit);
+            Assert.Equal("Kaldolin", hit.Source);
+            Assert.Equal("Kaldolin", hit.Target);
+            Assert.Equal(1364, hit.Amount);
             Assert.Equal("ds", hit.Type);
         }
 

@@ -1,6 +1,7 @@
 ﻿using EQLogParser;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -342,8 +343,62 @@ namespace EQLogParserTests.Tracker
             // make sure these don't throw an exception
             var tracker = new FightTracker(new SpellParser(), new CharTracker());
 
-            tracker.HandleEvent(new LogTauntEvent() { Source = PLAYER1, Target = null });
+            tracker.HandleEvent(new LogTauntEvent() { Source = PLAYER1, Target = null }); // ae taunt
             tracker.HandleEvent(new LogDeathEvent() { Name = PLAYER1, KillShot = null });
+            tracker.HandleEvent(new LogHealEvent() { Spell = "Celestial Healing", Source = null, Amount = 100 });
+            tracker.HandleEvent(new LogHealEvent() { Spell = null, Source = PLAYER1, Amount = 100 }); // lifetaps?
+            tracker.HandleEvent(new LogHitEvent() { Spell = "Slight Rash", Source = null, Amount = 100, Type = "dot" });
+            tracker.HandleEvent(new LogHitEvent() { Source = null, Amount = 100, Type = "ds" });
+        }
+
+        [Fact]
+        public void Full_Fight()
+        {
+            var fights = ParseFights("/Proj/eq/logparser/parser/tests/Tracker/eqlog_Rumstil_erollisi_A_RyGorr_overseer_20220130_162955.txt");
+            Assert.Single(fights);
+            var f = fights[0];
+            
+            var kan = f.Participants.FirstOrDefault(x => x.Name == "Kaldolin");
+            Assert.Equal(37, kan.InboundHitCount);
+            Assert.Equal(36, kan.InboundMeleeCount);
+
+            Assert.Equal(8, kan.DefenseTypes.Find(x => x.Type == "miss").Count);
+            Assert.Equal(6, kan.DefenseTypes.Find(x => x.Type == "parry").Count);
+            Assert.Equal(2, kan.DefenseTypes.Find(x => x.Type == "dodge").Count);
+            Assert.Equal(13, kan.DefenseTypes.Find(x => x.Type == "unknown").Count);
+            Assert.Equal(4, kan.DefenseTypes.Find(x => x.Type == "riposte").Count);
+            Assert.Equal(33, kan.InboundMissCount);
+
+            Assert.Equal(16, kan.InboundStrikeCount);
+            Assert.Equal(25, kan.InboundStrikeProneCount);
+
+            Assert.Equal(429168, kan.InboundHealSum);
+
+        }
+
+        private List<FightInfo> ParseFights(string path)
+        {
+            var lines = File.ReadAllLines(path);
+            var fights = new List<FightInfo>();
+            var parser = new LogParser();
+            parser.Player = "Rumstil";
+            var spells = new FakeSpellParser();
+            var chars = new CharTracker(spells);
+            chars.HandleEvent(new LogWhoEvent() { Name = parser.Player });
+            var tracker = new FightTracker(spells, chars);
+            tracker.OnFightFinished += f => fights.Add(f);
+
+            foreach (var line in lines)
+            {
+                var e = parser.ParseLine(line);
+                if (e != null)
+                {
+                    chars.HandleEvent(e);
+                    tracker.HandleEvent(e);
+                }
+            }
+
+            return fights;
         }
 
 

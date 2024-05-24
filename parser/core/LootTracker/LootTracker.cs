@@ -385,11 +385,11 @@ namespace EQLogParser
         /// <summary>
         /// Does the server follow standard loot rules?
         /// Beta server may have items that don't exist or haven't been named yet.
-        /// Mischief and Thornblade servers use randomized loot.
+        /// Mischief, Thornblade, Teek servers use randomized loot.
         /// </summary>
         public static bool IsStandardServer(string server)
         {
-            return server != null && server != "beta" && server != "mischief" && server != "thornblade";
+            return server != null && server != "beta" && server != "mischief" && server != "thornblade" && server != "teek";
         }
     }
 }
